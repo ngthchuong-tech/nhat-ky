@@ -2,7 +2,7 @@
   "name": "Nhật Ký Công Việc",
   "short_name": "Nhật Ký",
   "description": "Ghi chép, công việc và nhắc nhở - đồng bộ mọi thiết bị",
-  "start_url": "/",
+  "start_url": "/nhat-ky/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
