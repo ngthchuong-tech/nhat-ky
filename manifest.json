@@ -1,0 +1,19 @@
+{
+  "name": "Nhật Ký Công Việc",
+  "short_name": "Nhật Ký",
+  "description": "Ghi chép, công việc và nhắc nhở - đồng bộ mọi thiết bị",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#1D9E75",
+  "lang": "vi",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Ghi chép mới", "url": "/?tab=notes", "description": "Tạo ghi chép mới" },
+    { "name": "Thêm việc", "url": "/?tab=tasks", "description": "Thêm việc cần làm" }
+  ]
+}
