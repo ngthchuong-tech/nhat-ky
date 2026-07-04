@@ -152,11 +152,14 @@ function openDoc(d,cardEl){
   rl.href=d.link;rl.style.display="inline-flex";
   const rb=document.getElementById("rbody");
   if(d.link){
-    // Chuyển link Drive thành link preview có thể nhúng
-    const previewUrl=d.link.replace("/view?usp=drivesdk","").replace("/view","")
-      .replace("https://drive.google.com/file/d/","https://drive.google.com/file/d/")
-      +"?rm=minimal";
-    rb.innerHTML='<iframe class="pdf-frame" src="'+esc(previewUrl)+'" allow="autoplay" loading="lazy"></iframe>';
+    // Chuyển link Drive thành /preview để nhúng được vào iframe
+    const fileId=d.link.match(/\/d\/([^/]+)/);
+    if(fileId){
+      const previewUrl="https://drive.google.com/file/d/"+fileId[1]+"/preview";
+      rb.innerHTML='<iframe class="pdf-frame" src="'+previewUrl+'" allow="autoplay" loading="lazy"></iframe>';
+    } else {
+      rb.innerHTML='<div class="placeholder">Không thể xem trực tiếp — <a href="'+esc(d.link)+'" target="_blank" style="color:#185FA5">mở trong Drive</a></div>';
+    }
   } else {
     rb.innerHTML='<div class="placeholder">Không có link cho văn bản này</div>';
   }
