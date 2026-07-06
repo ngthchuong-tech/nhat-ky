@@ -6,52 +6,68 @@
 <title>Tra cứu văn bản KSNB — Cảng Đồng Nai</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#f0f4f8;color:#1a1a1a;min-height:100vh}
-.top{background:#1F4E78;color:#fff;padding:14px 20px;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.25)}
-.top-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.top h1{font-size:17px;font-weight:600}
-.top small{font-size:11px;opacity:.7}
-.search-wrap{background:#fff;padding:12px 20px;border-bottom:1px solid #dde;position:sticky;top:56px;z-index:9;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.search-wrap input{width:100%;height:42px;font-size:15px;padding:0 14px;border:2px solid #2E75B6;border-radius:8px;outline:none;color:#1a1a1a;background:#fff}
-.search-wrap input:focus{border-color:#1F4E78;box-shadow:0 0 0 3px rgba(31,78,120,.12)}
-.filters{padding:10px 20px;background:#fff;border-bottom:1px solid #dde;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.filters label{font-size:12px;color:#888;margin-right:4px}
-.chip{padding:4px 11px;border-radius:20px;border:1px solid #ccc;font-size:12px;cursor:pointer;background:#fff;color:#555;transition:all .15s;white-space:nowrap;user-select:none}
-.chip:hover{border-color:#1F4E78;color:#1F4E78}
-.chip.on{color:#fff;border-color:transparent}
-.main{padding:10px 20px 32px;max-width:1100px;margin:0 auto}
-.stats{font-size:12px;color:#999;margin:8px 0 6px}
-.list{display:flex;flex-direction:column;gap:7px}
-.card{background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:10px 14px;display:flex;gap:10px;align-items:flex-start;transition:box-shadow .15s;border-left:4px solid #ccc}
-.card:hover{box-shadow:0 2px 12px rgba(0,0,0,.09)}
-.badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;flex-shrink:0;margin-top:2px}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#eef2f7;color:#1a1a1a;min-height:100vh;-webkit-font-smoothing:antialiased}
+.app-header{position:sticky;top:0;z-index:20;box-shadow:0 3px 10px rgba(0,0,0,.10)}
+.top{background:linear-gradient(135deg,#1F4E78,#164267);color:#fff;padding:13px 20px}
+.top-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;max-width:1100px;margin:0 auto}
+.top h1{font-size:16px;font-weight:600;letter-spacing:.2px}
+.top small{font-size:11px;opacity:.75}
+.search-wrap{background:#fff;padding:10px 20px;border-bottom:1px solid #e5e9ee}
+.search-inner{max-width:1100px;margin:0 auto;position:relative}
+.search-inner .icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;opacity:.5;pointer-events:none}
+.search-wrap input{width:100%;height:40px;font-size:14px;padding:0 14px 0 38px;border:1.5px solid #d6dde6;border-radius:20px;outline:none;color:#1a1a1a;background:#f7f9fb;transition:border-color .15s,background .15s}
+.search-wrap input:focus{border-color:#2E75B6;background:#fff;box-shadow:0 0 0 3px rgba(46,117,182,.12)}
+.filters-wrap{background:#fff;border-bottom:1px solid #e5e9ee;padding:2px 0 4px}
+.filters{padding:6px 20px;max-width:1100px;margin:0 auto;display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;align-items:center;scrollbar-width:thin}
+.filters::-webkit-scrollbar{height:4px}
+.filters::-webkit-scrollbar-thumb{background:#dde3ea;border-radius:4px}
+.filters label{font-size:11px;color:#9aa4b0;margin-right:2px;flex-shrink:0;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.chip{padding:4px 12px;border-radius:20px;border:1px solid #d8dee6;font-size:12px;cursor:pointer;background:#fff;color:#556;transition:all .15s;white-space:nowrap;user-select:none;flex-shrink:0}
+.chip:hover{border-color:#1F4E78;color:#1F4E78;background:#f3f7fb}
+.chip.on{color:#fff;border-color:transparent;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.main{padding:14px 20px 40px;max-width:1100px;margin:0 auto}
+.stats{font-size:12px;color:#8a94a0;margin:2px 2px 10px;display:flex;justify-content:space-between;align-items:center}
+.list{display:flex;flex-direction:column;gap:8px}
+.card{background:#fff;border:1px solid #e8edf2;border-radius:12px;padding:11px 15px;display:flex;gap:11px;align-items:flex-start;transition:box-shadow .15s,transform .1s;border-left:4px solid #ccc}
+.card:hover{box-shadow:0 4px 16px rgba(20,40,70,.08);transform:translateY(-1px)}
+.badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:10px;white-space:nowrap;flex-shrink:0;margin-top:1px}
 .status{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap}
 .status-active{background:#D9EAD3;color:#3B6D11}
 .status-expired{background:#F4CCCC;color:#791F1F}
-.card.expired{opacity:.7}
-.card.expired .ct{text-decoration:line-through;text-decoration-color:#c66;}
-.note{font-size:11px;color:#a35;margin-top:3px;font-style:italic}
+.card.expired{opacity:.72;background:#fafafa}
+.card.expired .ct{text-decoration:line-through;text-decoration-color:#c66}
+.note{font-size:11px;color:#a35;margin-top:4px;font-style:italic;line-height:1.4}
 .cb{flex:1;min-width:0}
-.ct{font-size:13px;font-weight:500;color:#1a1a1a;line-height:1.5;margin-bottom:4px;word-break:break-word}
-.cm{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px;color:#999}
-.btn{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;background:#EBF3FB;color:#185FA5;font-size:12px;font-weight:500;text-decoration:none;border:1px solid #B5D4F4;transition:all .15s;white-space:nowrap}
-.btn:hover{background:#185FA5;color:#fff}
+.ct{font-size:13.5px;font-weight:500;color:#1a1a1a;line-height:1.5;margin-bottom:5px;word-break:break-word}
+.cm{display:flex;gap:9px;align-items:center;flex-wrap:wrap;font-size:11.5px;color:#9aa4b0}
+.cm>span:first-child{color:#8a94a0}
+.btn{display:inline-flex;align-items:center;gap:4px;padding:3px 11px;border-radius:7px;background:#EBF3FB;color:#185FA5;font-size:12px;font-weight:500;text-decoration:none;border:1px solid #B5D4F4;transition:all .15s;white-space:nowrap;margin-left:auto}
+.btn:hover{background:#185FA5;color:#fff;border-color:#185FA5}
 mark{background:#fff3cd;border-radius:2px;padding:0 2px}
-.empty{text-align:center;padding:48px 16px;color:#aaa;font-size:14px}
+.empty{text-align:center;padding:56px 16px;color:#aab;font-size:14px}
+.empty small{display:block;margin-top:6px;color:#c3cbd4}
+@media(max-width:480px){.top h1{font-size:14px}.card{padding:10px 12px}}
 </style>
 </head>
 <body>
-<div class="top">
-  <div class="top-row">
-    <div><h1>📁 Tra cứu văn bản KSNB — Cảng Đồng Nai</h1></div>
-    <small>818 văn bản | Cập nhật: 06/07/2026 11:07</small>
+<div class="app-header">
+  <div class="top">
+    <div class="top-row">
+      <div><h1>📁 Tra cứu văn bản KSNB — Cảng Đồng Nai</h1></div>
+      <small>818 văn bản | Cập nhật: 06/07/2026 11:27</small>
+    </div>
+  </div>
+  <div class="search-wrap">
+    <div class="search-inner">
+      <span class="icon">🔍</span>
+      <input type="text" id="q" placeholder="Gõ từ khóa: số hiệu, năm, nội dung... (có dấu hoặc không dấu đều được)" autocomplete="off">
+    </div>
+  </div>
+  <div class="filters-wrap">
+    <div class="filters" id="filters"><label>Lĩnh vực</label></div>
+    <div class="filters" id="filtersHL"><label>Hiệu lực</label></div>
   </div>
 </div>
-<div class="search-wrap">
-  <input type="text" id="q" placeholder="Gõ từ khóa: số hiệu, năm, nội dung... (có dấu hoặc không dấu đều được)" autocomplete="off">
-</div>
-<div class="filters" id="filters"><label>Lĩnh vực:</label></div>
-<div class="filters" id="filtersHL"><label>Hiệu lực:</label></div>
 <div class="main">
   <div class="stats" id="stats"></div>
   <div class="list" id="list"></div>
@@ -89,7 +105,7 @@ function rFilters(){
     if(!cnts[lv])return;
     h+='<span class="chip'+(actLV===lv?" on":"'")+'" style="'+(actLV===lv?'background:'+c.bc+';color:#fff':'')+'" data-lv="'+lv+'">'+lv+' · '+cnts[lv]+'</span>';
   });
-  document.getElementById("filters").innerHTML='<label>Lĩnh vực:</label>'+h;
+  document.getElementById("filters").innerHTML='<label>Lĩnh vực</label>'+h;
   document.querySelectorAll("#filters .chip").forEach(c=>c.onclick=()=>{actLV=c.dataset.lv;go();rFilters();});
 }
 function rFiltersHL(){
@@ -100,7 +116,7 @@ function rFiltersHL(){
   if(soHetHL>0){
     h+='<span class="chip'+(actHL==="Hết hiệu lực"?" on":"")+'" style="'+(actHL==="Hết hiệu lực"?'background:#791F1F;color:#fff':'')+'" data-hl="Hết hiệu lực">⛔ Hết hiệu lực ('+soHetHL+')</span>';
   }
-  document.getElementById("filtersHL").innerHTML='<label>Hiệu lực:</label>'+h;
+  document.getElementById("filtersHL").innerHTML='<label>Hiệu lực</label>'+h;
   document.querySelectorAll("#filtersHL .chip").forEach(c=>c.onclick=()=>{actHL=c.dataset.hl;go();rFiltersHL();});
 }
 function rList(){
