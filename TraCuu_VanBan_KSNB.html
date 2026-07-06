@@ -54,7 +54,7 @@ mark{background:#fff3cd;border-radius:2px;padding:0 2px}
   <div class="top">
     <div class="top-row">
       <div><h1>📁 Tra cứu văn bản KSNB — Cảng Đồng Nai</h1></div>
-      <small>901 văn bản | Cập nhật: 06/07/2026 15:00</small>
+      <small>901 văn bản | Cập nhật: 06/07/2026 15:16</small>
     </div>
   </div>
   <div class="search-wrap">
@@ -100,10 +100,10 @@ const DATA=[{"lv":"A1","lv_ten":"Tổ chức - Quản trị","so_hieu":"2021- 41
 let fil=[...DATA],actLV="",actHL="";
 function rFilters(){
   const cnts={};DATA.forEach(d=>cnts[d.lv]=(cnts[d.lv]||0)+1);
-  let h='<span class="chip'+(actLV===""?" on":"'")+'" style="'+(actLV===""?'background:#1F4E78;color:#fff':'')+'" data-lv="">Tất cả ('+DATA.length+')</span>';
+  let h='<span class="chip'+(actLV===""?" on":"")+'" style="'+(actLV===""?'background:#1F4E78;color:#fff':'')+'" data-lv="">Tất cả ('+DATA.length+')</span>';
   Object.entries(LV).forEach(([lv,c])=>{
     if(!cnts[lv])return;
-    h+='<span class="chip'+(actLV===lv?" on":"'")+'" style="'+(actLV===lv?'background:'+c.bc+';color:#fff':'')+'" data-lv="'+lv+'">'+lv+' · '+cnts[lv]+'</span>';
+    h+='<span class="chip'+(actLV===lv?" on":"")+'" style="'+(actLV===lv?'background:'+c.bc+';color:#fff':'')+'" data-lv="'+lv+'">'+lv+' · '+cnts[lv]+'</span>';
   });
   document.getElementById("filters").innerHTML='<label>Lĩnh vực</label>'+h;
   document.querySelectorAll("#filters .chip").forEach(c=>c.onclick=()=>{actLV=c.dataset.lv;go();rFilters();});
