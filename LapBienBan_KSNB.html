@@ -1143,7 +1143,7 @@ async function aiConclude(prefix){
   btn.disabled = true;
   try{
     const prompt = `Bạn là trợ lý soạn thảo văn bản hành chính tiếng Việt cho Ban Kiểm soát nội bộ của một công ty cảng biển. Dựa CHÍNH XÁC vào dữ liệu kiểm tra dưới đây (không bịa thêm thông tin không có), hãy viết lại thành một đoạn kết luận biên bản kiểm tra: văn phong hành chính, chuyên nghiệp, súc tích, mạch lạc. Chỉ trả về đúng đoạn văn kết luận, không thêm tiêu đề hay lời giải thích nào khác.\n\nDữ liệu kiểm tra:\n${draftFacts}`;
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(key)}`, {
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ contents:[{ parts:[{ text: prompt }] }] })
