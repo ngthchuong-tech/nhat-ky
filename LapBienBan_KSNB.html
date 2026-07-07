@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lập biên bản kiểm tra - Ban KSNB</title>
+<script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --ink:#1c2b3a;
+    --paper:#f7f5ef;
+    --card:#ffffff;
+    --line:#d8d2c4;
+    --accent:#8a1f2b; /* đỏ sen - dấu mộc */
+    --accent-2:#12563e; /* xanh lá công vụ */
+    --muted:#6b7280;
+    --focus:#8a1f2b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Segoe UI", Arial, sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+  }
+  header.top{
+    background:var(--ink);
+    color:#fff;
+    padding:18px 24px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  header.top .brand{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  header.top .brand small{
+    letter-spacing:2px;
+    color:#d8c9a3;
+    font-size:11px;
+    text-transform:uppercase;
+  }
+  header.top .brand h1{
+    margin:0;
+    font-size:19px;
+    font-weight:600;
+  }
+  nav.tabs{
+    max-width:980px;
+    margin:22px auto 0 auto;
+    display:flex;
+    gap:8px;
+    padding:0 16px;
+    flex-wrap:wrap;
+  }
+  nav.tabs button{
+    flex:1 1 220px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-bottom:3px solid transparent;
+    padding:12px 14px;
+    font-size:14px;
+    font-weight:600;
+    color:var(--muted);
+    cursor:pointer;
+    border-radius:8px 8px 0 0;
+    transition:all .15s ease;
+  }
+  nav.tabs button.active{
+    color:var(--accent);
+    border-bottom:3px solid var(--accent);
+    background:#fff;
+  }
+  main{
+    max-width:980px;
+    margin:0 auto 60px auto;
+    padding:0 16px;
+  }
+  .panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:0 8px 8px 8px;
+    padding:26px 26px 30px 26px;
+    display:none;
+  }
+  .panel.active{display:block;}
+  fieldset{
+    border:1px solid var(--line);
+    border-radius:8px;
+    margin:0 0 20px 0;
+    padding:14px 16px 16px 16px;
+  }
+  legend{
+    font-weight:700;
+    color:var(--accent-2);
+    padding:0 8px;
+    font-size:14px;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+  }
+  .sub-legend{
+    font-weight:700;
+    font-size:13px;
+    color:var(--ink);
+    margin:14px 0 6px 0;
+  }
+  label.field-label{
+    display:block;
+    font-size:12.5px;
+    color:var(--muted);
+    margin-bottom:3px;
+    font-weight:600;
+  }
+  input[type=text], input[type=date], input[type=time], input[type=number], textarea{
+    width:100%;
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-family:inherit;
+    font-size:13.5px;
+    background:#fdfcfa;
+    color:var(--ink);
+  }
+  textarea{resize:vertical;}
+  input:focus, textarea:focus{
+    outline:2px solid var(--focus);
+    outline-offset:1px;
+    background:#fff;
+  }
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
+  .row-group .row{
+    display:grid;
+    grid-template-columns:1fr 1.4fr auto;
+    gap:8px;
+    margin-bottom:8px;
+    align-items:start;
+  }
+  .row-group .row.single-col{grid-template-columns:1fr auto;}
+  .pos-header{
+    display:grid;
+    grid-template-columns:1.1fr 0.9fr 1.6fr auto;
+    gap:8px;
+    font-size:11.5px;
+    font-weight:700;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.3px;
+    margin-bottom:6px;
+    padding:0 2px;
+  }
+  .row-group .pos-row{
+    display:grid;
+    grid-template-columns:1.1fr 0.9fr 1.6fr auto;
+    gap:8px;
+    margin-bottom:8px;
+  }
+  select.l-status{
+    width:100%;
+    padding:8px 6px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-family:inherit;
+    font-size:13px;
+    background:#fdfcfa;
+    color:var(--ink);
+  }
+  .berth-block, .company-block{
+    border:1px dashed var(--line);
+    border-radius:8px;
+    padding:12px;
+    margin-bottom:12px;
+    background:#fbfaf7;
+  }
+  .berth-block .berth-header{
+    display:flex;
+    gap:8px;
+    margin-bottom:8px;
+    align-items:center;
+  }
+  .berth-header input{font-weight:700;}
+  button.btn{
+    border:none;
+    border-radius:6px;
+    padding:8px 14px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    transition:opacity .15s;
+  }
+  button.btn:hover{opacity:.88;}
+  button.btn-add{
+    background:#eaf1ee;
+    color:var(--accent-2);
+    border:1px solid #bcd6cb;
+  }
+  button.btn-remove{
+    background:#fbeceb;
+    color:var(--accent);
+    border:1px solid #ecc6c2;
+    height:36px;
+    padding:0 10px;
+  }
+  button.btn-export{
+    background:var(--accent);
+    color:#fff;
+    font-size:15px;
+    padding:14px 22px;
+    width:100%;
+    margin-top:8px;
+    border-radius:8px;
+  }
+  .hint{
+    font-size:12px;
+    color:var(--muted);
+    margin:-6px 0 14px 0;
+  }
+  .form-intro{
+    font-size:13.5px;
+    color:var(--muted);
+    margin-bottom:18px;
+    line-height:1.5;
+  }
+  .status-msg{
+    margin-top:10px;
+    font-size:13px;
+    text-align:center;
+    min-height:18px;
+  }
+  .status-msg.ok{color:var(--accent-2); font-weight:600;}
+  .status-msg.err{color:var(--accent); font-weight:600;}
+  @media (max-width:640px){
+    .grid2, .grid3{grid-template-columns:1fr;}
+    .row-group .row{grid-template-columns:1fr;}
+    .row-group .row.single-col{grid-template-columns:1fr;}
+    .row-group .pos-row{grid-template-columns:1fr;}
+    .pos-header{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <small>Công ty CP Cảng Đồng Nai — Ban Kiểm soát nội bộ</small>
+    <h1>Công cụ lập biên bản kiểm tra</h1>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="gd1">Biên bản tổng hợp — Gò Dầu</button>
+  <button class="tab-btn" data-tab="lbt">Biên bản tổng hợp — Long Bình Tân</button>
+  <button class="tab-btn" data-tab="vipham">Biên bản vi phạm thời gian làm việc</button>
+</nav>
+
+<div style="max-width:980px;margin:16px auto 0 auto;padding:0 16px;">
+  <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px 18px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <div>
+        <div style="font-weight:700;color:var(--accent-2);font-size:13px;text-transform:uppercase;letter-spacing:.4px;">Danh sách nhân viên công ty</div>
+        <div class="hint" style="margin:4px 0 0 0;">Tải lên 1 lần — trình duyệt này sẽ tự nhớ, lần sau mở lại trang không cần tải lại. Dùng chung cho gợi ý tên ở cả 3 mẫu bên dưới.</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="file" id="rosterFile" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleRosterFile(this.files[0])">
+        <button type="button" class="btn btn-add" onclick="document.getElementById('rosterFile').click()">📤 Tải lên từ Excel</button>
+        <button type="button" class="btn btn-remove" onclick="clearSavedRoster()">🗑 Xóa danh sách đã lưu</button>
+        <span id="rosterFileName" style="font-size:12.5px;color:var(--muted);"></span>
+      </div>
+    </div>
+    <details style="margin-top:10px;" id="rosterDetails">
+      <summary style="cursor:pointer;font-size:12.5px;color:var(--muted);">Xem / chỉnh sửa danh sách đã nạp (mỗi tên một dòng)</summary>
+      <textarea id="employeeRoster" rows="5" style="margin-top:8px;" oninput="updateRoster()" placeholder="Danh sách sẽ tự điền vào đây sau khi tải file Excel lên. Bạn cũng có thể gõ/sửa tay tại đây."></textarea>
+    </details>
+    <datalist id="employeeList"></datalist>
+  </div>
+</div>
+
+<main>
+
+<!-- ============================================================ -->
+<!-- TAB 1: GÒ DẦU TỔNG HỢP -->
+<!-- ============================================================ -->
+<section class="panel active" id="panel-gd1">
+  <p class="form-intro">Điền các trường bên dưới. Bấm <b>"+ Thêm"</b> ở mỗi mục để bổ sung dòng/đối tượng nếu cần. Khi xong, bấm <b>"Xuất file Word"</b> ở cuối trang.</p>
+
+  <fieldset>
+    <legend>Thông tin chung</legend>
+    <div class="grid3">
+      <div><label class="field-label">Ngày lập biên bản</label><input type="date" id="gd1_ngayLap"></div>
+      <div><label class="field-label">Ca trực kiểm tra</label><input type="text" id="gd1_catruc" placeholder="VD: 1, 2, 3..."></div>
+      <div></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Căn cứ</legend>
+    <textarea id="gd1_canCu" rows="3">- Căn cứ nội quy lao động hiện hành của công ty;
+- Căn cứ thông báo số 56/TB-CGD-HCBV ngày 03/08/2017 về việc bấm vân tay chấm công làm việc tại Cảng Gò Dầu.</textarea>
+  </fieldset>
+
+  <fieldset>
+    <legend>Đại diện Ban KSNB</legend>
+    <div class="row-group" id="gd1_ksnb"></div>
+    <button type="button" class="btn btn-add" onclick="addPersonRow('gd1_ksnb')">+ Thêm người</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Đại diện Cảng Gò Dầu</legend>
+    <div class="row-group" id="gd1_dvien"></div>
+    <button type="button" class="btn btn-add" onclick="addPersonRow('gd1_dvien')">+ Thêm người</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Thời gian & bộ phận kiểm tra</legend>
+    <label class="field-label">Các bộ phận được kiểm tra</label>
+    <input type="text" id="gd1_bophan" value="Ban Khai thác điều độ, Ban Kế toán Tài vụ, Ban Hành chính bảo vệ">
+    <div class="grid2" style="margin-top:10px;">
+      <div>
+        <label class="field-label">Từ giờ / phút / ngày</label>
+        <div class="grid3"><input type="text" id="gd1_tuGio" placeholder="giờ"><input type="text" id="gd1_tuPhut" placeholder="phút"><input type="date" id="gd1_tuNgay"></div>
+      </div>
+      <div>
+        <label class="field-label">Đến giờ / phút / ngày</label>
+        <div class="grid3"><input type="text" id="gd1_denGio" placeholder="giờ"><input type="text" id="gd1_denPhut" placeholder="phút"><input type="date" id="gd1_denNgay"></div>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Cầu bến kiểm tra</legend>
+    <div id="gd1_berths"></div>
+    <button type="button" class="btn btn-add" onclick="addBerth('gd1_berths')">+ Thêm cầu bến</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Ban Khai thác điều độ</legend>
+    <div class="sub-legend">Bộ phận điều độ (bao gồm Trưởng ca, Cầu bến)</div>
+    <div class="pos-header"><span>Vị trí / chức danh</span><span>Tên nhân viên</span><span>Tình trạng</span><span></span></div>
+    <div class="row-group" id="gd1_dieuDo"></div>
+    <button type="button" class="btn btn-add" onclick="addPosRow('gd1_dieuDo','Vị trí (VD: Cầu bến B1)')">+ Thêm nhân viên điều độ</button>
+
+    <div class="sub-legend">Bộ phận cơ giới (thiết bị / nội dung)</div>
+    <div class="pos-header"><span>Thiết bị</span><span>Tên nhân viên</span><span>Tình trạng</span><span></span></div>
+    <div class="row-group" id="gd1_coGioi"></div>
+    <button type="button" class="btn btn-add" onclick="addPosRow('gd1_coGioi','Tên thiết bị')">+ Thêm thiết bị</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Ban Kế toán Tài vụ</legend>
+    <div class="pos-header"><span>Vị trí</span><span>Tên nhân viên</span><span>Tình trạng</span><span></span></div>
+    <div class="row-group" id="gd1_ketoan"></div>
+    <button type="button" class="btn btn-add" onclick="addPosRow('gd1_ketoan','Vị trí')">+ Thêm nhân viên</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Ban Hành chính bảo vệ</legend>
+    <div class="pos-header"><span>Vị trí</span><span>Tên nhân viên</span><span>Tình trạng</span><span></span></div>
+    <div class="row-group" id="gd1_hcbv"></div>
+    <button type="button" class="btn btn-add" onclick="addPosRow('gd1_hcbv','Vị trí')">+ Thêm nhân viên</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Thiết bị thuê ngoài</legend>
+    <div id="gd1_companies"></div>
+    <button type="button" class="btn btn-add" onclick="addCompany('gd1_companies')">+ Thêm công ty</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Kết luận</legend>
+    <textarea id="gd1_ketluan" rows="4"></textarea>
+  </fieldset>
+
+  <fieldset>
+    <legend>Kết thúc biên bản</legend>
+    <div class="grid3">
+      <div><label class="field-label">Giờ</label><input type="text" id="gd1_ktGio"></div>
+      <div><label class="field-label">Phút</label><input type="text" id="gd1_ktPhut"></div>
+      <div><label class="field-label">Ngày</label><input type="date" id="gd1_ktNgay"></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Ký tên</legend>
+    <div class="hint">Cột trái: các chức danh phía đơn vị được kiểm tra ký tên. Cột phải: đại diện Ban KSNB (mặc định).</div>
+    <div class="row-group" id="gd1_kytenTrai"></div>
+    <button type="button" class="btn btn-add" onclick="addLabelRow('gd1_kytenTrai','Chức danh ký tên')">+ Thêm người ký</button>
+    <div style="margin-top:12px;">
+      <label class="field-label">Đại diện Ban KSNB ký tên (bên phải)</label>
+      <input type="text" id="gd1_ksnbKy" value="Nguyễn Duy Khôi">
+    </div>
+  </fieldset>
+
+  <button class="btn btn-export" onclick="exportGD1()">📄 Xuất file Word — Biên bản Gò Dầu</button>
+  <div class="status-msg" id="gd1_status"></div>
+</section>
+
+<!-- ============================================================ -->
+<!-- TAB 2: LONG BÌNH TÂN TỔNG HỢP -->
+<!-- ============================================================ -->
+<section class="panel" id="panel-lbt">
+  <p class="form-intro">Điền các trường bên dưới. Bấm <b>"+ Thêm"</b> ở mỗi mục để bổ sung dòng/đối tượng nếu cần. Khi xong, bấm <b>"Xuất file Word"</b> ở cuối trang.</p>
+
+  <fieldset>
+    <legend>Thông tin chung</legend>
+    <div class="grid3">
+      <div><label class="field-label">Ngày lập biên bản</label><input type="date" id="lbt_ngayLap"></div>
+      <div><label class="field-label">Ca trực kiểm tra</label><input type="text" id="lbt_catruc"></div>
+      <div></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Căn cứ</legend>
+    <textarea id="lbt_canCu" rows="8">- Căn cứ nội quy lao động hiện hành của công ty;
+- Căn cứ thông báo số 68/TB-LBT ngày 02/11/2020 về việc quy định thời gian làm việc tại Cảng Long Bình Tân;
+- Căn cứ thông báo số 59/TB-LBT ngày 23/10/2023 về việc tăng cường nhân sự trực ca khu thủ tục và giám sát sản xuất tại Cảng Long Bình Tân;
+- Căn cứ thông báo số 36/TB-LBT ngày 20/02/2025 về việc nhân viên EIR trực thay nhân viên thu ngân để nghỉ giữa ca;
+- Căn cứ thông báo số 73/TB-LBT ngày 26/05/2025 về việc nhân viên trạm cân trực thay bộ phận Gate out để nghỉ giữa ca;
+- Căn cứ chức năng, nhiệm vụ của Ban Hành chính bảo vệ Cảng Long Bình Tân;
+- Căn cứ Quyết định số 901/QĐ-CĐN-HCTH ngày 13/11/2015 về việc ban hành phương án phối hợp xử lý khẩn cấp sự cố an ninh, an toàn lao động trong công ty;
+- Căn cứ Thông báo số 1129/TB-CĐN-HCTH ngày 20/10/2017 về việc áp dụng quy trình tuần tra kiểm soát cho tổ ATLĐ tại 2 Cảng.</textarea>
+  </fieldset>
+
+  <fieldset>
+    <legend>Đại diện Ban KSNB</legend>
+    <div class="row-group" id="lbt_ksnb"></div>
+    <button type="button" class="btn btn-add" onclick="addPersonRow('lbt_ksnb')">+ Thêm người</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Đại diện Cảng Long Bình Tân</legend>
+    <div class="row-group" id="lbt_dvien"></div>
+    <button type="button" class="btn btn-add" onclick="addPersonRow('lbt_dvien')">+ Thêm người</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Thời gian & bộ phận kiểm tra</legend>
+    <label class="field-label">Các bộ phận được kiểm tra</label>
+    <input type="text" id="lbt_bophan" value="Ban Khai thác điều độ, Ban Kế toán thương vụ, Ban Hành chính bảo vệ">
+    <div class="grid2" style="margin-top:10px;">
+      <div>
+        <label class="field-label">Từ giờ / phút / ngày</label>
+        <div class="grid3"><input type="text" id="lbt_tuGio" placeholder="giờ"><input type="text" id="lbt_tuPhut" placeholder="phút"><input type="date" id="lbt_tuNgay"></div>
+      </div>
+      <div>
+        <label class="field-label">Đến giờ / phút / ngày</label>
+        <div class="grid3"><input type="text" id="lbt_denGio" placeholder="giờ"><input type="text" id="lbt_denPhut" placeholder="phút"><input type="date" id="lbt_denNgay"></div>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Cầu bến kiểm tra</legend>
+    <div id="lbt_berths"></div>
+    <button type="button" class="btn btn-add" onclick="addBerth('lbt_berths')">+ Thêm cầu bến</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>A. Ban Khai thác điều độ</legend>
+    <div class="sub-legend">Bộ phận điều độ (bao gồm Trưởng ca)</div>
+    <div class="pos-header"><span>Chức danh</span><span>Tên nhân viên</span><span>Tình trạng</span><span></span></div>
+    <div class="row-group" id="lbt_dieuDo"></div>
+    <button type="button" class="btn btn-add" onclick="addPosRow('lbt_dieuDo','Chức danh')">+ Thêm nhân viên điều độ</button>
+
+    <div class="sub-legend">Bộ phận cơ giới (thiết bị / nội dung)</div>
+    <div class="pos-header"><span>Thiết bị</span><span>Tên nhân viên</span><span>Tình trạng</span><span></span></div>
+    <div class="row-group" id="lbt_coGioi"></div>
+    <button type="button" class="btn btn-add" onclick="addPosRow('lbt_coGioi','Tên thiết bị')">+ Thêm thiết bị</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>B. Ban Kế toán thương vụ</legend>
+    <div class="pos-header"><span>Vị trí</span><span>Tên nhân viên</span><span>Tình trạng</span><span></span></div>
+    <div class="row-group" id="lbt_ketoan"></div>
+    <button type="button" class="btn btn-add" onclick="addPosRow('lbt_ketoan','Vị trí')">+ Thêm nhân viên</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>C. Ban Hành chính bảo vệ</legend>
+    <div class="pos-header"><span>Vị trí</span><span>Tên nhân viên</span><span>Tình trạng</span><span></span></div>
+    <div class="row-group" id="lbt_hcbv"></div>
+    <button type="button" class="btn btn-add" onclick="addPosRow('lbt_hcbv','Vị trí')">+ Thêm nhân viên</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>D. Thiết bị thuê ngoài</legend>
+    <div id="lbt_companies"></div>
+    <button type="button" class="btn btn-add" onclick="addCompany('lbt_companies')">+ Thêm công ty</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Trực lãnh đạo / chỉ huy</legend>
+    <label class="field-label">Trực lãnh đạo công ty</label>
+    <textarea id="lbt_trucLanhDao" rows="2"></textarea>
+    <label class="field-label" style="margin-top:8px;">Trực chỉ huy tại văn phòng</label>
+    <textarea id="lbt_trucVanPhong" rows="2"></textarea>
+    <label class="field-label" style="margin-top:8px;">Trực chỉ huy tại Cảng Long Bình Tân</label>
+    <textarea id="lbt_trucCang" rows="2"></textarea>
+  </fieldset>
+
+  <fieldset>
+    <legend>Kết luận</legend>
+    <textarea id="lbt_ketluan" rows="4"></textarea>
+  </fieldset>
+
+  <fieldset>
+    <legend>Kết thúc biên bản</legend>
+    <div class="grid3">
+      <div><label class="field-label">Giờ</label><input type="text" id="lbt_ktGio"></div>
+      <div><label class="field-label">Phút</label><input type="text" id="lbt_ktPhut"></div>
+      <div><label class="field-label">Ngày</label><input type="date" id="lbt_ktNgay"></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Ký tên</legend>
+    <div class="hint">Cột trái: các chức danh trực/chỉ huy ký tên. Cột phải: đại diện Ban KSNB (mặc định).</div>
+    <div class="row-group" id="lbt_kytenTrai"></div>
+    <button type="button" class="btn btn-add" onclick="addLabelRow('lbt_kytenTrai','Chức danh ký tên')">+ Thêm người ký</button>
+    <div style="margin-top:12px;">
+      <label class="field-label">Đại diện Ban KSNB ký tên (bên phải)</label>
+      <input type="text" id="lbt_ksnbKy" value="Nguyễn Duy Khôi">
+    </div>
+  </fieldset>
+
+  <button class="btn btn-export" onclick="exportLBT()">📄 Xuất file Word — Biên bản Long Bình Tân</button>
+  <div class="status-msg" id="lbt_status"></div>
+</section>
+
+<!-- ============================================================ -->
+<!-- TAB 3: BIÊN BẢN VI PHẠM -->
+<!-- ============================================================ -->
+<section class="panel" id="panel-vipham">
+  <p class="form-intro">Điền các trường bên dưới. Bấm <b>"+ Thêm"</b> để bổ sung người liên quan nếu cần. Khi xong, bấm <b>"Xuất file Word"</b> ở cuối trang.</p>
+
+  <fieldset>
+    <legend>Thông tin chung</legend>
+    <div class="grid3">
+      <div><label class="field-label">Ngày lập biên bản</label><input type="date" id="vp_ngayLap"></div>
+      <div><label class="field-label">Địa điểm / đơn vị</label><input type="text" id="vp_diadiem" placeholder="VD: Cảng Gò Dầu"></div>
+      <div><label class="field-label">Ca trực vi phạm</label><input type="text" id="vp_catruc"></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Căn cứ</legend>
+    <textarea id="vp_canCu" rows="3">- Căn cứ nội quy lao động hiện hành của công ty;
+- Căn cứ thông báo số 56/TB-CGD-HCBV ngày 03/08/2017 về việc bấm vân tay chấm công làm việc tại Cảng Gò Dầu.</textarea>
+  </fieldset>
+
+  <fieldset>
+    <legend>Đại diện Ban KSNB</legend>
+    <div class="row-group" id="vp_ksnb"></div>
+    <button type="button" class="btn btn-add" onclick="addPersonRow('vp_ksnb')">+ Thêm người</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Đại diện / người vi phạm</legend>
+    <div class="row-group" id="vp_dvien"></div>
+    <button type="button" class="btn btn-add" onclick="addPersonRow('vp_dvien')">+ Thêm người</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Ngày xảy ra vi phạm</legend>
+    <div class="grid3">
+      <div><label class="field-label">Ngày</label><input type="date" id="vp_ngayViPham"></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Nội dung vi phạm</legend>
+    <textarea id="vp_noiDung" rows="3"></textarea>
+  </fieldset>
+
+  <fieldset>
+    <legend>Diễn giải vi phạm</legend>
+    <textarea id="vp_dienGiai" rows="6"></textarea>
+  </fieldset>
+
+  <fieldset>
+    <legend>Kết thúc biên bản</legend>
+    <div class="grid3">
+      <div><label class="field-label">Giờ</label><input type="text" id="vp_ktGio"></div>
+      <div><label class="field-label">Phút</label><input type="text" id="vp_ktPhut"></div>
+      <div><label class="field-label">Ngày</label><input type="date" id="vp_ktNgay"></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Ký tên</legend>
+    <div class="row-group" id="vp_kytenTrai"></div>
+    <button type="button" class="btn btn-add" onclick="addLabelRow('vp_kytenTrai','Chức danh ký tên')">+ Thêm người ký</button>
+    <div style="margin-top:12px;">
+      <label class="field-label">Đại diện Ban KSNB ký tên (bên phải)</label>
+      <input type="text" id="vp_ksnbKy" value="Nguyễn Duy Khôi">
+    </div>
+  </fieldset>
+
+  <button class="btn btn-export" onclick="exportViPham()">📄 Xuất file Word — Biên bản vi phạm</button>
+  <div class="status-msg" id="vp_status"></div>
+</section>
+
+</main>
+
+<script>
+/* ============================================================
+   TAB SWITCHING
+   ============================================================ */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ============================================================
+   GENERIC ROW BUILDERS
+   ============================================================ */
+function esc(s){
+  if(s===undefined || s===null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+const ROSTER_KEY = 'ksnb_bienban_employee_roster';
+
+function saveRosterToStorage(text){
+  try{ window.localStorage.setItem(ROSTER_KEY, text); }catch(e){ /* storage unavailable, ignore */ }
+}
+
+function loadRosterFromStorage(){
+  try{ return window.localStorage.getItem(ROSTER_KEY); }catch(e){ return null; }
+}
+
+function clearSavedRoster(){
+  try{ window.localStorage.removeItem(ROSTER_KEY); }catch(e){ /* ignore */ }
+  document.getElementById('employeeRoster').value = '';
+  document.getElementById('rosterFileName').textContent = '';
+  updateRoster();
+  showRosterStatus('Đã xóa danh sách đã lưu trên trình duyệt này.', true);
+}
+
+function updateRoster(){
+  const ta = document.getElementById('employeeRoster');
+  const dl = document.getElementById('employeeList');
+  if(!ta || !dl) return;
+  const names = ta.value.split('\n').map(s=>s.trim()).filter(Boolean);
+  dl.innerHTML = names.map(n=>`<option value="${esc(n)}"></option>`).join('');
+  saveRosterToStorage(ta.value);
+}
+
+function looksLikeName(t){
+  if(!t || t.length < 5 || t.length > 60) return false;
+  if(!/[a-zA-ZÀ-ỹ]/.test(t)) return false;
+  if(!/\s/.test(t)) return false;
+  if(/^\d+$/.test(t)) return false;
+  const bad = /^(stt|số\s*tt|stt\.|mã\s*nv|ma\s*nv|họ\s*và\s*tên|họ\s*tên|chức\s*vụ|phòng\s*ban|đơn\s*vị|ngày\s*sinh|năm\s*sinh|giới\s*tính|ghi\s*chú|số\s*điện\s*thoại|sđt|địa\s*chỉ|email|cccd|cmnd|mã\s*số|ngày\s*vào\s*làm)/i;
+  if(bad.test(t.trim())) return false;
+  return true;
+}
+
+function handleRosterFile(file){
+  if(!file) return;
+  document.getElementById('rosterFileName').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+      const names = new Set();
+      wb.SheetNames.forEach(sn=>{
+        const sheet = wb.Sheets[sn];
+        const rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''});
+        rows.forEach(row=>{
+          row.forEach(cell=>{
+            if(typeof cell === 'string' && looksLikeName(cell)){
+              names.add(cell.trim());
+            }
+          });
+        });
+      });
+      const list = [...names];
+      const ta = document.getElementById('employeeRoster');
+      ta.value = list.join('\n');
+      updateRoster();
+      showRosterStatus(`Đã nạp ${list.length} tên từ file "${file.name}". Mở mục "Xem / chỉnh sửa danh sách" để kiểm tra và xóa dòng thừa nếu có.`, true);
+    }catch(err){
+      console.error(err);
+      showRosterStatus('Không đọc được file này. Hãy kiểm tra định dạng (.xlsx/.xls/.csv) rồi thử lại.', false);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function showRosterStatus(msg, ok){
+  let el = document.getElementById('rosterStatus');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'rosterStatus';
+    el.style.fontSize = '12.5px';
+    el.style.marginTop = '8px';
+    document.getElementById('rosterFileName').parentElement.parentElement.after(el);
+  }
+  el.textContent = msg;
+  el.style.color = ok ? 'var(--accent-2)' : 'var(--accent)';
+  el.style.fontWeight = '600';
+}
+
+// Row with two free-text fields (used for "Họ tên" / "Chức vụ")
+function addPersonRow(containerId, name='', title=''){
+  const c = document.getElementById(containerId);
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML = `
+    <div><label class="field-label">Họ và tên</label><input type="text" class="p-name" list="employeeList" value="${esc(name)}"></div>
+    <div><label class="field-label">Chức vụ</label><input type="text" class="p-title" value="${esc(title)}"></div>
+    <button type="button" class="btn btn-remove" onclick="this.parentElement.remove()">✕</button>
+  `;
+  c.appendChild(row);
+}
+
+// Row with a label field + a content field (used for equipment/position lists)
+function addLabelRow(containerId, labelPlaceholder='Nhãn', label='', value=''){
+  const c = document.getElementById(containerId);
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML = `
+    <div><label class="field-label">${esc(labelPlaceholder)}</label><input type="text" class="l-label" value="${esc(label)}"></div>
+    <div><label class="field-label">Nội dung ghi nhận</label><input type="text" class="l-value" value="${esc(value)}"></div>
+    <button type="button" class="btn btn-remove" onclick="this.parentElement.remove()">✕</button>
+  `;
+  c.appendChild(row);
+}
+
+function readPersonRows(containerId){
+  return [...document.querySelectorAll('#'+containerId+' .row')].map(r=>({
+    name: r.querySelector('.p-name').value.trim(),
+    title: r.querySelector('.p-title').value.trim()
+  })).filter(p=>p.name || p.title);
+}
+
+function readLabelRows(containerId){
+  return [...document.querySelectorAll('#'+containerId+' .row')].map(r=>({
+    label: r.querySelector('.l-label').value.trim(),
+    value: r.querySelector('.l-value').value.trim()
+  })).filter(r=>r.label || r.value);
+}
+
+// 3-column row: Vị trí/Thiết bị | Tên nhân viên | Trạng thái (có mặt / vắng mặt...)
+const STATUS_OPTIONS = ['Đang có mặt tại vị trí làm việc','Không có mặt tại vị trí làm việc'];
+function addPosRow(containerId, labelPlaceholder='Vị trí/Thiết bị', label='', employee='', status='Đang có mặt tại vị trí làm việc'){
+  const c = document.getElementById(containerId);
+  const row = document.createElement('div');
+  row.className = 'pos-row';
+  const options = STATUS_OPTIONS.map(o=>`<option value="${esc(o)}"${o===status?' selected':''}>${esc(o)}</option>`).join('');
+  row.innerHTML = `
+    <input type="text" class="l-label" placeholder="${esc(labelPlaceholder)}" value="${esc(label)}">
+    <input type="text" class="l-employee" list="employeeList" placeholder="Tên nhân viên" value="${esc(employee)}">
+    <select class="l-status">${options}</select>
+    <button type="button" class="btn btn-remove" onclick="this.parentElement.remove()">✕</button>
+  `;
+  c.appendChild(row);
+}
+
+function readPosRows(containerId){
+  return [...document.querySelectorAll('#'+containerId+' .pos-row')].map(r=>({
+    label: r.querySelector('.l-label').value.trim(),
+    employee: r.querySelector('.l-employee').value.trim(),
+    status: r.querySelector('.l-status').value
+  })).filter(r=>r.label || r.employee);
+}
+
+/* ---- Berth blocks (cầu bến): name + 3 content fields ---- */
+function addBerth(containerId, name=''){
+  const c = document.getElementById(containerId);
+  const block = document.createElement('div');
+  block.className = 'berth-block';
+  block.innerHTML = `
+    <div class="berth-header">
+      <input type="text" class="berth-name" placeholder="Tên cầu bến (VD: B1)" value="${esc(name)}">
+      <button type="button" class="btn btn-remove" onclick="this.closest('.berth-block').remove()">✕ Xóa cầu bến</button>
+    </div>
+    <label class="field-label">Tên phương tiện cập bến</label>
+    <input type="text" class="berth-pt">
+    <label class="field-label" style="margin-top:6px;">Thực hiện làm hàng</label>
+    <input type="text" class="berth-lh">
+    <label class="field-label" style="margin-top:6px;">Thiết bị làm hàng</label>
+    <input type="text" class="berth-tb">
+  `;
+  c.appendChild(block);
+}
+
+function readBerths(containerId){
+  return [...document.querySelectorAll('#'+containerId+' .berth-block')].map(b=>({
+    name: b.querySelector('.berth-name').value.trim(),
+    pt: b.querySelector('.berth-pt').value.trim(),
+    lh: b.querySelector('.berth-lh').value.trim(),
+    tb: b.querySelector('.berth-tb').value.trim()
+  })).filter(b=>b.name || b.pt || b.lh || b.tb);
+}
+
+/* ---- Company blocks (thiết bị thuê ngoài): name + device rows ---- */
+let companyCounter = 0;
+function addCompany(containerId, name=''){
+  companyCounter++;
+  const cid = 'company_'+companyCounter+'_'+Date.now();
+  const c = document.getElementById(containerId);
+  const block = document.createElement('div');
+  block.className = 'company-block';
+  block.innerHTML = `
+    <div class="berth-header">
+      <input type="text" class="company-name" placeholder="Tên công ty" value="${esc(name)}">
+      <button type="button" class="btn btn-remove" onclick="this.closest('.company-block').remove()">✕ Xóa công ty</button>
+    </div>
+    <div class="pos-header"><span>Thiết bị</span><span>Tên nhân viên vận hành</span><span>Tình trạng</span><span></span></div>
+    <div class="row-group" id="${cid}"></div>
+    <button type="button" class="btn btn-add" onclick="addPosRow('${cid}','Thiết bị / nội dung')">+ Thêm thiết bị</button>
+  `;
+  c.appendChild(block);
+}
+
+function readCompanies(containerId){
+  return [...document.querySelectorAll('#'+containerId+' .company-block')].map(b=>{
+    const name = b.querySelector('.company-name').value.trim();
+    const rowGroup = b.querySelector('.row-group');
+    const devices = [...rowGroup.querySelectorAll('.pos-row')].map(r=>({
+      label: r.querySelector('.l-label').value.trim(),
+      employee: r.querySelector('.l-employee').value.trim(),
+      status: r.querySelector('.l-status').value
+    })).filter(d=>d.label || d.employee);
+    return {name, devices};
+  }).filter(c=>c.name || c.devices.length);
+}
+
+/* ============================================================
+   SEED DEFAULT ROWS (matching the original mẫu)
+   ============================================================ */
+function seed(){
+  // GD1
+  addPersonRow('gd1_ksnb','Nguyễn Duy Khôi','Nhân viên');
+  addPersonRow('gd1_dvien','','');
+  ['B1','B2','B3','B4','B5','A1','A3'].forEach(n=>addBerth('gd1_berths', n));
+  ['Cẩu Lima 1 – 60LA 2007','Cẩu Lima 2 – 60LA 2006','Cẩu PH – 60LA 2014','Cẩu MAC 2','Xe cuốc 0782','Xe cuốc 0783','Xe xúc 2010']
+    .forEach(n=>addPosRow('gd1_coGioi','Tên thiết bị', n));
+  ['Trưởng ca','Cầu bến A1-3','Cầu bến B1','Cầu bến B2','Cầu bến B3','Cầu bến B4','Cầu bến B5'].forEach(n=>addPosRow('gd1_dieuDo','Vị trí', n));
+  ['Nhân viên Trạm cân Khu A','Nhân viên Trạm cân Khu B'].forEach(n=>addPosRow('gd1_ketoan','Vị trí', n));
+  ['Nhân viên Trực ban an ninh','Nhân viên trực tại các vị trí: B1, B2, B3, B4, B5, A1, A3'].forEach(n=>addPosRow('gd1_hcbv','Vị trí', n));
+  ['Công ty Dịch Vụ Cảng','Công ty Cảng Phía Nam','Công ty Quốc Việt Hoa'].forEach(n=>addCompany('gd1_companies', n));
+  addLabelRow('gd1_kytenTrai','Chức danh ký tên','CẢNG GÒ DẦU');
+
+  // LBT
+  addPersonRow('lbt_ksnb','Nguyễn Duy Khôi','Nhân viên');
+  addPersonRow('lbt_dvien','',''); addPersonRow('lbt_dvien','',''); addPersonRow('lbt_dvien','','');
+  ['K1 – K2','K1 – K3','K4','K3 – K5'].forEach(n=>addBerth('lbt_berths', n));
+  ['Trưởng ca','Nhân viên Điều độ bãi','Nhân viên Điều độ cầu tàu','Nhân viên Giao nhận cầu tàu','Nhân viên Thủ tục']
+    .forEach(n=>addPosRow('lbt_dieuDo','Chức danh', n));
+  ['Cẩu LH1','Cẩu LH2','Cẩu LH3','Cẩu MAC 1','Xe nâng cont Kalmar 60LA-3173','Xe nâng cont Kalmar mới','Xe đầu kéo cont Otawa','Xe đầu kéo cont FAW (38)','Xe đầu kéo cont FAW (39)','Xe xúc 2011','Xe nâng CAT 3.0','Xe cuốc 0659','Xe cuốc 0660','Xe cuốc SK135SR-3']
+    .forEach(n=>addPosRow('lbt_coGioi','Tên thiết bị', n));
+  ['Nhân viên Trạm cân','Nhân viên Gate out'].forEach(n=>addPosRow('lbt_ketoan','Vị trí', n));
+  ['Nhân viên Trực ban an ninh','Nhân viên bảo vệ B1','Nhân viên bảo vệ B2','Nhân viên bảo vệ B3','Nhân viên bảo vệ B5','Nhân viên bảo vệ C1','Nhân viên bảo vệ C2A','Nhân viên bảo vệ C2B','Nhân viên bảo vệ C3','Nhân viên bảo vệ C4A','Nhân viên bảo vệ C4B (khu thủ tục 1)','Nhân viên bảo vệ C5A','Nhân viên bảo vệ C5B','Nhân viên bảo vệ trực khu thủ tục 2']
+    .forEach(n=>addPosRow('lbt_hcbv','Vị trí', n));
+  addCompany('lbt_companies','Công ty Dologco');
+  addCompany('lbt_companies','Công ty Dịch Vụ Cảng');
+  addCompany('lbt_companies','Công ty Quốc Việt Hoa');
+  // fill default devices for Dologco & Dich Vu Cang
+  (function(){
+    const blocks = document.querySelectorAll('#lbt_companies .company-block');
+    const dologco = blocks[0].querySelector('.row-group').id;
+    const dvc = blocks[1].querySelector('.row-group').id;
+    ['Cẩu MAC 2','Cẩu MAC 4','Xe nâng cont hàng','Xe nâng cont rỗng'].forEach(n=>addPosRow(dologco,'Thiết bị', n));
+    ['Cẩu MAC 3','Thiết bị cẩu bờ'].forEach(n=>addPosRow(dvc,'Thiết bị', n));
+  })();
+  ['Trực chỉ huy tại văn phòng','Trực chỉ huy tại Cảng Long Bình Tân','Trưởng ca'].forEach(n=>addLabelRow('lbt_kytenTrai','Chức danh ký tên', n));
+
+  // Vi phạm
+  addPersonRow('vp_ksnb','Nguyễn Duy Khôi','Nhân viên');
+  addPersonRow('vp_dvien','','');
+  addLabelRow('vp_kytenTrai','Chức danh ký tên','CẢNG GÒ DẦU');
+
+  const savedRoster = loadRosterFromStorage();
+  document.getElementById('employeeRoster').value = (savedRoster !== null && savedRoster !== '') ? savedRoster : 'Nguyễn Duy Khôi';
+  updateRoster();
+}
+seed();
+
+/* ============================================================
+   DOCX HELPERS
+   ============================================================ */
+const { Document, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, HeadingLevel, Packer } = docx;
+
+function fmtDate(dateStr){
+  if(!dateStr) return {d:'……',m:'……',y:'……'};
+  const [y,m,d] = dateStr.split('-');
+  return {d,m,y};
+}
+
+function noBorder(){
+  return { top:{style:BorderStyle.NONE,size:0,color:"FFFFFF"}, bottom:{style:BorderStyle.NONE,size:0,color:"FFFFFF"},
+           left:{style:BorderStyle.NONE,size:0,color:"FFFFFF"}, right:{style:BorderStyle.NONE,size:0,color:"FFFFFF"} };
+}
+
+function headerTable(dateObj){
+  return new Table({
+    width:{size:100, type:WidthType.PERCENTAGE},
+    borders:noBorder(),
+    rows:[
+      new TableRow({children:[
+        new TableCell({borders:noBorder(), width:{size:50,type:WidthType.PERCENTAGE}, children:[
+          new Paragraph({children:[new TextRun({text:"CÔNG TY CP CẢNG ĐỒNG NAI", bold:true})]}),
+          new Paragraph({children:[new TextRun({text:"BAN KIỂM SOÁT NỘI BỘ", bold:true})]})
+        ]}),
+        new TableCell({borders:noBorder(), width:{size:50,type:WidthType.PERCENTAGE}, children:[
+          new Paragraph({alignment:AlignmentType.CENTER, children:[new TextRun({text:"CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", bold:true})]}),
+          new Paragraph({alignment:AlignmentType.CENTER, children:[new TextRun({text:"Độc lập - Tự do - Hạnh phúc", bold:true})]})
+        ]})
+      ]}),
+      new TableRow({children:[
+        new TableCell({borders:noBorder(), children:[new Paragraph("")]}),
+        new TableCell({borders:noBorder(), children:[
+          new Paragraph({alignment:AlignmentType.CENTER, children:[new TextRun({text:`Đồng Nai, ngày ${dateObj.d} tháng ${dateObj.m} năm ${dateObj.y}`, italics:true})]})
+        ]})
+      ]})
+    ]
+  });
+}
+
+function titleBlock(title, subtitle){
+  const arr = [
+    new Paragraph({alignment:AlignmentType.CENTER, spacing:{before:300, after:80}, children:[new TextRun({text:title, bold:true, size:32})]})
+  ];
+  if(subtitle){
+    arr.push(new Paragraph({alignment:AlignmentType.CENTER, spacing:{after:200}, children:[new TextRun({text:subtitle, italics:true})]}));
+  }
+  return arr;
+}
+
+function canCuParas(text){
+  return text.split('\n').filter(l=>l.trim()).map(l=>new Paragraph({indent:{left:400}, children:[new TextRun({text:l, italics:true})]}));
+}
+
+function underlineBold(text){
+  return new Paragraph({spacing:{before:150, after:60}, children:[new TextRun({text, bold:true, underline:{}})]});
+}
+
+function boldPara(text, opts={}){
+  return new Paragraph({spacing:{before:opts.before||100, after:opts.after||60}, children:[new TextRun({text, bold:true})]});
+}
+
+function plainPara(text, opts={}){
+  return new Paragraph({spacing:{before:opts.before||0, after:opts.after||60}, children:[new TextRun({text: text || ""})]});
+}
+
+function personLines(list, heading){
+  const paras = [underlineBold(heading)];
+  list.forEach((p,i)=>{
+    paras.push(new Paragraph({children:[
+      new TextRun({text:`${i+1}/ Ông/Bà: ${p.name || '……………………………'}    Chức vụ: ${p.title || '……………………'}`})
+    ]}));
+  });
+  return paras;
+}
+
+function labelRowsParas(list, headingText){
+  const paras = [];
+  if(headingText) paras.push(boldPara(headingText));
+  list.forEach(r=>{
+    paras.push(new Paragraph({children:[
+      new TextRun({text:`- ${r.label || '…………'}: `, bold:true}),
+      new TextRun({text: r.value || '……………………………………………………'})
+    ]}));
+  });
+  return paras;
+}
+
+function posRowsParas(list, headingText){
+  const paras = [];
+  if(headingText) paras.push(boldPara(headingText));
+  list.forEach(r=>{
+    const emp = r.employee || '……………………';
+    const status = r.status || 'Đang có mặt tại vị trí làm việc';
+    paras.push(new Paragraph({children:[
+      new TextRun({text:`- ${r.label || '…………'}: `, bold:true}),
+      new TextRun({text:`${emp}  (${status})`})
+    ]}));
+  });
+  return paras;
+}
+
+function berthParas(berths){
+  const paras = [];
+  berths.forEach(b=>{
+    paras.push(underlineBold(`Cầu bến ${b.name || '……'}:`));
+    paras.push(new Paragraph({children:[new TextRun({text:"- Tên phương tiện cập bến: ", bold:true}), new TextRun({text:b.pt || '……………………………………'})]}));
+    paras.push(new Paragraph({children:[new TextRun({text:"- Thực hiện làm hàng: ", bold:true}), new TextRun({text:b.lh || '……………………………………'})]}));
+    paras.push(new Paragraph({children:[new TextRun({text:"- Thiết bị làm hàng: ", bold:true}), new TextRun({text:b.tb || '……………………………………'})]}));
+  });
+  return paras;
+}
+
+function companyParas(companies){
+  const paras = [];
+  companies.forEach(c=>{
+    paras.push(boldPara(c.name || 'Công ty ……'));
+    c.devices.forEach(d=>{
+      const emp = d.employee || '……………………';
+      const status = d.status || 'Đang có mặt tại vị trí làm việc';
+      paras.push(new Paragraph({children:[
+        new TextRun({text: d.label ? `+ ${d.label}: ` : '+ ', bold:true}),
+        new TextRun({text: `${emp}  (${status})`})
+      ]}));
+    });
+  });
+  return paras;
+}
+
+function multilineParas(text){
+  const lines = (text||'').split('\n').filter(l=>l.trim());
+  if(lines.length===0) return [new Paragraph("……………………………………………………………………………………………")];
+  return lines.map(l=>new Paragraph(l));
+}
+
+function signatureTable(leftRows, rightLabel, rightName){
+  const leftCells = leftRows.length ? leftRows.map(r=>new Paragraph({alignment:AlignmentType.CENTER, children:[new TextRun({text:r.label||'', bold:true})]}))
+                    : [new Paragraph("")];
+  return new Table({
+    width:{size:100, type:WidthType.PERCENTAGE},
+    borders:noBorder(),
+    rows:[ new TableRow({children:[
+      new TableCell({borders:noBorder(), width:{size:50,type:WidthType.PERCENTAGE}, children:leftCells}),
+      new TableCell({borders:noBorder(), width:{size:50,type:WidthType.PERCENTAGE}, children:[
+        new Paragraph({alignment:AlignmentType.CENTER, children:[new TextRun({text:rightLabel, bold:true})]}),
+        new Paragraph({alignment:AlignmentType.CENTER, spacing:{before:600}, children:[new TextRun({text:rightName||'', bold:true})]})
+      ]})
+    ]})]
+  });
+}
+
+function closingPara(){
+  return new Paragraph({spacing:{before:200, after:100}, children:[new TextRun({text:"Biên bản này được lập thành 02 bản và có giá trị như nhau, mỗi bên giữ 01 bản."})]});
+}
+
+function endPara(gio,phut,ngayObj){
+  return new Paragraph({spacing:{after:200}, children:[new TextRun({
+    text:`Biên bản kết thúc vào lúc ${gio||'……'} giờ ${phut||'……'} phút ngày ${ngayObj.d} tháng ${ngayObj.m} năm ${ngayObj.y}. Mọi người có tên trên cùng xác nhận các nội dung trên và cùng ký tên dưới đây.`
+  })]});
+}
+
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function showStatus(id, msg, ok=true){
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'status-msg ' + (ok?'ok':'err');
+}
+
+/* ============================================================
+   EXPORT: GD1
+   ============================================================ */
+function exportGD1(){
+  try{
+    const dateObj = fmtDate(document.getElementById('gd1_ngayLap').value);
+    const ktDate = fmtDate(document.getElementById('gd1_ktNgay').value);
+    const tuNgay = fmtDate(document.getElementById('gd1_tuNgay').value);
+    const denNgay = fmtDate(document.getElementById('gd1_denNgay').value);
+
+    const children = [];
+    children.push(headerTable(dateObj));
+    children.push(...titleBlock("BIÊN BẢN KIỂM TRA", "(Về việc kiểm tra thời gian làm việc, tuân thủ nội quy lao động tại Cảng Gò Dầu)"));
+    children.push(...canCuParas(document.getElementById('gd1_canCu').value));
+    children.push(plainPara("Chúng tôi gồm:", {before:150}));
+    children.push(...personLines(readPersonRows('gd1_ksnb'), "ĐẠI DIỆN BAN KIỂM SOÁT NỘI BỘ:"));
+    children.push(...personLines(readPersonRows('gd1_dvien'), "ĐẠI DIỆN CẢNG GÒ DẦU:"));
+
+    const bophan = document.getElementById('gd1_bophan').value;
+    const catruc = document.getElementById('gd1_catruc').value;
+    const tuGio = document.getElementById('gd1_tuGio').value, tuPhut = document.getElementById('gd1_tuPhut').value;
+    const denGio = document.getElementById('gd1_denGio').value, denPhut = document.getElementById('gd1_denPhut').value;
+    children.push(new Paragraph({spacing:{before:150,after:150}, children:[new TextRun({
+      text:`Ban Kiểm soát nội bộ thực hiện kiểm tra tuân thủ quy định làm việc của các bộ phận: ${bophan} trong ca trực ${catruc||'……'}, từ ${tuGio||'……'} giờ ${tuPhut||'……'} phút ngày ${tuNgay.d}/${tuNgay.m}/${tuNgay.y} đến ${denGio||'……'} giờ ${denPhut||'……'} phút ngày ${denNgay.d}/${denNgay.m}/${denNgay.y}, kết quả kiểm tra như sau:`
+    })]}));
+
+    children.push(...berthParas(readBerths('gd1_berths')));
+    children.push(boldPara("* Ban Khai thác điều độ:", {before:150}));
+    children.push(...posRowsParas(readPosRows('gd1_dieuDo'), "- Bộ phận điều độ:"));
+    children.push(...posRowsParas(readPosRows('gd1_coGioi'), "- Bộ phận cơ giới:"));
+    children.push(boldPara("* Ban Kế toán Tài vụ:", {before:150}));
+    children.push(...posRowsParas(readPosRows('gd1_ketoan'), null));
+    children.push(boldPara("* Ban hành chính bảo vệ:", {before:150}));
+    children.push(...posRowsParas(readPosRows('gd1_hcbv'), null));
+    children.push(boldPara("* Thiết bị thuê ngoài:", {before:150}));
+    children.push(...companyParas(readCompanies('gd1_companies')));
+
+    children.push(underlineBold("Kết luận:"));
+    children.push(...multilineParas(document.getElementById('gd1_ketluan').value));
+
+    children.push(closingPara());
+    children.push(endPara(document.getElementById('gd1_ktGio').value, document.getElementById('gd1_ktPhut').value, ktDate));
+    children.push(signatureTable(
+      readLabelRows('gd1_kytenTrai'),
+      "BAN KIỂM SOÁT NỘI BỘ",
+      document.getElementById('gd1_ksnbKy').value
+    ));
+
+    const doc = new Document({ sections:[{ properties:{}, children }] });
+    Packer.toBlob(doc).then(blob=>{
+      downloadBlob(blob, `BienBan_KiemTra_GoDau_${document.getElementById('gd1_ngayLap').value||'draft'}.docx`);
+      showStatus('gd1_status','Đã xuất file Word thành công.', true);
+    });
+  }catch(e){
+    console.error(e);
+    showStatus('gd1_status','Có lỗi khi xuất file: '+e.message, false);
+  }
+}
+
+/* ============================================================
+   EXPORT: LBT
+   ============================================================ */
+function exportLBT(){
+  try{
+    const dateObj = fmtDate(document.getElementById('lbt_ngayLap').value);
+    const ktDate = fmtDate(document.getElementById('lbt_ktNgay').value);
+    const tuNgay = fmtDate(document.getElementById('lbt_tuNgay').value);
+    const denNgay = fmtDate(document.getElementById('lbt_denNgay').value);
+
+    const children = [];
+    children.push(headerTable(dateObj));
+    children.push(...titleBlock("BIÊN BẢN KIỂM TRA", "(Về việc kiểm tra tuân thủ thời gian làm việc, nội quy lao động tại Cảng Long Bình Tân)"));
+    children.push(...canCuParas(document.getElementById('lbt_canCu').value));
+    children.push(plainPara("Chúng tôi gồm:", {before:150}));
+    children.push(...personLines(readPersonRows('lbt_ksnb'), "ĐẠI DIỆN BAN KIỂM SOÁT NỘI BỘ:"));
+    children.push(...personLines(readPersonRows('lbt_dvien'), "ĐẠI DIỆN CẢNG LONG BÌNH TÂN:"));
+
+    const bophan = document.getElementById('lbt_bophan').value;
+    const catruc = document.getElementById('lbt_catruc').value;
+    const tuGio = document.getElementById('lbt_tuGio').value, tuPhut = document.getElementById('lbt_tuPhut').value;
+    const denGio = document.getElementById('lbt_denGio').value, denPhut = document.getElementById('lbt_denPhut').value;
+    children.push(new Paragraph({spacing:{before:150,after:150}, children:[new TextRun({
+      text:`Ban Kiểm soát nội bộ thực hiện kiểm tra tuân thủ quy định làm việc của các bộ phận: ${bophan} trong ca trực ${catruc||'……'}, từ ${tuGio||'……'} giờ ${tuPhut||'……'} phút ngày ${tuNgay.d}/${tuNgay.m}/${tuNgay.y} đến ${denGio||'……'} giờ ${denPhut||'……'} phút ngày ${denNgay.d}/${denNgay.m}/${denNgay.y}, kết quả kiểm tra như sau:`
+    })]}));
+
+    children.push(...berthParas(readBerths('lbt_berths')));
+
+    children.push(boldPara("A. Ban Khai thác điều độ:", {before:150}));
+    children.push(...posRowsParas(readPosRows('lbt_dieuDo'), "* Bộ phận điều độ:"));
+    children.push(...posRowsParas(readPosRows('lbt_coGioi'), "* Bộ phận cơ giới:"));
+    children.push(boldPara("B. Ban Kế toán thương vụ:", {before:150}));
+    children.push(...posRowsParas(readPosRows('lbt_ketoan'), null));
+    children.push(boldPara("C. Ban hành chính bảo vệ:", {before:150}));
+    children.push(...posRowsParas(readPosRows('lbt_hcbv'), null));
+    children.push(boldPara("D. Thiết bị thuê ngoài:", {before:150}));
+    children.push(...companyParas(readCompanies('lbt_companies')));
+
+    children.push(underlineBold("* Trực lãnh đạo công ty:"));
+    children.push(...multilineParas(document.getElementById('lbt_trucLanhDao').value));
+    children.push(underlineBold("* Trực chỉ huy tại văn phòng:"));
+    children.push(...multilineParas(document.getElementById('lbt_trucVanPhong').value));
+    children.push(underlineBold("* Trực chỉ huy tại Cảng Long Bình Tân:"));
+    children.push(...multilineParas(document.getElementById('lbt_trucCang').value));
+
+    children.push(underlineBold("* Kết luận:"));
+    children.push(...multilineParas(document.getElementById('lbt_ketluan').value));
+
+    children.push(closingPara());
+    children.push(endPara(document.getElementById('lbt_ktGio').value, document.getElementById('lbt_ktPhut').value, ktDate));
+    children.push(signatureTable(
+      readLabelRows('lbt_kytenTrai'),
+      "ĐẠI DIỆN BAN KSNB",
+      document.getElementById('lbt_ksnbKy').value
+    ));
+
+    const doc = new Document({ sections:[{ properties:{}, children }] });
+    Packer.toBlob(doc).then(blob=>{
+      downloadBlob(blob, `BienBan_KiemTra_LongBinhTan_${document.getElementById('lbt_ngayLap').value||'draft'}.docx`);
+      showStatus('lbt_status','Đã xuất file Word thành công.', true);
+    });
+  }catch(e){
+    console.error(e);
+    showStatus('lbt_status','Có lỗi khi xuất file: '+e.message, false);
+  }
+}
+
+/* ============================================================
+   EXPORT: VI PHẠM
+   ============================================================ */
+function exportViPham(){
+  try{
+    const dateObj = fmtDate(document.getElementById('vp_ngayLap').value);
+    const ktDate = fmtDate(document.getElementById('vp_ktNgay').value);
+    const viPhamNgay = fmtDate(document.getElementById('vp_ngayViPham').value);
+    const diadiem = document.getElementById('vp_diadiem').value || 'Cảng Gò Dầu';
+
+    const children = [];
+    children.push(headerTable(dateObj));
+    children.push(...titleBlock("BIÊN BẢN KIỂM TRA", "(Về việc kiểm tra thời gian làm việc của các đơn vị tham gia sản xuất)"));
+    children.push(...canCuParas(document.getElementById('vp_canCu').value));
+    children.push(plainPara("Chúng tôi gồm:", {before:150}));
+    children.push(...personLines(readPersonRows('vp_ksnb'), "ĐẠI DIỆN BAN KIỂM SOÁT NỘI BỘ:"));
+    children.push(...personLines(readPersonRows('vp_dvien'), `ĐẠI DIỆN ${diadiem.toUpperCase()}:`));
+
+    const catruc = document.getElementById('vp_catruc').value;
+    children.push(new Paragraph({spacing:{before:150,after:150}, children:[new TextRun({
+      text:`Căn cứ nội quy lao động hiện hành của công ty, Ban Kiểm soát nội bộ tiến hành lập biên bản về việc không tuân thủ quy định làm việc trong ca trực ${catruc||'……'} ngày ${viPhamNgay.d} tháng ${viPhamNgay.m} năm ${viPhamNgay.y}.`
+    })]}));
+
+    children.push(boldPara("- Nội dung vi phạm:"));
+    children.push(...multilineParas(document.getElementById('vp_noiDung').value));
+    children.push(boldPara("- Diễn giải vi phạm:", {before:150}));
+    children.push(...multilineParas(document.getElementById('vp_dienGiai').value));
+
+    children.push(closingPara());
+    children.push(endPara(document.getElementById('vp_ktGio').value, document.getElementById('vp_ktPhut').value, ktDate));
+    children.push(signatureTable(
+      readLabelRows('vp_kytenTrai'),
+      "BAN KIỂM SOÁT NỘI BỘ",
+      document.getElementById('vp_ksnbKy').value
+    ));
+
+    const doc = new Document({ sections:[{ properties:{}, children }] });
+    Packer.toBlob(doc).then(blob=>{
+      downloadBlob(blob, `BienBan_ViPham_${document.getElementById('vp_ngayLap').value||'draft'}.docx`);
+      showStatus('vp_status','Đã xuất file Word thành công.', true);
+    });
+  }catch(e){
+    console.error(e);
+    showStatus('vp_status','Có lỗi khi xuất file: '+e.message, false);
+  }
+}
+</script>
+
+</body>
+</html>
