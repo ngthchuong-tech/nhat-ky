@@ -160,6 +160,24 @@
     gap:8px;
     margin-bottom:8px;
   }
+  .equip-header{
+    display:grid;
+    grid-template-columns:1fr 0.85fr 1.3fr 1fr auto;
+    gap:8px;
+    font-size:11.5px;
+    font-weight:700;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.3px;
+    margin-bottom:6px;
+    padding:0 2px;
+  }
+  .row-group .equip-row{
+    display:grid;
+    grid-template-columns:1fr 0.85fr 1.3fr 1fr auto;
+    gap:8px;
+    margin-bottom:8px;
+  }
   select.l-status{
     width:100%;
     padding:8px 6px;
@@ -169,6 +187,54 @@
     font-size:13px;
     background:#fdfcfa;
     color:var(--ink);
+  }
+  select.l-condition{
+    width:100%;
+    padding:8px 6px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-family:inherit;
+    font-size:13px;
+    background:#fdfcfa;
+    color:var(--ink);
+  }
+  .pos-block{
+    border:1px dashed var(--line);
+    border-radius:8px;
+    padding:10px 12px 12px 12px;
+    margin-bottom:10px;
+    background:#fbfaf7;
+  }
+  .posblock-row1{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    margin-bottom:8px;
+    flex-wrap:wrap;
+  }
+  .posblock-row1 .l-label{
+    flex:2 1 200px;
+    font-weight:700;
+  }
+  .posblock-row1 .l-condition{
+    flex:1 1 160px;
+  }
+  .posblock-employees{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    margin-bottom:8px;
+    padding-left:12px;
+    border-left:2px solid var(--line);
+  }
+  .emp-subrow{
+    display:grid;
+    grid-template-columns:1fr 1.3fr auto;
+    gap:8px;
+  }
+  button.btn-sm{
+    padding:6px 10px;
+    font-size:12px;
   }
   .berth-block, .company-block{
     border:1px dashed var(--line);
@@ -239,7 +305,10 @@
     .row-group .row{grid-template-columns:1fr;}
     .row-group .row.single-col{grid-template-columns:1fr;}
     .row-group .pos-row{grid-template-columns:1fr;}
+    .row-group .equip-row{grid-template-columns:1fr;}
+    .emp-subrow{grid-template-columns:1fr;}
     .pos-header{display:none;}
+    .equip-header{display:none;}
   }
 </style>
 </head>
@@ -366,34 +435,40 @@
   <fieldset>
     <legend>Ban Khai thác điều độ</legend>
     <div class="sub-legend">Bộ phận điều độ (bao gồm Trưởng ca, Cầu bến)</div>
-    <div class="pos-header"><span>Vị trí / chức danh</span><span>Tên nhân viên</span><span>Tình trạng</span><span></span></div>
+    <div class="hint">Mỗi vị trí có thể có nhiều nhân viên trực — bấm "+ Thêm nhân viên" bên trong từng vị trí nếu có hơn 1 người.</div>
     <div class="row-group" id="gd1_dieuDo"></div>
-    <button type="button" class="btn btn-add" onclick="addPosRow('gd1_dieuDo','Vị trí (VD: Cầu bến B1)')">+ Thêm nhân viên điều độ</button>
+    <button type="button" class="btn btn-add" onclick="addPositionBlock('gd1_dieuDo','Vị trí (VD: Cầu bến B1)')">+ Thêm vị trí</button>
 
     <div class="sub-legend">Bộ phận cơ giới (thiết bị / nội dung)</div>
-    <div class="pos-header"><span>Thiết bị</span><span>Tên nhân viên</span><span>Tình trạng</span><span></span></div>
+    <div class="hint">Mỗi thiết bị: chọn tình trạng thiết bị + thêm nhân viên vận hành (có thể nhiều người).</div>
     <div class="row-group" id="gd1_coGioi"></div>
-    <button type="button" class="btn btn-add" onclick="addPosRow('gd1_coGioi','Tên thiết bị')">+ Thêm thiết bị</button>
+    <button type="button" class="btn btn-add" onclick="addPositionBlock('gd1_coGioi','Tên thiết bị','',true)">+ Thêm thiết bị</button>
   </fieldset>
 
   <fieldset>
     <legend>Ban Kế toán Tài vụ</legend>
-    <div class="pos-header"><span>Vị trí</span><span>Tên nhân viên</span><span>Tình trạng</span><span></span></div>
+    <div class="hint">Mỗi vị trí có thể có nhiều nhân viên trực — bấm "+ Thêm nhân viên" bên trong từng vị trí nếu cần.</div>
     <div class="row-group" id="gd1_ketoan"></div>
-    <button type="button" class="btn btn-add" onclick="addPosRow('gd1_ketoan','Vị trí')">+ Thêm nhân viên</button>
+    <button type="button" class="btn btn-add" onclick="addPositionBlock('gd1_ketoan','Vị trí')">+ Thêm vị trí</button>
   </fieldset>
 
   <fieldset>
     <legend>Ban Hành chính bảo vệ</legend>
-    <div class="pos-header"><span>Vị trí</span><span>Tên nhân viên</span><span>Tình trạng</span><span></span></div>
+    <div class="hint">Mỗi vị trí có thể có nhiều nhân viên trực — bấm "+ Thêm nhân viên" bên trong từng vị trí nếu cần.</div>
     <div class="row-group" id="gd1_hcbv"></div>
-    <button type="button" class="btn btn-add" onclick="addPosRow('gd1_hcbv','Vị trí')">+ Thêm nhân viên</button>
+    <button type="button" class="btn btn-add" onclick="addPositionBlock('gd1_hcbv','Vị trí')">+ Thêm vị trí</button>
   </fieldset>
 
   <fieldset>
     <legend>Thiết bị thuê ngoài</legend>
     <div id="gd1_companies"></div>
     <button type="button" class="btn btn-add" onclick="addCompany('gd1_companies')">+ Thêm công ty</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>Tình hình an ninh trật tự</legend>
+    <div class="hint">Do bảo vệ báo cáo trực tiếp. Để trống nếu không có gì đặc biệt — biên bản sẽ tự ghi: "Tình hình an ninh trật tự ổn định".</div>
+    <textarea id="gd1_antt" rows="3" placeholder="Để trống nếu tình hình an ninh trật tự ổn định, không có vụ việc bất thường."></textarea>
   </fieldset>
 
   <fieldset>
@@ -494,28 +569,28 @@
   <fieldset>
     <legend>A. Ban Khai thác điều độ</legend>
     <div class="sub-legend">Bộ phận điều độ (bao gồm Trưởng ca)</div>
-    <div class="pos-header"><span>Chức danh</span><span>Tên nhân viên</span><span>Tình trạng</span><span></span></div>
+    <div class="hint">Mỗi vị trí có thể có nhiều nhân viên trực — bấm "+ Thêm nhân viên" bên trong từng vị trí nếu có hơn 1 người.</div>
     <div class="row-group" id="lbt_dieuDo"></div>
-    <button type="button" class="btn btn-add" onclick="addPosRow('lbt_dieuDo','Chức danh')">+ Thêm nhân viên điều độ</button>
+    <button type="button" class="btn btn-add" onclick="addPositionBlock('lbt_dieuDo','Chức danh')">+ Thêm vị trí</button>
 
     <div class="sub-legend">Bộ phận cơ giới (thiết bị / nội dung)</div>
-    <div class="pos-header"><span>Thiết bị</span><span>Tên nhân viên</span><span>Tình trạng</span><span></span></div>
+    <div class="hint">Mỗi thiết bị: chọn tình trạng thiết bị + thêm nhân viên vận hành (có thể nhiều người).</div>
     <div class="row-group" id="lbt_coGioi"></div>
-    <button type="button" class="btn btn-add" onclick="addPosRow('lbt_coGioi','Tên thiết bị')">+ Thêm thiết bị</button>
+    <button type="button" class="btn btn-add" onclick="addPositionBlock('lbt_coGioi','Tên thiết bị','',true)">+ Thêm thiết bị</button>
   </fieldset>
 
   <fieldset>
     <legend>B. Ban Kế toán thương vụ</legend>
-    <div class="pos-header"><span>Vị trí</span><span>Tên nhân viên</span><span>Tình trạng</span><span></span></div>
+    <div class="hint">Mỗi vị trí có thể có nhiều nhân viên trực — bấm "+ Thêm nhân viên" bên trong từng vị trí nếu cần.</div>
     <div class="row-group" id="lbt_ketoan"></div>
-    <button type="button" class="btn btn-add" onclick="addPosRow('lbt_ketoan','Vị trí')">+ Thêm nhân viên</button>
+    <button type="button" class="btn btn-add" onclick="addPositionBlock('lbt_ketoan','Vị trí')">+ Thêm vị trí</button>
   </fieldset>
 
   <fieldset>
     <legend>C. Ban Hành chính bảo vệ</legend>
-    <div class="pos-header"><span>Vị trí</span><span>Tên nhân viên</span><span>Tình trạng</span><span></span></div>
+    <div class="hint">Mỗi vị trí có thể có nhiều nhân viên trực — bấm "+ Thêm nhân viên" bên trong từng vị trí nếu cần.</div>
     <div class="row-group" id="lbt_hcbv"></div>
-    <button type="button" class="btn btn-add" onclick="addPosRow('lbt_hcbv','Vị trí')">+ Thêm nhân viên</button>
+    <button type="button" class="btn btn-add" onclick="addPositionBlock('lbt_hcbv','Vị trí')">+ Thêm vị trí</button>
   </fieldset>
 
   <fieldset>
@@ -532,6 +607,12 @@
     <textarea id="lbt_trucVanPhong" rows="2"></textarea>
     <label class="field-label" style="margin-top:8px;">Trực chỉ huy tại Cảng Long Bình Tân</label>
     <textarea id="lbt_trucCang" rows="2"></textarea>
+  </fieldset>
+
+  <fieldset>
+    <legend>Tình hình an ninh trật tự</legend>
+    <div class="hint">Do bảo vệ báo cáo trực tiếp. Để trống nếu không có gì đặc biệt — biên bản sẽ tự ghi: "Tình hình an ninh trật tự ổn định".</div>
+    <textarea id="lbt_antt" rows="3" placeholder="Để trống nếu tình hình an ninh trật tự ổn định, không có vụ việc bất thường."></textarea>
   </fieldset>
 
   <fieldset>
@@ -824,28 +905,59 @@ function readLabelRows(containerId){
   })).filter(r=>r.label || r.value);
 }
 
-// 3-column row: Vị trí/Thiết bị | Tên nhân viên | Trạng thái (có mặt / vắng mặt...)
+// Position/equipment block: one "vị trí/thiết bị" that can hold MULTIPLE employees,
+// each with their own attendance status. hasCondition=true adds an equipment-condition dropdown.
 const STATUS_OPTIONS = ['Đang có mặt tại vị trí làm việc','Không có mặt tại vị trí làm việc'];
-function addPosRow(containerId, labelPlaceholder='Vị trí/Thiết bị', label='', employee='', status='Đang có mặt tại vị trí làm việc'){
+const CONDITION_OPTIONS = ['Hoạt động tốt','Hư hỏng','Đang sửa chữa'];
+
+function addPositionBlock(containerId, labelPlaceholder='Vị trí/Thiết bị', label='', hasCondition=false, condition='Hoạt động tốt', employees=null){
   const c = document.getElementById(containerId);
-  const row = document.createElement('div');
-  row.className = 'pos-row';
-  const options = STATUS_OPTIONS.map(o=>`<option value="${esc(o)}"${o===status?' selected':''}>${esc(o)}</option>`).join('');
-  row.innerHTML = `
-    <input type="text" class="l-label" list="equipmentList" placeholder="${esc(labelPlaceholder)}" value="${esc(label)}">
-    <input type="text" class="l-employee" list="employeeList" placeholder="Tên nhân viên" value="${esc(employee)}">
-    <select class="l-status">${options}</select>
-    <button type="button" class="btn btn-remove" onclick="this.parentElement.remove()">✕</button>
+  const block = document.createElement('div');
+  block.className = 'pos-block';
+  const condHtml = hasCondition
+    ? `<select class="l-condition">${CONDITION_OPTIONS.map(o=>`<option value="${esc(o)}"${o===condition?' selected':''}>${esc(o)}</option>`).join('')}</select>`
+    : '';
+  block.innerHTML = `
+    <div class="posblock-row1">
+      <input type="text" class="l-label" list="equipmentList" placeholder="${esc(labelPlaceholder)}" value="${esc(label)}">
+      ${condHtml}
+      <button type="button" class="btn btn-remove btn-sm" onclick="this.closest('.pos-block').remove()">✕ Xóa vị trí</button>
+    </div>
+    <div class="posblock-employees"></div>
+    <button type="button" class="btn btn-add btn-sm" onclick="addEmployeeSubRow(this.previousElementSibling)">+ Thêm nhân viên</button>
   `;
-  c.appendChild(row);
+  c.appendChild(block);
+  const empList = (employees && employees.length) ? employees : [{name:'', status:'Đang có mặt tại vị trí làm việc'}];
+  const empContainer = block.querySelector('.posblock-employees');
+  empList.forEach(e=>addEmployeeSubRow(empContainer, e.name, e.status));
 }
 
-function readPosRows(containerId){
-  return [...document.querySelectorAll('#'+containerId+' .pos-row')].map(r=>({
-    label: r.querySelector('.l-label').value.trim(),
-    employee: r.querySelector('.l-employee').value.trim(),
-    status: r.querySelector('.l-status').value
-  })).filter(r=>r.label || r.employee);
+function addEmployeeSubRow(empContainer, name='', status='Đang có mặt tại vị trí làm việc'){
+  const row = document.createElement('div');
+  row.className = 'emp-subrow';
+  const options = STATUS_OPTIONS.map(o=>`<option value="${esc(o)}"${o===status?' selected':''}>${esc(o)}</option>`).join('');
+  row.innerHTML = `
+    <input type="text" class="l-employee" list="employeeList" placeholder="Tên nhân viên" value="${esc(name)}">
+    <select class="l-status">${options}</select>
+    <button type="button" class="btn btn-remove btn-sm" onclick="this.parentElement.remove()">✕</button>
+  `;
+  empContainer.appendChild(row);
+}
+
+// Reads all position blocks within a container. Accepts either an element id (string) or a DOM element.
+function readPositionBlocks(containerIdOrEl){
+  const root = typeof containerIdOrEl === 'string' ? document.getElementById(containerIdOrEl) : containerIdOrEl;
+  if(!root) return [];
+  return [...root.querySelectorAll('.pos-block')].map(b=>{
+    const label = b.querySelector('.l-label').value.trim();
+    const condEl = b.querySelector('.l-condition');
+    const condition = condEl ? condEl.value : null;
+    const employees = [...b.querySelectorAll('.emp-subrow')].map(r=>({
+      name: r.querySelector('.l-employee').value.trim(),
+      status: r.querySelector('.l-status').value
+    })).filter(e=>e.name);
+    return { label, condition, employees };
+  }).filter(pb=>pb.label || pb.employees.length);
 }
 
 /* ---- Berth blocks (cầu bến): name + 3 content fields ---- */
@@ -856,6 +968,10 @@ function addBerth(containerId, name=''){
   block.innerHTML = `
     <div class="berth-header">
       <input type="text" class="berth-name" placeholder="Tên cầu bến (VD: B1)" value="${esc(name)}">
+      <select class="berth-hoatdong">
+        <option value="Đang hoạt động" selected>Đang hoạt động</option>
+        <option value="Tạm ngừng hoạt động">Tạm ngừng hoạt động</option>
+      </select>
       <button type="button" class="btn btn-remove" onclick="this.closest('.berth-block').remove()">✕ Xóa cầu bến</button>
     </div>
     <label class="field-label">Tên phương tiện cập bến</label>
@@ -864,6 +980,8 @@ function addBerth(containerId, name=''){
     <input type="text" class="berth-lh">
     <label class="field-label" style="margin-top:6px;">Thiết bị làm hàng</label>
     <input type="text" class="berth-tb">
+    <label class="field-label" style="margin-top:6px;">Lý do (nếu tạm ngừng hoạt động)</label>
+    <input type="text" class="berth-lydo" placeholder="Để trống nếu đang hoạt động bình thường">
   `;
   c.appendChild(block);
 }
@@ -871,13 +989,15 @@ function addBerth(containerId, name=''){
 function readBerths(containerId){
   return [...document.querySelectorAll('#'+containerId+' .berth-block')].map(b=>({
     name: b.querySelector('.berth-name').value.trim(),
+    hoatdong: b.querySelector('.berth-hoatdong').value,
     pt: b.querySelector('.berth-pt').value.trim(),
     lh: b.querySelector('.berth-lh').value.trim(),
-    tb: b.querySelector('.berth-tb').value.trim()
+    tb: b.querySelector('.berth-tb').value.trim(),
+    lydo: b.querySelector('.berth-lydo').value.trim()
   })).filter(b=>b.name || b.pt || b.lh || b.tb);
 }
 
-/* ---- Company blocks (thiết bị thuê ngoài): name + device rows ---- */
+/* ---- Company blocks (thiết bị thuê ngoài): name + device position-blocks ---- */
 let companyCounter = 0;
 function addCompany(containerId, name=''){
   companyCounter++;
@@ -890,9 +1010,8 @@ function addCompany(containerId, name=''){
       <input type="text" class="company-name" placeholder="Tên công ty" value="${esc(name)}">
       <button type="button" class="btn btn-remove" onclick="this.closest('.company-block').remove()">✕ Xóa công ty</button>
     </div>
-    <div class="pos-header"><span>Thiết bị</span><span>Tên nhân viên vận hành</span><span>Tình trạng</span><span></span></div>
     <div class="row-group" id="${cid}"></div>
-    <button type="button" class="btn btn-add" onclick="addPosRow('${cid}','Thiết bị / nội dung')">+ Thêm thiết bị</button>
+    <button type="button" class="btn btn-add" onclick="addPositionBlock('${cid}','Thiết bị / nội dung','',true)">+ Thêm thiết bị</button>
   `;
   c.appendChild(block);
 }
@@ -901,11 +1020,7 @@ function readCompanies(containerId){
   return [...document.querySelectorAll('#'+containerId+' .company-block')].map(b=>{
     const name = b.querySelector('.company-name').value.trim();
     const rowGroup = b.querySelector('.row-group');
-    const devices = [...rowGroup.querySelectorAll('.pos-row')].map(r=>({
-      label: r.querySelector('.l-label').value.trim(),
-      employee: r.querySelector('.l-employee').value.trim(),
-      status: r.querySelector('.l-status').value
-    })).filter(d=>d.label || d.employee);
+    const devices = readPositionBlocks(rowGroup);
     return {name, devices};
   }).filter(c=>c.name || c.devices.length);
 }
@@ -925,38 +1040,81 @@ function loadGeminiKey(){
 }
 
 function gatherConclusionFacts(prefix){
+  // Phần 1: Tuân thủ nội quy lao động — mỗi vị trí có thể có nhiều nhân viên
   const posContainers = [prefix+'_dieuDo', prefix+'_coGioi', prefix+'_ketoan', prefix+'_hcbv'];
   let total = 0;
   const absent = [];
   posContainers.forEach(cid=>{
     if(!document.getElementById(cid)) return;
-    readPosRows(cid).forEach(r=>{
-      total++;
-      if(r.status && r.status.startsWith('Không')){
-        absent.push({ label: r.label || '(chưa đặt tên)', employee: r.employee || '(chưa ghi tên)' });
-      }
+    readPositionBlocks(cid).forEach(pb=>{
+      pb.employees.forEach(e=>{
+        total++;
+        if(e.status && e.status.startsWith('Không')){
+          absent.push({ label: pb.label || '(chưa đặt tên)', employee: e.name || '(chưa ghi tên)' });
+        }
+      });
     });
   });
   readCompanies(prefix+'_companies').forEach(c=>{
-    c.devices.forEach(d=>{
-      total++;
-      if(d.status && d.status.startsWith('Không')){
-        absent.push({ label: `${c.name || 'Công ty …'} - ${d.label || '(chưa đặt tên)'}`, employee: d.employee || '(chưa ghi tên)' });
-      }
+    c.devices.forEach(pb=>{
+      pb.employees.forEach(e=>{
+        total++;
+        if(e.status && e.status.startsWith('Không')){
+          absent.push({ label: `${c.name || 'Công ty …'} - ${pb.label || '(chưa đặt tên)'}`, employee: e.name || '(chưa ghi tên)' });
+        }
+      });
     });
   });
-  return { total, absent };
+
+  // Phần 2: Tình hình sản xuất — cầu bến hoạt động/ngừng + tình trạng thiết bị cơ giới
+  const berths = readBerths(prefix+'_berths');
+  const stoppedBerths = berths.filter(b=>b.hoatdong === 'Tạm ngừng hoạt động');
+  const activeBerths = berths.filter(b=>b.hoatdong !== 'Tạm ngừng hoạt động' && (b.name || b.pt || b.lh || b.tb));
+
+  const equipmentBlocks = document.getElementById(prefix+'_coGioi') ? readPositionBlocks(prefix+'_coGioi') : [];
+  const brokenEquip = equipmentBlocks.filter(pb=>pb.condition && pb.condition !== 'Hoạt động tốt');
+
+  // Phần 3: Tình hình an ninh trật tự — báo cáo trực tiếp của bảo vệ
+  const anttEl = document.getElementById(prefix+'_antt');
+  const antt = anttEl ? anttEl.value.trim() : '';
+
+  return { total, absent, berths, stoppedBerths, activeBerths, equipmentBlocks, brokenEquip, antt };
 }
 
 function buildConclusionText(facts){
+  // Phần 1 — Tuân thủ nội quy lao động
+  let part1;
   if(facts.total === 0){
-    return 'Chưa có dữ liệu vị trí/thiết bị nào được đánh dấu tình trạng để tổng hợp kết luận. Hãy điền các mục Bộ phận điều độ, Cơ giới, Kế toán, Hành chính bảo vệ... trước khi dùng nút này.';
+    part1 = 'Chưa có dữ liệu vị trí/thiết bị nào được đánh dấu tình trạng để tổng hợp.';
+  } else if(facts.absent.length === 0){
+    part1 = `Qua kiểm tra thực tế, toàn bộ ${facts.total} lượt nhân viên tại các vị trí/thiết bị được kiểm tra đều đang có mặt tại vị trí làm việc theo đúng quy định.`;
+  } else {
+    const lines = facts.absent.map(a=>`  + ${a.label}: ${a.employee}`).join('\n');
+    part1 = `Qua kiểm tra thực tế ${facts.total} lượt nhân viên tại các vị trí/thiết bị, ghi nhận ${facts.absent.length} trường hợp không có mặt tại vị trí làm việc tại thời điểm kiểm tra, cụ thể:\n${lines}\n\nĐề nghị các bộ phận liên quan kiểm tra, chấn chỉnh và nhắc nhở nhân viên chấp hành nghiêm quy định về thời gian làm việc.`;
   }
-  if(facts.absent.length === 0){
-    return `Qua kiểm tra thực tế, toàn bộ ${facts.total} vị trí/thiết bị được kiểm tra đều đang có mặt tại vị trí làm việc theo đúng quy định. Đề nghị các bộ phận tiếp tục duy trì việc chấp hành nghiêm thời gian làm việc.`;
+
+  // Phần 2 — Tình hình sản xuất
+  const part2Lines = [];
+  if(facts.stoppedBerths.length){
+    part2Lines.push(`Có ${facts.stoppedBerths.length} cầu bến tạm ngừng hoạt động:`);
+    facts.stoppedBerths.forEach(b=>part2Lines.push(`  + Cầu bến ${b.name || '……'}: ${b.lydo || 'chưa ghi rõ lý do'}`));
   }
-  const lines = facts.absent.map(a=>`- ${a.label}: ${a.employee}`).join('\n');
-  return `Qua kiểm tra thực tế ${facts.total} vị trí/thiết bị, ghi nhận ${facts.absent.length} vị trí không có mặt tại vị trí làm việc tại thời điểm kiểm tra, cụ thể:\n${lines}\n\nĐề nghị các bộ phận liên quan kiểm tra, chấn chỉnh và nhắc nhở nhân viên chấp hành nghiêm quy định về thời gian làm việc.`;
+  if(facts.activeBerths.length){
+    part2Lines.push(`${facts.activeBerths.length} cầu bến đang hoạt động bình thường: ${facts.activeBerths.map(b=>b.name || '……').join(', ')}.`);
+  }
+  if(facts.brokenEquip.length){
+    part2Lines.push(`Có ${facts.brokenEquip.length} thiết bị không ở trạng thái hoạt động tốt:`);
+    facts.brokenEquip.forEach(pb=>part2Lines.push(`  + ${pb.label || '……'}: ${pb.condition}`));
+  }
+  if(!part2Lines.length){
+    part2Lines.push('Tình hình sản xuất tại các cầu bến diễn ra bình thường, các phương tiện, thiết bị hoạt động ổn định.');
+  }
+  const part2 = part2Lines.join('\n');
+
+  // Phần 3 — An ninh trật tự
+  const part3 = facts.antt || 'Tình hình an ninh trật tự ổn định, không ghi nhận vụ việc bất thường.';
+
+  return `1. Về tuân thủ nội quy lao động:\n${part1}\n\n2. Về tình hình sản xuất:\n${part2}\n\n3. Về tình hình an ninh trật tự:\n${part3}`;
 }
 
 function autoConclude(prefix){
@@ -1012,10 +1170,10 @@ function seed(){
   addPersonRow('gd1_dvien','','');
   ['B1','B2','B3','B4','B5','A1','A3'].forEach(n=>addBerth('gd1_berths', n));
   ['Cẩu Lima 1 – 60LA 2007','Cẩu Lima 2 – 60LA 2006','Cẩu PH – 60LA 2014','Cẩu MAC 2','Xe cuốc 0782','Xe cuốc 0783','Xe xúc 2010']
-    .forEach(n=>addPosRow('gd1_coGioi','Tên thiết bị', n));
-  ['Trưởng ca','Cầu bến A1-3','Cầu bến B1','Cầu bến B2','Cầu bến B3','Cầu bến B4','Cầu bến B5'].forEach(n=>addPosRow('gd1_dieuDo','Vị trí', n));
-  ['Nhân viên Trạm cân Khu A','Nhân viên Trạm cân Khu B'].forEach(n=>addPosRow('gd1_ketoan','Vị trí', n));
-  ['Nhân viên Trực ban an ninh','Nhân viên bảo vệ B1','Nhân viên bảo vệ B2','Nhân viên bảo vệ B3','Nhân viên bảo vệ B4','Nhân viên bảo vệ B5','Nhân viên bảo vệ A1','Nhân viên bảo vệ A3'].forEach(n=>addPosRow('gd1_hcbv','Vị trí', n));
+    .forEach(n=>addPositionBlock('gd1_coGioi','Tên thiết bị', n, true));
+  ['Trưởng ca','Cầu bến A1-3','Cầu bến B1','Cầu bến B2','Cầu bến B3','Cầu bến B4','Cầu bến B5'].forEach(n=>addPositionBlock('gd1_dieuDo','Vị trí', n));
+  ['Nhân viên Trạm cân Khu A','Nhân viên Trạm cân Khu B'].forEach(n=>addPositionBlock('gd1_ketoan','Vị trí', n));
+  ['Nhân viên Trực ban an ninh','Nhân viên bảo vệ B1','Nhân viên bảo vệ B2','Nhân viên bảo vệ B3','Nhân viên bảo vệ B4','Nhân viên bảo vệ B5','Nhân viên bảo vệ A1','Nhân viên bảo vệ A3'].forEach(n=>addPositionBlock('gd1_hcbv','Vị trí', n));
   ['Công ty Dịch Vụ Cảng','Công ty Cảng Phía Nam','Công ty Quốc Việt Hoa'].forEach(n=>addCompany('gd1_companies', n));
   addLabelRow('gd1_kytenTrai','Chức danh ký tên','CẢNG GÒ DẦU');
 
@@ -1024,12 +1182,12 @@ function seed(){
   addPersonRow('lbt_dvien','',''); addPersonRow('lbt_dvien','',''); addPersonRow('lbt_dvien','','');
   ['K1 – K2','K1 – K3','K4','K3 – K5'].forEach(n=>addBerth('lbt_berths', n));
   ['Trưởng ca','Nhân viên Điều độ bãi','Nhân viên Điều độ cầu tàu','Nhân viên Giao nhận cầu tàu','Nhân viên Thủ tục']
-    .forEach(n=>addPosRow('lbt_dieuDo','Chức danh', n));
+    .forEach(n=>addPositionBlock('lbt_dieuDo','Chức danh', n));
   ['Cẩu LH1','Cẩu LH2','Cẩu LH3','Cẩu MAC 1','Xe nâng cont Kalmar 60LA-3173','Xe nâng cont Kalmar mới','Xe đầu kéo cont Otawa','Xe đầu kéo cont FAW (38)','Xe đầu kéo cont FAW (39)','Xe xúc 2011','Xe nâng CAT 3.0','Xe cuốc 0659','Xe cuốc 0660','Xe cuốc SK135SR-3']
-    .forEach(n=>addPosRow('lbt_coGioi','Tên thiết bị', n));
-  ['Nhân viên Trạm cân','Nhân viên Gate out'].forEach(n=>addPosRow('lbt_ketoan','Vị trí', n));
+    .forEach(n=>addPositionBlock('lbt_coGioi','Tên thiết bị', n, true));
+  ['Nhân viên Trạm cân','Nhân viên Gate out'].forEach(n=>addPositionBlock('lbt_ketoan','Vị trí', n));
   ['Nhân viên Trực ban an ninh','Nhân viên bảo vệ B1','Nhân viên bảo vệ B2','Nhân viên bảo vệ B3','Nhân viên bảo vệ B5','Nhân viên bảo vệ C1','Nhân viên bảo vệ C2A','Nhân viên bảo vệ C2B','Nhân viên bảo vệ C3','Nhân viên bảo vệ C4A','Nhân viên bảo vệ C4B (khu thủ tục 1)','Nhân viên bảo vệ C5A','Nhân viên bảo vệ C5B','Nhân viên bảo vệ trực khu thủ tục 2']
-    .forEach(n=>addPosRow('lbt_hcbv','Vị trí', n));
+    .forEach(n=>addPositionBlock('lbt_hcbv','Vị trí', n));
   addCompany('lbt_companies','Công ty Dologco');
   addCompany('lbt_companies','Công ty Dịch Vụ Cảng');
   addCompany('lbt_companies','Công ty Quốc Việt Hoa');
@@ -1038,8 +1196,8 @@ function seed(){
     const blocks = document.querySelectorAll('#lbt_companies .company-block');
     const dologco = blocks[0].querySelector('.row-group').id;
     const dvc = blocks[1].querySelector('.row-group').id;
-    ['Cẩu MAC 2','Cẩu MAC 4','Xe nâng cont hàng','Xe nâng cont rỗng'].forEach(n=>addPosRow(dologco,'Thiết bị', n));
-    ['Cẩu MAC 3','Thiết bị cẩu bờ'].forEach(n=>addPosRow(dvc,'Thiết bị', n));
+    ['Cẩu MAC 2','Cẩu MAC 4','Xe nâng cont hàng','Xe nâng cont rỗng'].forEach(n=>addPositionBlock(dologco,'Thiết bị', n, true));
+    ['Cẩu MAC 3','Thiết bị cẩu bờ'].forEach(n=>addPositionBlock(dvc,'Thiết bị', n, true));
   })();
   ['Trực chỉ huy tại văn phòng','Trực chỉ huy tại Cảng Long Bình Tân','Trưởng ca'].forEach(n=>addLabelRow('lbt_kytenTrai','Chức danh ký tên', n));
 
@@ -1149,15 +1307,17 @@ function labelRowsParas(list, headingText){
   return paras;
 }
 
-function posRowsParas(list, headingText){
+function posBlockParas(list, headingText, opts={}){
   const paras = [];
   if(headingText) paras.push(boldPara(headingText));
-  list.forEach(r=>{
-    const emp = r.employee || '……………………';
-    const status = r.status || 'Đang có mặt tại vị trí làm việc';
+  list.forEach(pb=>{
+    const empText = pb.employees && pb.employees.length
+      ? pb.employees.map(e=>`${e.name || '……………………'} (${e.status})`).join('; ')
+      : '……………………… (Đang có mặt tại vị trí làm việc)';
+    const condSuffix = (opts.showCondition && pb.condition) ? `  — Tình trạng thiết bị: ${pb.condition}` : '';
     paras.push(new Paragraph({children:[
-      new TextRun({text:`- ${r.label || '…………'}: `, bold:true}),
-      new TextRun({text:`${emp}  (${status})`})
+      new TextRun({text:`- ${pb.label || '…………'}: `, bold:true}),
+      new TextRun({text:`${empText}${condSuffix}`})
     ]}));
   });
   return paras;
@@ -1167,9 +1327,13 @@ function berthParas(berths){
   const paras = [];
   berths.forEach(b=>{
     paras.push(underlineBold(`Cầu bến ${b.name || '……'}:`));
+    paras.push(new Paragraph({children:[new TextRun({text:"- Tình trạng hoạt động: ", bold:true}), new TextRun({text:b.hoatdong || 'Đang hoạt động'})]}));
     paras.push(new Paragraph({children:[new TextRun({text:"- Tên phương tiện cập bến: ", bold:true}), new TextRun({text:b.pt || '……………………………………'})]}));
     paras.push(new Paragraph({children:[new TextRun({text:"- Thực hiện làm hàng: ", bold:true}), new TextRun({text:b.lh || '……………………………………'})]}));
     paras.push(new Paragraph({children:[new TextRun({text:"- Thiết bị làm hàng: ", bold:true}), new TextRun({text:b.tb || '……………………………………'})]}));
+    if(b.hoatdong === 'Tạm ngừng hoạt động'){
+      paras.push(new Paragraph({children:[new TextRun({text:"- Lý do tạm ngừng: ", bold:true}), new TextRun({text:b.lydo || '……………………………………'})]}));
+    }
   });
   return paras;
 }
@@ -1178,14 +1342,7 @@ function companyParas(companies){
   const paras = [];
   companies.forEach(c=>{
     paras.push(boldPara(c.name || 'Công ty ……'));
-    c.devices.forEach(d=>{
-      const emp = d.employee || '……………………';
-      const status = d.status || 'Đang có mặt tại vị trí làm việc';
-      paras.push(new Paragraph({children:[
-        new TextRun({text: d.label ? `+ ${d.label}: ` : '+ ', bold:true}),
-        new TextRun({text: `${emp}  (${status})`})
-      ]}));
-    });
+    paras.push(...posBlockParas(c.devices, null, {showCondition:true}));
   });
   return paras;
 }
@@ -1264,14 +1421,17 @@ function exportGD1(){
 
     children.push(...berthParas(readBerths('gd1_berths')));
     children.push(boldPara("* Ban Khai thác điều độ:", {before:150}));
-    children.push(...posRowsParas(readPosRows('gd1_dieuDo'), "- Bộ phận điều độ:"));
-    children.push(...posRowsParas(readPosRows('gd1_coGioi'), "- Bộ phận cơ giới:"));
+    children.push(...posBlockParas(readPositionBlocks('gd1_dieuDo'), "- Bộ phận điều độ:"));
+    children.push(...posBlockParas(readPositionBlocks('gd1_coGioi'), "- Bộ phận cơ giới:", {showCondition:true}));
     children.push(boldPara("* Ban Kế toán Tài vụ:", {before:150}));
-    children.push(...posRowsParas(readPosRows('gd1_ketoan'), null));
+    children.push(...posBlockParas(readPositionBlocks('gd1_ketoan'), null));
     children.push(boldPara("* Ban hành chính bảo vệ:", {before:150}));
-    children.push(...posRowsParas(readPosRows('gd1_hcbv'), null));
+    children.push(...posBlockParas(readPositionBlocks('gd1_hcbv'), null));
     children.push(boldPara("* Thiết bị thuê ngoài:", {before:150}));
     children.push(...companyParas(readCompanies('gd1_companies')));
+
+    children.push(underlineBold("Tình hình an ninh trật tự:"));
+    children.push(...multilineParas(document.getElementById('gd1_antt').value || 'Tình hình an ninh trật tự ổn định, không có vụ việc bất thường xảy ra trong ca trực.'));
 
     children.push(underlineBold("Kết luận:"));
     children.push(...multilineParas(document.getElementById('gd1_ketluan').value));
@@ -1324,12 +1484,12 @@ function exportLBT(){
     children.push(...berthParas(readBerths('lbt_berths')));
 
     children.push(boldPara("A. Ban Khai thác điều độ:", {before:150}));
-    children.push(...posRowsParas(readPosRows('lbt_dieuDo'), "* Bộ phận điều độ:"));
-    children.push(...posRowsParas(readPosRows('lbt_coGioi'), "* Bộ phận cơ giới:"));
+    children.push(...posBlockParas(readPositionBlocks('lbt_dieuDo'), "* Bộ phận điều độ:"));
+    children.push(...posBlockParas(readPositionBlocks('lbt_coGioi'), "* Bộ phận cơ giới:", {showCondition:true}));
     children.push(boldPara("B. Ban Kế toán thương vụ:", {before:150}));
-    children.push(...posRowsParas(readPosRows('lbt_ketoan'), null));
+    children.push(...posBlockParas(readPositionBlocks('lbt_ketoan'), null));
     children.push(boldPara("C. Ban hành chính bảo vệ:", {before:150}));
-    children.push(...posRowsParas(readPosRows('lbt_hcbv'), null));
+    children.push(...posBlockParas(readPositionBlocks('lbt_hcbv'), null));
     children.push(boldPara("D. Thiết bị thuê ngoài:", {before:150}));
     children.push(...companyParas(readCompanies('lbt_companies')));
 
@@ -1339,6 +1499,9 @@ function exportLBT(){
     children.push(...multilineParas(document.getElementById('lbt_trucVanPhong').value));
     children.push(underlineBold("* Trực chỉ huy tại Cảng Long Bình Tân:"));
     children.push(...multilineParas(document.getElementById('lbt_trucCang').value));
+
+    children.push(underlineBold("* Tình hình an ninh trật tự:"));
+    children.push(...multilineParas(document.getElementById('lbt_antt').value || 'Tình hình an ninh trật tự ổn định, không có vụ việc bất thường xảy ra trong ca trực.'));
 
     children.push(underlineBold("* Kết luận:"));
     children.push(...multilineParas(document.getElementById('lbt_ketluan').value));
