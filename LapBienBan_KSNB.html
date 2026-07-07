@@ -266,17 +266,43 @@
         <div class="hint" style="margin:4px 0 0 0;">Tải lên 1 lần — trình duyệt này sẽ tự nhớ, lần sau mở lại trang không cần tải lại. Dùng chung cho gợi ý tên ở cả 3 mẫu bên dưới.</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <input type="file" id="rosterFile" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleRosterFile(this.files[0])">
+        <input type="file" id="rosterFile" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleRosterFile(this.files[0],'employee')">
         <button type="button" class="btn btn-add" onclick="document.getElementById('rosterFile').click()">📤 Tải lên từ Excel</button>
-        <button type="button" class="btn btn-remove" onclick="clearSavedRoster()">🗑 Xóa danh sách đã lưu</button>
+        <button type="button" class="btn btn-remove" onclick="clearSavedRoster('employee')">🗑 Xóa danh sách đã lưu</button>
         <span id="rosterFileName" style="font-size:12.5px;color:var(--muted);"></span>
       </div>
     </div>
     <details style="margin-top:10px;" id="rosterDetails">
       <summary style="cursor:pointer;font-size:12.5px;color:var(--muted);">Xem / chỉnh sửa danh sách đã nạp (mỗi tên một dòng)</summary>
-      <textarea id="employeeRoster" rows="5" style="margin-top:8px;" oninput="updateRoster()" placeholder="Danh sách sẽ tự điền vào đây sau khi tải file Excel lên. Bạn cũng có thể gõ/sửa tay tại đây."></textarea>
+      <textarea id="employeeRoster" rows="5" style="margin-top:8px;" oninput="updateRoster('employee')" placeholder="Danh sách sẽ tự điền vào đây sau khi tải file Excel lên. Bạn cũng có thể gõ/sửa tay tại đây."></textarea>
     </details>
     <datalist id="employeeList"></datalist>
+  </div>
+
+  <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-top:12px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <div>
+        <div style="font-weight:700;color:var(--accent-2);font-size:13px;text-transform:uppercase;letter-spacing:.4px;">Danh sách thiết bị</div>
+        <div class="hint" style="margin:4px 0 0 0;">Tải lên 1 lần — dùng chung cho gợi ý ở các ô "Vị trí / Thiết bị" (Bộ phận cơ giới, thiết bị thuê ngoài...) trong cả 3 mẫu.</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="file" id="equipmentFile" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleRosterFile(this.files[0],'equipment')">
+        <button type="button" class="btn btn-add" onclick="document.getElementById('equipmentFile').click()">📤 Tải lên từ Excel</button>
+        <button type="button" class="btn btn-remove" onclick="clearSavedRoster('equipment')">🗑 Xóa danh sách đã lưu</button>
+        <span id="equipmentFileName" style="font-size:12.5px;color:var(--muted);"></span>
+      </div>
+    </div>
+    <details style="margin-top:10px;" id="equipmentDetails">
+      <summary style="cursor:pointer;font-size:12.5px;color:var(--muted);">Xem / chỉnh sửa danh sách đã nạp (mỗi thiết bị một dòng)</summary>
+      <textarea id="equipmentRoster" rows="5" style="margin-top:8px;" oninput="updateRoster('equipment')" placeholder="Danh sách sẽ tự điền vào đây sau khi tải file Excel lên. Bạn cũng có thể gõ/sửa tay tại đây."></textarea>
+    </details>
+    <datalist id="equipmentList"></datalist>
+  </div>
+
+  <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-top:12px;">
+    <div style="font-weight:700;color:var(--accent-2);font-size:13px;text-transform:uppercase;letter-spacing:.4px;">Gemini API key (tùy chọn — để viết kết luận bằng AI)</div>
+    <div class="hint" style="margin:4px 0 8px 0;">Không bắt buộc. Nếu để trống, nút "Tự động tổng hợp" ở mục Kết luận vẫn hoạt động bình thường (không cần AI). Nếu bạn dán API key Gemini của mình vào đây, sẽ có thêm nút "Viết lại bằng AI" để diễn đạt kết luận mượt hơn. Key chỉ lưu trên trình duyệt này (không gửi cho ai khác ngoài Google) — nên giới hạn key theo tên miền (HTTP referrer) trong Google AI Studio để an toàn hơn.</div>
+    <input type="password" id="geminiApiKey" placeholder="Dán Gemini API key vào đây..." oninput="saveGeminiKey()">
   </div>
 </div>
 
@@ -372,6 +398,11 @@
 
   <fieldset>
     <legend>Kết luận</legend>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <button type="button" class="btn btn-add" onclick="autoConclude('gd1')">🪄 Tự động tổng hợp</button>
+      <button type="button" class="btn btn-add" id="gd1_aiBtn" onclick="aiConclude('gd1')">✨ Viết lại bằng AI (Gemini)</button>
+    </div>
+    <div class="status-msg" id="gd1_aiStatus" style="text-align:left;min-height:16px;"></div>
     <textarea id="gd1_ketluan" rows="4"></textarea>
   </fieldset>
 
@@ -505,6 +536,11 @@
 
   <fieldset>
     <legend>Kết luận</legend>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <button type="button" class="btn btn-add" onclick="autoConclude('lbt')">🪄 Tự động tổng hợp</button>
+      <button type="button" class="btn btn-add" id="lbt_aiBtn" onclick="aiConclude('lbt')">✨ Viết lại bằng AI (Gemini)</button>
+    </div>
+    <div class="status-msg" id="lbt_aiStatus" style="text-align:left;min-height:16px;"></div>
     <textarea id="lbt_ketluan" rows="4"></textarea>
   </fieldset>
 
@@ -628,34 +664,57 @@ function esc(s){
   return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-const ROSTER_KEY = 'ksnb_bienban_employee_roster';
+const ROSTER_CONFIGS = {
+  employee: {
+    storageKey: 'ksnb_bienban_employee_roster',
+    rosterId: 'employeeRoster',
+    listId: 'employeeList',
+    fileNameId: 'rosterFileName',
+    statusId: 'rosterStatus',
+    anchorId: 'rosterFileName',
+    noun: 'tên',
+    filterFn: looksLikeName_impl
+  },
+  equipment: {
+    storageKey: 'ksnb_bienban_equipment_roster',
+    rosterId: 'equipmentRoster',
+    listId: 'equipmentList',
+    fileNameId: 'equipmentFileName',
+    statusId: 'equipmentStatus',
+    anchorId: 'equipmentFileName',
+    noun: 'thiết bị',
+    filterFn: looksLikeEquipment_impl
+  }
+};
 
-function saveRosterToStorage(text){
-  try{ window.localStorage.setItem(ROSTER_KEY, text); }catch(e){ /* storage unavailable, ignore */ }
+function saveRosterToStorage(key, text){
+  try{ window.localStorage.setItem(key, text); }catch(e){ /* storage unavailable, ignore */ }
 }
 
-function loadRosterFromStorage(){
-  try{ return window.localStorage.getItem(ROSTER_KEY); }catch(e){ return null; }
+function loadRosterFromStorage(key){
+  try{ return window.localStorage.getItem(key); }catch(e){ return null; }
 }
 
-function clearSavedRoster(){
-  try{ window.localStorage.removeItem(ROSTER_KEY); }catch(e){ /* ignore */ }
-  document.getElementById('employeeRoster').value = '';
-  document.getElementById('rosterFileName').textContent = '';
-  updateRoster();
-  showRosterStatus('Đã xóa danh sách đã lưu trên trình duyệt này.', true);
+function clearSavedRoster(kind='employee'){
+  const cfg = ROSTER_CONFIGS[kind];
+  try{ window.localStorage.removeItem(cfg.storageKey); }catch(e){ /* ignore */ }
+  document.getElementById(cfg.rosterId).value = '';
+  document.getElementById(cfg.fileNameId).textContent = '';
+  updateRoster(kind);
+  showRosterStatus(kind, 'Đã xóa danh sách đã lưu trên trình duyệt này.', true);
 }
 
-function updateRoster(){
-  const ta = document.getElementById('employeeRoster');
-  const dl = document.getElementById('employeeList');
+function updateRoster(kind='employee'){
+  const cfg = ROSTER_CONFIGS[kind];
+  const ta = document.getElementById(cfg.rosterId);
+  const dl = document.getElementById(cfg.listId);
   if(!ta || !dl) return;
-  const names = ta.value.split('\n').map(s=>s.trim()).filter(Boolean);
-  dl.innerHTML = names.map(n=>`<option value="${esc(n)}"></option>`).join('');
-  saveRosterToStorage(ta.value);
+  const items = ta.value.split('\n').map(s=>s.trim()).filter(Boolean);
+  dl.innerHTML = items.map(n=>`<option value="${esc(n)}"></option>`).join('');
+  saveRosterToStorage(cfg.storageKey, ta.value);
 }
 
-function looksLikeName(t){
+function looksLikeName_impl(t){
   if(!t || t.length < 5 || t.length > 60) return false;
   if(!/[a-zA-ZÀ-ỹ]/.test(t)) return false;
   if(!/\s/.test(t)) return false;
@@ -665,47 +724,60 @@ function looksLikeName(t){
   return true;
 }
 
-function handleRosterFile(file){
+function looksLikeEquipment_impl(t){
+  if(!t) return false;
+  t = t.trim();
+  if(t.length < 2 || t.length > 60) return false;
+  if(/^\d+$/.test(t)) return false;
+  if(!/[a-zA-ZÀ-ỹ0-9]/.test(t)) return false;
+  const bad = /^(stt|số\s*tt|tên\s*thiết\s*bị|loại\s*thiết\s*bị|số\s*lượng|đơn\s*vị\s*tính|ghi\s*chú|tình\s*trạng|mã\s*thiết\s*bị|mã\s*số|năm\s*sản\s*xuất|xuất\s*xứ|nơi\s*sản\s*xuất|đơn\s*vị\s*quản\s*lý|bộ\s*phận|ngày\s*mua|nhà\s*cung\s*cấp)/i;
+  if(bad.test(t)) return false;
+  return true;
+}
+
+function handleRosterFile(file, kind='employee'){
   if(!file) return;
-  document.getElementById('rosterFileName').textContent = file.name;
+  const cfg = ROSTER_CONFIGS[kind];
+  document.getElementById(cfg.fileNameId).textContent = file.name;
   const reader = new FileReader();
   reader.onload = (e)=>{
     try{
       const data = new Uint8Array(e.target.result);
       const wb = XLSX.read(data, {type:'array'});
-      const names = new Set();
+      const items = new Set();
       wb.SheetNames.forEach(sn=>{
         const sheet = wb.Sheets[sn];
         const rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''});
         rows.forEach(row=>{
           row.forEach(cell=>{
-            if(typeof cell === 'string' && looksLikeName(cell)){
-              names.add(cell.trim());
+            if(typeof cell === 'string' && cfg.filterFn(cell)){
+              items.add(cell.trim());
             }
           });
         });
       });
-      const list = [...names];
-      const ta = document.getElementById('employeeRoster');
+      const list = [...items];
+      const ta = document.getElementById(cfg.rosterId);
       ta.value = list.join('\n');
-      updateRoster();
-      showRosterStatus(`Đã nạp ${list.length} tên từ file "${file.name}". Mở mục "Xem / chỉnh sửa danh sách" để kiểm tra và xóa dòng thừa nếu có.`, true);
+      updateRoster(kind);
+      showRosterStatus(kind, `Đã nạp ${list.length} ${cfg.noun} từ file "${file.name}". Mở mục "Xem / chỉnh sửa danh sách" để kiểm tra và xóa dòng thừa nếu có.`, true);
     }catch(err){
       console.error(err);
-      showRosterStatus('Không đọc được file này. Hãy kiểm tra định dạng (.xlsx/.xls/.csv) rồi thử lại.', false);
+      showRosterStatus(kind, 'Không đọc được file này. Hãy kiểm tra định dạng (.xlsx/.xls/.csv) rồi thử lại.', false);
     }
   };
   reader.readAsArrayBuffer(file);
 }
 
-function showRosterStatus(msg, ok){
-  let el = document.getElementById('rosterStatus');
+function showRosterStatus(kind, msg, ok){
+  const cfg = ROSTER_CONFIGS[kind];
+  let el = document.getElementById(cfg.statusId);
   if(!el){
     el = document.createElement('div');
-    el.id = 'rosterStatus';
+    el.id = cfg.statusId;
     el.style.fontSize = '12.5px';
     el.style.marginTop = '8px';
-    document.getElementById('rosterFileName').parentElement.parentElement.after(el);
+    document.getElementById(cfg.anchorId).parentElement.parentElement.after(el);
   }
   el.textContent = msg;
   el.style.color = ok ? 'var(--accent-2)' : 'var(--accent)';
@@ -760,7 +832,7 @@ function addPosRow(containerId, labelPlaceholder='Vị trí/Thiết bị', label
   row.className = 'pos-row';
   const options = STATUS_OPTIONS.map(o=>`<option value="${esc(o)}"${o===status?' selected':''}>${esc(o)}</option>`).join('');
   row.innerHTML = `
-    <input type="text" class="l-label" placeholder="${esc(labelPlaceholder)}" value="${esc(label)}">
+    <input type="text" class="l-label" list="equipmentList" placeholder="${esc(labelPlaceholder)}" value="${esc(label)}">
     <input type="text" class="l-employee" list="employeeList" placeholder="Tên nhân viên" value="${esc(employee)}">
     <select class="l-status">${options}</select>
     <button type="button" class="btn btn-remove" onclick="this.parentElement.remove()">✕</button>
@@ -839,8 +911,101 @@ function readCompanies(containerId){
 }
 
 /* ============================================================
-   SEED DEFAULT ROWS (matching the original mẫu)
+   KẾT LUẬN: tự động tổng hợp (rule-based) + tùy chọn viết lại bằng AI (Gemini)
    ============================================================ */
+const GEMINI_KEY_STORAGE = 'ksnb_bienban_gemini_key';
+
+function saveGeminiKey(){
+  const val = document.getElementById('geminiApiKey').value.trim();
+  try{ window.localStorage.setItem(GEMINI_KEY_STORAGE, val); }catch(e){ /* ignore */ }
+}
+
+function loadGeminiKey(){
+  try{ return window.localStorage.getItem(GEMINI_KEY_STORAGE) || ''; }catch(e){ return ''; }
+}
+
+function gatherConclusionFacts(prefix){
+  const posContainers = [prefix+'_dieuDo', prefix+'_coGioi', prefix+'_ketoan', prefix+'_hcbv'];
+  let total = 0;
+  const absent = [];
+  posContainers.forEach(cid=>{
+    if(!document.getElementById(cid)) return;
+    readPosRows(cid).forEach(r=>{
+      total++;
+      if(r.status && r.status.startsWith('Không')){
+        absent.push({ label: r.label || '(chưa đặt tên)', employee: r.employee || '(chưa ghi tên)' });
+      }
+    });
+  });
+  readCompanies(prefix+'_companies').forEach(c=>{
+    c.devices.forEach(d=>{
+      total++;
+      if(d.status && d.status.startsWith('Không')){
+        absent.push({ label: `${c.name || 'Công ty …'} - ${d.label || '(chưa đặt tên)'}`, employee: d.employee || '(chưa ghi tên)' });
+      }
+    });
+  });
+  return { total, absent };
+}
+
+function buildConclusionText(facts){
+  if(facts.total === 0){
+    return 'Chưa có dữ liệu vị trí/thiết bị nào được đánh dấu tình trạng để tổng hợp kết luận. Hãy điền các mục Bộ phận điều độ, Cơ giới, Kế toán, Hành chính bảo vệ... trước khi dùng nút này.';
+  }
+  if(facts.absent.length === 0){
+    return `Qua kiểm tra thực tế, toàn bộ ${facts.total} vị trí/thiết bị được kiểm tra đều đang có mặt tại vị trí làm việc theo đúng quy định. Đề nghị các bộ phận tiếp tục duy trì việc chấp hành nghiêm thời gian làm việc.`;
+  }
+  const lines = facts.absent.map(a=>`- ${a.label}: ${a.employee}`).join('\n');
+  return `Qua kiểm tra thực tế ${facts.total} vị trí/thiết bị, ghi nhận ${facts.absent.length} vị trí không có mặt tại vị trí làm việc tại thời điểm kiểm tra, cụ thể:\n${lines}\n\nĐề nghị các bộ phận liên quan kiểm tra, chấn chỉnh và nhắc nhở nhân viên chấp hành nghiêm quy định về thời gian làm việc.`;
+}
+
+function autoConclude(prefix){
+  const facts = gatherConclusionFacts(prefix);
+  document.getElementById(prefix+'_ketluan').value = buildConclusionText(facts);
+}
+
+async function aiConclude(prefix){
+  const key = loadGeminiKey();
+  const statusEl = document.getElementById(prefix+'_aiStatus');
+  const btn = document.getElementById(prefix+'_aiBtn');
+  if(!key){
+    statusEl.textContent = 'Chưa có Gemini API key — dán key vào ô "Gemini API key" ở đầu trang trước khi dùng tính năng này.';
+    statusEl.className = 'status-msg err';
+    return;
+  }
+  const facts = gatherConclusionFacts(prefix);
+  if(facts.total === 0){
+    statusEl.textContent = 'Chưa có dữ liệu vị trí/thiết bị nào để tổng hợp. Hãy điền các mục kiểm tra trước.';
+    statusEl.className = 'status-msg err';
+    return;
+  }
+  const draftFacts = buildConclusionText(facts);
+  statusEl.textContent = 'Đang gọi AI để viết lại kết luận...';
+  statusEl.className = 'status-msg';
+  btn.disabled = true;
+  try{
+    const prompt = `Bạn là trợ lý soạn thảo văn bản hành chính tiếng Việt cho Ban Kiểm soát nội bộ của một công ty cảng biển. Dựa CHÍNH XÁC vào dữ liệu kiểm tra dưới đây (không bịa thêm thông tin không có), hãy viết lại thành một đoạn kết luận biên bản kiểm tra: văn phong hành chính, chuyên nghiệp, súc tích, mạch lạc. Chỉ trả về đúng đoạn văn kết luận, không thêm tiêu đề hay lời giải thích nào khác.\n\nDữ liệu kiểm tra:\n${draftFacts}`;
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(key)}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ contents:[{ parts:[{ text: prompt }] }] })
+    });
+    const data = await resp.json();
+    if(data.error) throw new Error(data.error.message || 'Lỗi không xác định từ Gemini API.');
+    const text = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
+    if(!text) throw new Error('Không nhận được nội dung trả về từ Gemini.');
+    document.getElementById(prefix+'_ketluan').value = text.trim();
+    statusEl.textContent = 'Đã viết lại kết luận bằng AI.';
+    statusEl.className = 'status-msg ok';
+  }catch(err){
+    console.error(err);
+    statusEl.textContent = 'Lỗi khi gọi Gemini API: ' + err.message + ' (kiểm tra lại API key, hoặc dùng nút "Tự động tổng hợp" thay thế).';
+    statusEl.className = 'status-msg err';
+  }finally{
+    btn.disabled = false;
+  }
+}
+
 function seed(){
   // GD1
   addPersonRow('gd1_ksnb','Nguyễn Duy Khôi','Nhân viên');
@@ -850,7 +1015,7 @@ function seed(){
     .forEach(n=>addPosRow('gd1_coGioi','Tên thiết bị', n));
   ['Trưởng ca','Cầu bến A1-3','Cầu bến B1','Cầu bến B2','Cầu bến B3','Cầu bến B4','Cầu bến B5'].forEach(n=>addPosRow('gd1_dieuDo','Vị trí', n));
   ['Nhân viên Trạm cân Khu A','Nhân viên Trạm cân Khu B'].forEach(n=>addPosRow('gd1_ketoan','Vị trí', n));
-  ['Nhân viên Trực ban an ninh','Nhân viên trực tại các vị trí: B1, B2, B3, B4, B5, A1, A3'].forEach(n=>addPosRow('gd1_hcbv','Vị trí', n));
+  ['Nhân viên Trực ban an ninh','Nhân viên bảo vệ B1','Nhân viên bảo vệ B2','Nhân viên bảo vệ B3','Nhân viên bảo vệ B4','Nhân viên bảo vệ B5','Nhân viên bảo vệ A1','Nhân viên bảo vệ A3'].forEach(n=>addPosRow('gd1_hcbv','Vị trí', n));
   ['Công ty Dịch Vụ Cảng','Công ty Cảng Phía Nam','Công ty Quốc Việt Hoa'].forEach(n=>addCompany('gd1_companies', n));
   addLabelRow('gd1_kytenTrai','Chức danh ký tên','CẢNG GÒ DẦU');
 
@@ -883,9 +1048,15 @@ function seed(){
   addPersonRow('vp_dvien','','');
   addLabelRow('vp_kytenTrai','Chức danh ký tên','CẢNG GÒ DẦU');
 
-  const savedRoster = loadRosterFromStorage();
-  document.getElementById('employeeRoster').value = (savedRoster !== null && savedRoster !== '') ? savedRoster : 'Nguyễn Duy Khôi';
-  updateRoster();
+  const savedEmployeeRoster = loadRosterFromStorage(ROSTER_CONFIGS.employee.storageKey);
+  document.getElementById('employeeRoster').value = (savedEmployeeRoster !== null && savedEmployeeRoster !== '') ? savedEmployeeRoster : 'Nguyễn Duy Khôi';
+  updateRoster('employee');
+
+  const savedEquipmentRoster = loadRosterFromStorage(ROSTER_CONFIGS.equipment.storageKey);
+  document.getElementById('equipmentRoster').value = savedEquipmentRoster || '';
+  updateRoster('equipment');
+
+  document.getElementById('geminiApiKey').value = loadGeminiKey();
 }
 seed();
 
