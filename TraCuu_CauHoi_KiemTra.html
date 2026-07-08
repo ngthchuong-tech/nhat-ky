@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Thư viện Câu hỏi Kiểm tra — Ban KSNB</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#eef2f7;color:#1a1a1a;min-height:100vh}
+.top{background:linear-gradient(135deg,#1F4E78,#164267);color:#fff;padding:14px 20px}
+.top-row{max-width:1300px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+.top h1{font-size:16px;font-weight:600}
+.top small{font-size:11px;opacity:.75}
+.search-wrap{background:#fff;padding:10px 20px;border-bottom:1px solid #e5e9ee}
+.search-inner{max-width:1300px;margin:0 auto;position:relative}
+.search-inner input{width:100%;height:40px;font-size:14px;padding:0 14px;border:1.5px solid #d6dde6;border-radius:20px;outline:none;background:#f7f9fb}
+.search-inner input:focus{border-color:#2E75B6;background:#fff}
+.filters-wrap{background:#fff;border-bottom:1px solid #e5e9ee}
+.filters{padding:6px 20px;max-width:1300px;margin:0 auto;display:flex;gap:6px;overflow-x:auto;align-items:center}
+.filters label{font-size:11px;color:#9aa4b0;font-weight:600;text-transform:uppercase;margin-right:4px;flex-shrink:0}
+.chip{padding:4px 12px;border-radius:20px;border:1px solid #d8dee6;font-size:12px;cursor:pointer;background:#fff;color:#556;white-space:nowrap;flex-shrink:0}
+.chip.on{background:#1F4E78;color:#fff;border-color:transparent}
+.layout{display:grid;grid-template-columns:1fr 340px;gap:16px;max-width:1300px;margin:16px auto;padding:0 20px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}}
+.stats{font-size:12px;color:#8a94a0;margin-bottom:10px}
+.card{background:#fff;border:1px solid #e8edf2;border-left:4px solid #1F4E78;border-radius:10px;padding:13px 15px;margin-bottom:10px}
+.tag-row{display:flex;gap:6px;margin-bottom:6px}
+.tag{font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px}
+.tag.qt{background:#EAF1F8;color:#1F4E78}
+.tag.buoc{background:#F0E6CC;color:#8a6d1a}
+.ten-buoc{font-weight:600;font-size:14px;margin-bottom:3px}
+.bo-phan{font-size:11.5px;color:#8a94a0;margin-bottom:7px}
+.field{font-size:13px;margin-bottom:5px;line-height:1.5}
+.field b{color:#1F4E78}
+.rui-ro{background:#fdf1f0;border-left:3px solid #c0392b;padding:6px 9px;border-radius:4px}
+.rui-ro b{color:#c0392b}
+label.chk{display:flex;gap:7px;align-items:flex-start;margin-top:8px;font-size:13px;font-weight:600;color:#1F4E78;cursor:pointer}
+.expand-btn{margin-top:9px;font-size:11.5px;background:none;border:1px solid #d8dee6;border-radius:14px;padding:3px 11px;cursor:pointer;color:#1F4E78}
+.derived-box{display:none;margin-top:9px;border-top:1px dashed #e5e9ee;padding-top:9px}
+.derived-box.open{display:block}
+.derived-item{display:flex;gap:7px;align-items:flex-start;font-size:12px;margin-bottom:7px;padding:5px 7px;border-radius:5px}
+.derived-item .dtag{flex-shrink:0;font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:9px;color:#fff;margin-top:1px}
+.derived-item.dv .dtag{background:#c98a12}.derived-item.dv{background:#fff9ee}
+.derived-item.th .dtag{background:#4c8c3f}.derived-item.th{background:#f2f9f0}
+.derived-item.dr .dtag{background:#c0392b}.derived-item.dr{background:#fdf1f0}
+.derived-item label.chk{margin:0;font-weight:400;color:#1a1a1a;flex:1}
+#sidebar{background:#fff;border:1px solid #e8edf2;border-radius:10px;padding:15px;align-self:start;position:sticky;top:16px}
+#sidebar h2{font-size:14px;color:#1F4E78;margin-bottom:8px}
+#sidebar .hint{font-size:11.5px;color:#8a94a0;margin-bottom:10px}
+#selected-list{max-height:50vh;overflow-y:auto}
+.sel-item{font-size:12px;border-bottom:1px solid #eef1f4;padding:7px 0}
+.sel-item button{border:none;background:none;color:#c0392b;font-size:11px;cursor:pointer;padding:0;margin-top:3px}
+#sidebar .actions{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+#sidebar .actions button{padding:8px;border-radius:6px;border:1px solid #1F4E78;background:#fff;color:#1F4E78;cursor:pointer;font-size:12.5px}
+#sidebar .actions button.primary{background:#1F4E78;color:#fff}
+.empty{text-align:center;padding:40px 16px;color:#aab;font-size:13px}
+@media print{.top,.search-wrap,.filters-wrap,#sidebar .actions,label.chk{display:none!important}.layout{grid-template-columns:1fr}#sidebar{display:block!important;position:static}.card{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="top"><div class="top-row">
+  <h1>📋 Thư viện Câu hỏi Kiểm tra — Ban KSNB</h1>
+  <small>32 cụm câu hỏi | Cập nhật: 08/07/2026 10:15</small>
+</div></div>
+<div class="search-wrap"><div class="search-inner">
+  <input type="text" id="q" placeholder="Tìm theo từ khóa: cầu bến, hóa đơn, xe ra vào..." autocomplete="off">
+</div></div>
+<div class="filters-wrap"><div class="filters" id="filtersQT"><label>Quy trình</label></div></div>
+
+<div class="layout">
+  <div>
+    <div class="stats" id="stats"></div>
+    <div id="list"></div>
+  </div>
+  <div id="sidebar">
+    <h2>Danh sách buổi làm việc</h2>
+    <div class="hint">Tick chọn câu hỏi bên trái để gom vào đây.</div>
+    <div id="selected-list"></div>
+    <div class="actions">
+      <button class="primary" onclick="window.print()">🖨️ In</button>
+      <button onclick="copyList()">📋 Sao chép văn bản</button>
+      <button onclick="clearList()">🗑️ Xóa hết</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA = [{"nhomCauHoi":"QA111-B1-1","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B1","tenBuoc":"Lập kế hoạch khai thác cầu bến dự kiến","boPhan":"TB Khai thác Điều độ","trungTam":{"yeuCau":"Kế hoạch cầu bến lập trên cơ sở kế hoạch sản lượng của P.Kinh doanh; Ban GĐ phê duyệt khi cần; thông báo bộ phận liên quan","cauHoi":"Kế hoạch khai thác cầu bến dự kiến có được lập dựa trên kế hoạch sản lượng do phòng Kinh doanh cung cấp không? Đề nghị xuất trình văn bản/kế hoạch sản lượng.","bangChung":"Kế hoạch cầu bến (văn bản/email)","ruiRo":"Không có kế hoạch bằng văn bản, chỉ thỏa thuận miệng"},"phaiSinh":[{"loai":"Đầu vào","cauHoi":"Phòng Kinh doanh có gửi kế hoạch sản lượng định kỳ (tháng/quý) cho Ban Khai thác Điều độ không? Gửi vào thời điểm nào, bằng hình thức gì (văn bản, email, hệ thống)? Đề nghị xuất trình minh chứng gửi/nhận gần nhất."},{"loai":"Thực hiện","cauHoi":"Khi lập kế hoạch cầu bến, có xin ý kiến chỉ đạo của Ban Giám đốc Cảng theo đúng quy định (khi cần) không? Xin ý kiến bằng hình thức gì (tờ trình, họp, email)? Có minh chứng phê duyệt/bút phê không?"},{"loai":"Đầu ra","cauHoi":"Kế hoạch khai thác cầu bến sau khi ban hành có phải báo cáo cơ quan quản lý nhà nước (Cảng vụ...) không? Việc báo cáo thực hiện như thế nào, có minh chứng (công văn, biên nhận) không?"},{"loai":"Đầu ra","cauHoi":"Kế hoạch cầu bến có được lưu trữ để đối chiếu khi có kiểm tra sau này không? Lưu ở đâu, thời hạn lưu bao lâu?"}]},{"nhomCauHoi":"QA111-B1-2","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B1","tenBuoc":"Lập kế hoạch khai thác cầu bến dự kiến","boPhan":"TB Khai thác Điều độ","trungTam":{"yeuCau":"Kế hoạch cầu bến lập trên cơ sở kế hoạch sản lượng của P.Kinh doanh; Ban GĐ phê duyệt khi cần; thông báo bộ phận liên quan","cauHoi":"Kế hoạch cầu bến có được thông báo tới các bộ phận liên quan (cơ giới, bảo vệ, tài vụ...) không? Bằng hình thức nào, có lưu vết không?","bangChung":"Thông báo/email gửi các bộ phận","ruiRo":"Không lưu email/thông báo, khó truy vết"},"phaiSinh":[{"loai":"Đầu vào","cauHoi":"Danh sách các bộ phận cần nhận thông báo kế hoạch cầu bến có được quy định rõ (đơn vị/cá nhân cụ thể) không, hay tùy từng lần triển khai?"},{"loai":"Đầu ra","cauHoi":"Các bộ phận nhận thông báo có phản hồi xác nhận đã nhận và đã chuẩn bị theo kế hoạch không? Có minh chứng phản hồi không?"}]},{"nhomCauHoi":"QA111-B2-1","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B2","tenBuoc":"Tiếp nhận thông tin tàu đến","boPhan":"TB Khai thác Điều độ","trungTam":{"yeuCau":"Nhận thông báo tàu đến, xác nhận chấp nhận/chưa chấp nhận; chuyển kế hoạch cho trưởng ca; P.KD gửi hợp đồng/thông tin KH trước khi tàu cập","cauHoi":"Phiếu thông tin tàu đến (MA111/06) có được lập đầy đủ, đúng thời điểm không?","bangChung":"MA111/06 Phiếu thông tin tàu đến","ruiRo":"Phiếu lập trễ hoặc thiếu thông tin"},"phaiSinh":[{"loai":"Đầu vào","cauHoi":"Thông tin tàu đến do khách hàng/đại lý cung cấp qua kênh nào (điện thoại, email, văn bản)? Có được ghi nhận ngay tại thời điểm nhận không?"},{"loai":"Đầu ra","cauHoi":"Phiếu thông tin tàu đến sau khi lập có được chuyển cho Trưởng ca Điều độ và các bộ phận liên quan kịp thời không, bằng hình thức gì?"}]},{"nhomCauHoi":"QA111-B2-2","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B2","tenBuoc":"Tiếp nhận thông tin tàu đến","boPhan":"TB Khai thác Điều độ","trungTam":{"yeuCau":"Nhận thông báo tàu đến, xác nhận chấp nhận/chưa chấp nhận; chuyển kế hoạch cho trưởng ca; P.KD gửi hợp đồng/thông tin KH trước khi tàu cập","cauHoi":"Thông báo chấp nhận/chưa chấp nhận tàu cập cầu có bằng văn bản hay chỉ qua điện thoại? Nếu qua điện thoại có ghi nhận lại không?","bangChung":"Thông báo chấp nhận cập cầu (văn bản/tin nhắn)","ruiRo":"Xác nhận miệng không lưu vết, dễ tranh chấp"},"phaiSinh":[{"loai":"Đầu vào","cauHoi":"Trước khi xác nhận chấp nhận tàu cập cầu, có kiểm tra tình trạng cầu bến thực tế (đang có tàu khác hay trống) không? Căn cứ vào đâu?"},{"loai":"Thực hiện","cauHoi":"Ai là người có thẩm quyền ký/xác nhận chấp nhận tàu cập cầu? Có đúng thẩm quyền theo phân công không?"},{"loai":"Đầu ra","cauHoi":"Sau khi xác nhận, thông tin có được cập nhật vào kế hoạch cầu bến chung để tránh chồng chéo với tàu khác không?"}]},{"nhomCauHoi":"QA111-B2-3","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B2","tenBuoc":"Tiếp nhận thông tin tàu đến","boPhan":"TB Khai thác Điều độ","trungTam":{"yeuCau":"Nhận thông báo tàu đến, xác nhận chấp nhận/chưa chấp nhận; chuyển kế hoạch cho trưởng ca; P.KD gửi hợp đồng/thông tin KH trước khi tàu cập","cauHoi":"Hợp đồng/thông tin khách hàng (MA111/07) do phòng KD cung cấp có đầy đủ trước khi tàu cập cầu không?","bangChung":"MA111/07 Thông tin hàng hóa, khách hàng; hợp đồng","ruiRo":"Nhận tàu khi chưa có hợp đồng/thông tin KH đầy đủ"},"phaiSinh":[{"loai":"Đầu vào","cauHoi":"Phòng Kinh doanh gửi hợp đồng/thông tin khách hàng cho Cảng vào thời điểm nào so với thời điểm tàu cập? Có đúng quy định 'trước khi tàu bắt đầu cập cầu' không?"},{"loai":"Đầu ra","cauHoi":"Trường hợp chưa có hợp đồng chính thức mà đã cho tàu cập cầu làm hàng, có văn bản cam kết/bổ sung hợp đồng sau đó không? Ai phê duyệt việc chấp nhận rủi ro này?"}]},{"nhomCauHoi":"QA111-B2-4","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B2","tenBuoc":"Tiếp nhận thông tin tàu đến","boPhan":"TB Khai thác Điều độ","trungTam":{"yeuCau":"Nhận thông báo tàu đến, xác nhận chấp nhận/chưa chấp nhận; chuyển kế hoạch cho trưởng ca; P.KD gửi hợp đồng/thông tin KH trước khi tàu cập","cauHoi":"Các order bổ sung của tàu/đại lý (tàu lai, cầu bờ, xe cứu hỏa, điện nước) có được ghi nhận và xử lý kịp thời không?","bangChung":"Giấy order của tàu/đại lý","ruiRo":"Order bị bỏ sót hoặc xử lý chậm"},"phaiSinh":[{"loai":"Thực hiện","cauHoi":"Việc xử lý các order bổ sung có được phân công rõ bộ phận thực hiện và thời hạn xử lý không?"},{"loai":"Đầu ra","cauHoi":"Chi phí phát sinh từ các order bổ sung có được đối chiếu, thu đúng, thu đủ khi quyết toán với tàu/đại lý không?"}]},{"nhomCauHoi":"QA111-B3-1","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B3","tenBuoc":"Giấy báo sản xuất","boPhan":"Trưởng ca Điều độ","trungTam":{"yeuCau":"Lập giấy báo sản xuất/kế hoạch sản xuất gửi Đội trưởng cơ giới/DVC, Bảo vệ, Tài vụ, Điều độ trực ca","cauHoi":"Giấy báo sản xuất (MA111/01) có được lập và gửi đầy đủ 4 bộ phận liên quan (cơ giới/DVC, bảo vệ, tài vụ, điều độ trực ca) không?","bangChung":"MA111/01 Giấy báo sản xuất kèm xác nhận đã nhận","ruiRo":"Giấy báo sản xuất thiếu bộ phận nhận"},"phaiSinh":[{"loai":"Đầu vào","cauHoi":"Giấy báo sản xuất được lập dựa trên kế hoạch nào (kế hoạch cầu bến ở B1 hay chỉ đạo trực tiếp)? Có nhất quán với kế hoạch đã duyệt không?"},{"loai":"Đầu ra","cauHoi":"Các bộ phận nhận giấy báo sản xuất có ký xác nhận đã nhận/đã hiểu nội dung không? Nếu có sai lệch giữa các lần gửi, ai chịu trách nhiệm cập nhật?"}]},{"nhomCauHoi":"QA111-B3-2","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B3","tenBuoc":"Giấy báo sản xuất","boPhan":"Trưởng ca Điều độ","trungTam":{"yeuCau":"Lập giấy báo sản xuất/kế hoạch sản xuất gửi Đội trưởng cơ giới/DVC, Bảo vệ, Tài vụ, Điều độ trực ca","cauHoi":"Thời điểm lập giấy báo sản xuất có đảm bảo đủ thời gian chuẩn bị cho các bộ phận không?","bangChung":"MA111/01 (đối chiếu thời gian lập với giờ tàu cập)","ruiRo":"Lập quá sát giờ tàu cập, các bộ phận bị động"},"phaiSinh":[{"loai":"Thực hiện","cauHoi":"Có quy định thời gian tối thiểu (bao nhiêu giờ trước khi tàu cập) phải hoàn tất giấy báo sản xuất không? Đối chiếu vài hồ sơ gần đây có tuân thủ không?"}]},{"nhomCauHoi":"QA111-B4-1","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B4","tenBuoc":"Chuẩn bị làm hàng","boPhan":"Trưởng ca","trungTam":{"yeuCau":"Hàng lỏng: kiểm tra đường ống, PCCC, chống tràn dầu; thông báo chủ hàng thời gian tàu cập; thông báo tài vụ bố trí cân hàng","cauHoi":"Đối với hàng lỏng/nguy hiểm, có biên bản/checklist kiểm tra đường ống, khớp nối, PCCC, dụng cụ chống tràn dầu trước khi làm hàng không?","bangChung":"Biên bản kiểm tra an toàn PCCC/chống tràn dầu","ruiRo":"Bỏ qua kiểm tra an toàn với hàng nguy hiểm"},"phaiSinh":[{"loai":"Đầu vào","cauHoi":"Checklist kiểm tra an toàn cho hàng lỏng/nguy hiểm có được ban hành chính thức (mẫu quy định) hay mỗi lần làm theo kinh nghiệm cá nhân?"},{"loai":"Thực hiện","cauHoi":"Ai là người ký xác nhận đã kiểm tra đạt yêu cầu an toàn trước khi cho phép làm hàng?"},{"loai":"Đầu ra","cauHoi":"Biên bản kiểm tra an toàn có được lưu trữ cùng hồ sơ tàu để phục vụ kiểm tra của cơ quan PCCC/môi trường khi cần không?"}]},{"nhomCauHoi":"QA111-B4-2","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B4","tenBuoc":"Chuẩn bị làm hàng","boPhan":"Trưởng ca","trungTam":{"yeuCau":"Hàng lỏng: kiểm tra đường ống, PCCC, chống tràn dầu; thông báo chủ hàng thời gian tàu cập; thông báo tài vụ bố trí cân hàng","cauHoi":"Chủ hàng có được thông báo thời gian tàu dự kiến cập đúng hạn để chuẩn bị phương tiện, nhân sự không?","bangChung":"Thông báo cho chủ hàng (văn bản/tin nhắn)","ruiRo":"Thông báo quá sát giờ tàu cập"},"phaiSinh":[{"loai":"Đầu vào","cauHoi":"Thời điểm thông báo cho chủ hàng có được tính toán đủ thời gian cho chủ hàng chuẩn bị (theo cam kết/SLA nào) không?"}]},{"nhomCauHoi":"QA111-B5-1","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B5","tenBuoc":"Điều động thiết bị cơ giới","boPhan":"Trưởng ca","trungTam":{"yeuCau":"Ưu tiên: cơ giới cảng → Vendor DVC → thuê ngoài (khi GĐ phê duyệt); báo cáo hàng ngày tình trạng sẵn sàng thiết bị","cauHoi":"Việc điều động thiết bị cơ giới có tuân thủ đúng trình tự ưu tiên: Cơ giới cảng → Vendor DVC → thuê ngoài (khi được GĐ phê duyệt) không?","bangChung":"Văn bản/điện thoại từ chối của cơ giới cảng, xác nhận Vendor DVC","ruiRo":"Bỏ qua thứ tự ưu tiên, thuê ngoài khi cơ giới cảng/Vendor còn khả năng đáp ứng — dấu hiệu thiên vị trong lựa chọn đơn vị cung cấp"},"phaiSinh":[{"loai":"Đầu vào","cauHoi":"Việc xác định cơ giới cảng 'không đáp ứng được yêu cầu' dựa trên tiêu chí cụ thể nào (số lượng thiết bị, tình trạng hỏng hóc...)? Có văn bản/biên bản xác nhận từ chối không?"},{"loai":"Thực hiện","cauHoi":"Ai là người quyết định chuyển từ cơ giới cảng sang Vendor DVC? Căn cứ và thẩm quyền quyết định?"},{"loai":"Đầu ra","cauHoi":"Chi phí thuê Vendor/thuê ngoài có được đối chiếu với đơn giá cơ giới cảng để đánh giá chênh lệch chi phí phát sinh không?"}]},{"nhomCauHoi":"QA111-B5-2","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B5","tenBuoc":"Điều động thiết bị cơ giới","boPhan":"Trưởng ca","trungTam":{"yeuCau":"Ưu tiên: cơ giới cảng → Vendor DVC → thuê ngoài (khi GĐ phê duyệt); báo cáo hàng ngày tình trạng sẵn sàng thiết bị","cauHoi":"Có báo cáo hàng ngày về tình trạng hoạt động và sẵn sàng của thiết bị cơ giới/Vendor không? Đề nghị xuất trình báo cáo.","bangChung":"Báo cáo tình trạng thiết bị hàng ngày","ruiRo":"Không có báo cáo định kỳ, thiếu căn cứ lập kế hoạch"},"phaiSinh":[{"loai":"Đầu ra","cauHoi":"Báo cáo tình trạng thiết bị hàng ngày có được tổng hợp định kỳ (tuần/tháng) để đánh giá xu hướng và lập kế hoạch bảo trì/đầu tư không?"}]},{"nhomCauHoi":"QA111-B5-3","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B5","tenBuoc":"Điều động thiết bị cơ giới","boPhan":"Trưởng ca","trungTam":{"yeuCau":"Ưu tiên: cơ giới cảng → Vendor DVC → thuê ngoài (khi GĐ phê duyệt); báo cáo hàng ngày tình trạng sẵn sàng thiết bị","cauHoi":"Trường hợp thuê đơn vị bên ngoài, có văn bản phê duyệt của Giám đốc Cảng không?","bangChung":"Văn bản phê duyệt thuê ngoài của GĐ Cảng","ruiRo":"Thuê ngoài không có phê duyệt"},"phaiSinh":[{"loai":"Đầu vào","cauHoi":"Trước khi trình GĐ phê duyệt thuê ngoài, có báo giá/so sánh từ ít nhất 2-3 đơn vị để đảm bảo cạnh tranh, minh bạch không?"}]},{"nhomCauHoi":"QA111-B6-1","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B6","tenBuoc":"Chuẩn bị đón tàu cập cầu","boPhan":"Trưởng ca/Điều độ bến","trungTam":{"yeuCau":"Kiểm tra vệ sinh cầu, hạ tầng (đệm va, cọc bích, PCCC, biển báo), chiều dài cầu còn lại, thủy triều/gió, thông báo các bộ phận đón tàu","cauHoi":"Có checklist/biên bản kiểm tra hạ tầng cầu bến (đệm va, cọc bích, PCCC, biển báo) trước mỗi lượt đón tàu không?","bangChung":"Biên bản/nhật ký kiểm tra hạ tầng cầu bến","ruiRo":"Không lưu hồ sơ kiểm tra hạ tầng, khó truy trách nhiệm khi có sự cố va chạm"},"phaiSinh":[{"loai":"Đầu vào","cauHoi":"Checklist kiểm tra hạ tầng cầu bến có được cập nhật định kỳ theo tình trạng thực tế (hao mòn đệm va, cọc bích...) không?"},{"loai":"Đầu ra","cauHoi":"Nếu phát hiện hạ tầng không đạt yêu cầu, có quy trình báo cáo và tạm dừng tiếp nhận tàu cho đến khi khắc phục không?"}]},{"nhomCauHoi":"QA111-B6-2","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B6","tenBuoc":"Chuẩn bị đón tàu cập cầu","boPhan":"Trưởng ca/Điều độ bến","trungTam":{"yeuCau":"Kiểm tra vệ sinh cầu, hạ tầng (đệm va, cọc bích, PCCC, biển báo), chiều dài cầu còn lại, thủy triều/gió, thông báo các bộ phận đón tàu","cauHoi":"Việc kiểm tra thủy triều, hướng gió, vùng nước trước cầu có được ghi nhận làm căn cứ phương án cập cầu an toàn không?","bangChung":"Bảng thủy triều tham chiếu, ghi chép phương án cập cầu","ruiRo":"Không ghi nhận căn cứ, phương án cập cầu thiếu cơ sở"},"phaiSinh":[{"loai":"Đầu ra","cauHoi":"Phương án cập cầu có được đối chiếu lại với thực tế sau khi tàu cập để rút kinh nghiệm không?"}]},{"nhomCauHoi":"QA111-B7-1","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B7","tenBuoc":"Tiếp nhận tàu vào cầu cảng","boPhan":"Điều độ bến","trungTam":{"yeuCau":"Phối hợp thuyền trưởng/hoa tiêu/tàu lai, buộc dây đúng thứ tự, thu thập hồ sơ tàu","cauHoi":"Nhật ký trực ca Điều độ (MA111/03) có ghi nhận đầy đủ thời gian, diễn biến quá trình tiếp nhận tàu vào cầu không?","bangChung":"MA111/03 Nhật ký trực ca Điều độ","ruiRo":"Nhật ký ghi thiếu/chậm, không phản ánh đúng diễn biến thực tế"},"phaiSinh":[{"loai":"Thực hiện","cauHoi":"Nhật ký trực ca có được ghi theo thời gian thực (tại thời điểm xảy ra) hay ghi bổ sung sau đó? Có dấu hiệu ghi khống/ghi trễ không?"}]},{"nhomCauHoi":"QA111-B7-2","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B7","tenBuoc":"Tiếp nhận tàu vào cầu cảng","boPhan":"Điều độ bến","trungTam":{"yeuCau":"Phối hợp thuyền trưởng/hoa tiêu/tàu lai, buộc dây đúng thứ tự, thu thập hồ sơ tàu","cauHoi":"Hồ sơ tàu (danh sách thuyền viên, Bảng khai chung, hồ sơ hàng hóa, cam kết an ninh) có được thu thập đầy đủ và lưu trữ không?","bangChung":"Danh sách thuyền viên, Ship's Particulars, cam kết an ninh, giấy đăng kiểm (ghe/sà lan)","ruiRo":"Thiếu hồ sơ tàu lưu trữ, ảnh hưởng truy xuất khi có sự cố/tranh chấp"},"phaiSinh":[{"loai":"Đầu ra","cauHoi":"Hồ sơ tàu thu thập được có được bàn giao/lưu trữ tập trung để phục vụ tra cứu về sau (vd: khi có tranh chấp hàng hóa) không? Lưu ở đâu, ai quản lý?"}]},{"nhomCauHoi":"QA111-B8-1","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B8","tenBuoc":"Cung cấp dịch vụ cho tàu","boPhan":"NV Bảo vệ/NV Hành chính","trungTam":{"yeuCau":"Cấp nước/điện theo giấy yêu cầu; dịch vụ ngoài cảng cần hóa đơn; mọi dịch vụ có Receipt xác nhận của tàu","cauHoi":"Các dịch vụ cấp nước/điện có giấy yêu cầu (MA111/04) từ Tàu/Đại lý trước khi thực hiện không?","bangChung":"MA111/04 Giấy yêu cầu cung cấp dịch vụ cho tàu","ruiRo":"Cấp dịch vụ khi chưa có giấy yêu cầu"},"phaiSinh":[{"loai":"Đầu vào","cauHoi":"Trường hợp tàu yêu cầu dịch vụ gấp (không kịp làm giấy trước), có quy trình xử lý ngoại lệ và bổ sung giấy tờ sau đó không? Ai phê duyệt ngoại lệ này?"}]},{"nhomCauHoi":"QA111-B8-2","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B8","tenBuoc":"Cung cấp dịch vụ cho tàu","boPhan":"NV Bảo vệ/NV Hành chính","trungTam":{"yeuCau":"Cấp nước/điện theo giấy yêu cầu; dịch vụ ngoài cảng cần hóa đơn; mọi dịch vụ có Receipt xác nhận của tàu","cauHoi":"Mỗi lần cung cấp dịch vụ có được tàu ký xác nhận (Receipt) làm chứng từ thanh toán không?","bangChung":"Receipt xác nhận dịch vụ đã cung cấp","ruiRo":"Thiếu Receipt xác nhận — nguy cơ thất thoát doanh thu dịch vụ"},"phaiSinh":[{"loai":"Đầu ra","cauHoi":"Các Receipt xác nhận dịch vụ có được đối chiếu định kỳ với hóa đơn thu tiền thực tế để phát hiện chênh lệch/thất thoát không?"}]},{"nhomCauHoi":"QA111-B8-3","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B8","tenBuoc":"Cung cấp dịch vụ cho tàu","boPhan":"NV Bảo vệ/NV Hành chính","trungTam":{"yeuCau":"Cấp nước/điện theo giấy yêu cầu; dịch vụ ngoài cảng cần hóa đơn; mọi dịch vụ có Receipt xác nhận của tàu","cauHoi":"Đơn vị bên ngoài cung cấp dịch vụ cho tàu có xuất trình hóa đơn chứng từ để làm cơ sở thu phí theo quy định của Cảng không?","bangChung":"Hóa đơn của đơn vị cung cấp dịch vụ ngoài, bảng phí quy định","ruiRo":"Đơn vị ngoài không xuất trình hóa đơn, bỏ sót phí thu"},"phaiSinh":[{"loai":"Thực hiện","cauHoi":"Ai chịu trách nhiệm kiểm tra, đối chiếu hóa đơn của đơn vị cung cấp dịch vụ ngoài trước khi tính phí?"}]},{"nhomCauHoi":"QA111-B8-4","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B8","tenBuoc":"Cung cấp dịch vụ cho tàu","boPhan":"NV Bảo vệ/NV Hành chính","trungTam":{"yeuCau":"Cấp nước/điện theo giấy yêu cầu; dịch vụ ngoài cảng cần hóa đơn; mọi dịch vụ có Receipt xác nhận của tàu","cauHoi":"Rác thải nguy hại có được cân trực tiếp và thu phí đúng theo bảng giá quy định của Cảng không?","bangChung":"Phiếu cân rác thải nguy hại, bảng giá phí rác thải độc hại","ruiRo":"Không cân/thu phí đúng quy định đối với rác thải nguy hại"},"phaiSinh":[{"loai":"Đầu ra","cauHoi":"Phí thu từ rác thải nguy hại có được đối chiếu với phiếu cân và nộp về đúng khoản mục doanh thu của Cảng không?"}]},{"nhomCauHoi":"QA111-B9-1","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B9","tenBuoc":"Sẵn sàng làm hàng","boPhan":"Điều độ trực ca/Trưởng ca","trungTam":{"yeuCau":"Đối chiếu tình trạng hàng hóa thực tế với hợp đồng trước khi phát lệnh; nếu sai lệch lập biên bản, báo cáo TB Điều độ & GĐ Cảng, không phát lệnh","cauHoi":"Tình trạng hàng hóa thực tế trên tàu có được đối chiếu với hợp đồng/thông tin đã ký trước khi phát lệnh làm hàng không?","bangChung":"Biên bản đối chiếu hàng hóa, hợp đồng","ruiRo":"Phát lệnh làm hàng khi chưa đối chiếu — rủi ro tranh chấp giao nhận"},"phaiSinh":[{"loai":"Đầu vào","cauHoi":"Ai là người trực tiếp đối chiếu tình trạng hàng hóa thực tế với hợp đồng — có đủ chuyên môn/thẩm quyền để đánh giá không?"},{"loai":"Đầu ra","cauHoi":"Kết quả đối chiếu (khớp/không khớp) có được ghi nhận bằng văn bản trước khi phát lệnh làm hàng, kể cả khi khớp hoàn toàn không?"}]},{"nhomCauHoi":"QA111-B9-2","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B9","tenBuoc":"Sẵn sàng làm hàng","boPhan":"Điều độ trực ca/Trưởng ca","trungTam":{"yeuCau":"Đối chiếu tình trạng hàng hóa thực tế với hợp đồng trước khi phát lệnh; nếu sai lệch lập biên bản, báo cáo TB Điều độ & GĐ Cảng, không phát lệnh","cauHoi":"Trường hợp phát hiện sai lệch, có lập biên bản hiện trường và báo cáo Trưởng Ban Điều Độ, Giám đốc Cảng trước khi quyết định không phát lệnh không?","bangChung":"Biên bản hiện trường, báo cáo cấp trên","ruiRo":"Tự ý xử lý không báo cáo cấp trên khi có sai lệch lớn"},"phaiSinh":[{"loai":"Đầu ra","cauHoi":"Sau khi quyết định không phát lệnh, việc đàm phán lại với khách hàng/P.Kinh doanh mất bao lâu? Có ghi nhận nguyên nhân chậm trễ (nếu có) không?"}]},{"nhomCauHoi":"QA111-B10-1","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B10","tenBuoc":"Tiếp nhận xe vào xếp dỡ hàng","boPhan":"Điều độ bến/Bảo vệ","trungTam":{"yeuCau":"Chủ hàng/đơn vị vận chuyển gửi danh sách xe trước; Điều độ chuyển cho bảo vệ cổng theo dõi","cauHoi":"Danh sách đăng ký xe vào cảng nhận hàng có đầy đủ thông tin (số xe, tài xế, giấy chứng nhận trọng tải) và được gửi trước khi xe vào không?","bangChung":"Danh sách đăng ký xe, giấy chứng nhận trọng tải (photo)","ruiRo":"Xe vào không có trong danh sách đăng ký"},"phaiSinh":[{"loai":"Đầu vào","cauHoi":"Danh sách đăng ký xe được gửi trước tối thiểu bao lâu so với giờ xe vào? Có trường hợp gửi bổ sung gấp/không đúng quy trình không?"}]},{"nhomCauHoi":"QA111-B10-2","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B10","tenBuoc":"Tiếp nhận xe vào xếp dỡ hàng","boPhan":"Điều độ bến/Bảo vệ","trungTam":{"yeuCau":"Chủ hàng/đơn vị vận chuyển gửi danh sách xe trước; Điều độ chuyển cho bảo vệ cổng theo dõi","cauHoi":"Bảo vệ cổng có đối chiếu xe thực tế vào/ra với danh sách đăng ký không? Có trường hợp xe ngoài danh sách được vào nhận hàng không?","bangChung":"Sổ/nhật ký ra vào cổng của bảo vệ","ruiRo":"Xe ngoài danh sách vẫn được vào — dấu hiệu thiếu kiểm soát, có thể liên quan ưu ái điều phối phương tiện"},"phaiSinh":[{"loai":"Đầu ra","cauHoi":"Trường hợp phát hiện xe không có trong danh sách, bảo vệ cổng xử lý như thế nào — từ chối hay báo cáo xin ý kiến? Có ghi nhận lại để theo dõi không?"}]},{"nhomCauHoi":"QA111-B11-1","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B11","tenBuoc":"Triển khai làm hàng","boPhan":"Điều độ bến/Cơ giới","trungTam":{"yeuCau":"Điều động phương tiện đồng bộ, liên tục không gián đoạn; đảm bảo an toàn","cauHoi":"Việc điều động thiết bị làm hàng có đảm bảo liên tục, đúng tiến độ không? Có ghi nhận thời gian gián đoạn (nếu có) và nguyên nhân không?","bangChung":"Nhật ký làm hàng, biên bản gián đoạn (nếu có)","ruiRo":"Gián đoạn làm hàng không rõ nguyên nhân/không ghi nhận, ảnh hưởng năng suất"},"phaiSinh":[{"loai":"Đầu vào","cauHoi":"Trước khi triển khai làm hàng, có xác nhận tất cả phương tiện/thiết bị đã sẵn sàng (không có sự cố tiềm ẩn) không?"},{"loai":"Đầu ra","cauHoi":"Các lần gián đoạn làm hàng có được tổng hợp định kỳ để phân tích nguyên nhân gốc rễ (thiết bị, nhân sự, khách hàng...) không?"}]},{"nhomCauHoi":"QA111-B12-1","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B12","tenBuoc":"Giao nhận hàng hóa","boPhan":"Điều độ bến/Chủ hàng","trungTam":{"yeuCau":"Đại diện KH giao nhận, xuất phiếu xuất hàng cho từng xe; nếu hư hỏng phải dừng làm hàng, lập biên bản hiện trường","cauHoi":"Phiếu xuất hàng cho từng xe có được lập đầy đủ, khớp với số lượng xe thực tế qua cổng không?","bangChung":"Phiếu xuất hàng từng xe, đối chiếu với nhật ký cổng","ruiRo":"Phiếu xuất hàng không khớp số xe thực tế qua cổng"},"phaiSinh":[{"loai":"Đầu vào","cauHoi":"Phiếu xuất hàng do khách hàng lập theo mẫu riêng — Cảng có đối chiếu mẫu này với thực tế xếp dỡ trước khi chuyển cho Điều độ bến không?"}]},{"nhomCauHoi":"QA111-B12-2","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B12","tenBuoc":"Giao nhận hàng hóa","boPhan":"Điều độ bến/Chủ hàng","trungTam":{"yeuCau":"Đại diện KH giao nhận, xuất phiếu xuất hàng cho từng xe; nếu hư hỏng phải dừng làm hàng, lập biên bản hiện trường","cauHoi":"Nếu có phát sinh hư hỏng/đổ vỡ hàng hóa, có lập biên bản hiện trường với đầy đủ chữ ký các bên (khách hàng, tàu, cảng) không?","bangChung":"Biên bản hiện trường hàng hư hỏng","ruiRo":"Không lập biên bản khi có hư hỏng — khó xác định trách nhiệm bồi thường"},"phaiSinh":[{"loai":"Đầu ra","cauHoi":"Biên bản hiện trường hàng hư hỏng có được chuyển cho bộ phận nào để xử lý bồi thường/khiếu nại? Thời gian xử lý trung bình là bao lâu?"}]},{"nhomCauHoi":"QA111-B13-1","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B13","tenBuoc":"Hoàn thành thủ tục tàu xuất bến","boPhan":"Điều độ bến/Thống kê","trungTam":{"yeuCau":"Lập bảng kết toán sản lượng, giấy xác báo thời gian tàu tại cảng (MA111/05), chuyển kế toán áp giá","cauHoi":"Bảng kết toán sản lượng hàng hóa với chủ hàng có khớp với các chứng từ giao nhận (phiếu xuất hàng, MA111/05) không?","bangChung":"Bảng kết toán sản lượng, MA111/05, phiếu xuất hàng","ruiRo":"Kết toán sản lượng không khớp chứng từ gốc"},"phaiSinh":[{"loai":"Đầu vào","cauHoi":"Bảng kết toán sản lượng được tổng hợp từ những chứng từ gốc nào? Có đối chiếu chéo giữa Điều độ bến và bộ phận Thống kê trước khi chốt số liệu không?"}]},{"nhomCauHoi":"QA111-B13-2","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B13","tenBuoc":"Hoàn thành thủ tục tàu xuất bến","boPhan":"Điều độ bến/Thống kê","trungTam":{"yeuCau":"Lập bảng kết toán sản lượng, giấy xác báo thời gian tàu tại cảng (MA111/05), chuyển kế toán áp giá","cauHoi":"Giấy xác báo thời gian tàu tại cảng (MA111/05) có được chuyển kịp thời cho Kế toán để áp giá tính phí không?","bangChung":"MA111/05, chứng từ chuyển giao cho Kế toán (có ký nhận, ngày chuyển)","ruiRo":"Chuyển chứng từ chậm cho kế toán, làm trễ thu phí"},"phaiSinh":[{"loai":"Đầu ra","cauHoi":"Có quy định thời hạn cụ thể (bao nhiêu ngày sau khi tàu rời) phải chuyển đủ chứng từ cho Kế toán không? Thực tế có trường hợp chậm trễ không, nguyên nhân?"}]},{"nhomCauHoi":"QA111-B14-1","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B14","tenBuoc":"Tàu rời cầu","boPhan":"Điều độ bến","trungTam":{"yeuCau":"Tàu/đại lý hoàn tất giấy phép rời cảng, thanh toán phí cầu bến trước khi rời; tra thủy triều, kiểm tra vùng nước trước khi rời","cauHoi":"Tàu/đại lý đã thanh toán đầy đủ phí cầu bến và các dịch vụ trước khi rời cầu chưa? Có trường hợp cho tàu rời khi chưa thanh toán không?","bangChung":"Chứng từ thanh toán phí cầu bến/dịch vụ","ruiRo":"Cho tàu rời khi chưa thanh toán đầy đủ — thất thu"},"phaiSinh":[{"loai":"Đầu vào","cauHoi":"Trường hợp khách hàng nợ phí cầu bến từ các lần trước, có được xem xét trước khi chấp nhận cho tàu hiện tại rời cầu không?"},{"loai":"Đầu ra","cauHoi":"Có cơ chế đối chiếu công nợ định kỳ với phòng Tài vụ để đảm bảo không có tàu nào rời cầu khi còn nợ phí không?"}]},{"nhomCauHoi":"QA111-B14-2","maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp","buoc":"B14","tenBuoc":"Tàu rời cầu","boPhan":"Điều độ bến","trungTam":{"yeuCau":"Tàu/đại lý hoàn tất giấy phép rời cảng, thanh toán phí cầu bến trước khi rời; tra thủy triều, kiểm tra vùng nước trước khi rời","cauHoi":"Giấy phép rời cảng do Cảng vụ cấp có được xuất trình/lưu hồ sơ không?","bangChung":"Giấy phép rời cảng (Cảng vụ)","ruiRo":"Thiếu hồ sơ giấy phép rời cảng"},"phaiSinh":[{"loai":"Đầu ra","cauHoi":"Giấy phép rời cảng có được lưu trữ đầy đủ, đối chiếu số lượng tàu rời với số giấy phép lưu trữ để phát hiện thiếu sót không?"}]}];
+const DANH_SACH_QT = [{"maQT":"QA111","tenQT":"Xếp dỡ hàng tổng hợp"}];
+const LS_SEL = 'ksnb_cauhoi_selected';
+let selected = JSON.parse(localStorage.getItem(LS_SEL) || '[]');
+let actQT = "";
+
+function bd(s){if(!s)return"";return s.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[đĐ]/g,"d")}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+
+function rFilters(){
+  let h = '<span class="chip'+(actQT===""?" on":"")+'" data-qt="">Tất cả ('+DATA.length+')</span>';
+  DANH_SACH_QT.forEach(qt=>{
+    const cnt = DATA.filter(d=>d.maQT===qt.maQT).length;
+    h += '<span class="chip'+(actQT===qt.maQT?" on":"")+'" data-qt="'+esc(qt.maQT)+'" title="'+esc(qt.tenQT)+'">'+esc(qt.maQT)+' ('+cnt+')</span>';
+  });
+  document.getElementById("filtersQT").innerHTML = '<label>Quy trình</label>'+h;
+  document.querySelectorAll("#filtersQT .chip").forEach(c=>c.onclick=()=>{actQT=c.dataset.qt;go();});
+}
+
+function go(){
+  const q = document.getElementById("q").value.trim();
+  const ws = bd(q).split(/\s+/).filter(w=>w.length>=2);
+  let fil = DATA.filter(d=>{
+    if(actQT && d.maQT!==actQT) return false;
+    if(!ws.length) return true;
+    const t = d.trungTam||{};
+    const haystack = bd([d.maQT,d.tenQT,d.tenBuoc,d.boPhan,t.yeuCau,t.cauHoi,t.bangChung,t.ruiRo,
+      ...(d.phaiSinh||[]).map(p=>p.cauHoi)].join(" "));
+    return ws.every(w=>haystack.includes(w));
+  });
+  document.getElementById("stats").textContent = "Tìm thấy "+fil.length+" cụm câu hỏi";
+  rList(fil);
+  rFilters();
+}
+
+function rList(groups){
+  const el = document.getElementById("list");
+  if(!groups.length){ el.innerHTML='<div class="empty">Không có kết quả phù hợp.</div>'; return; }
+  el.innerHTML = groups.map((g,gi)=>{
+    const t = g.trungTam||{};
+    const uidC = g.nhomCauHoi+"_c";
+    const checkedC = selected.some(s=>s.uid===uidC);
+    const nD = (g.phaiSinh||[]).length;
+    const dHtml = (g.phaiSinh||[]).map((d,di)=>{
+      const uid = g.nhomCauHoi+"_d"+di;
+      const checked = selected.some(s=>s.uid===uid);
+      const cls = d.loai==="Đầu vào"?"dv":d.loai==="Thực hiện"?"th":"dr";
+      return '<div class="derived-item '+cls+'"><span class="dtag">'+esc(d.loai)+'</span>'+
+        '<label class="chk"><input type="checkbox" data-uid="'+uid+'" '+(checked?"checked":"")+
+        ' onchange="toggleSelect(\''+g.nhomCauHoi+'\',\'d\','+di+',this)">'+esc(d.cauHoi)+'</label></div>';
+    }).join("");
+    return '<div class="card">'+
+      '<div class="tag-row"><span class="tag qt">'+esc(g.maQT)+'</span><span class="tag buoc">'+esc(g.buoc)+'</span></div>'+
+      '<div class="ten-buoc">'+esc(g.tenBuoc)+'</div>'+
+      '<div class="bo-phan">Bộ phận chịu trách nhiệm: '+esc(g.boPhan)+'</div>'+
+      '<div class="field"><b>Câu hỏi kiểm tra:</b> '+esc(t.cauHoi)+'</div>'+
+      '<div class="field"><b>Bằng chứng/hồ sơ cần yêu cầu:</b> '+esc(t.bangChung)+'</div>'+
+      (t.ruiRo?'<div class="field rui-ro"><b>⚠ Dấu hiệu rủi ro:</b> '+esc(t.ruiRo)+'</div>':'')+
+      '<label class="chk"><input type="checkbox" data-uid="'+uidC+'" '+(checkedC?"checked":"")+
+      ' onchange="toggleSelect(\''+g.nhomCauHoi+'\',\'c\',null,this)">Thêm vào danh sách buổi làm việc</label>'+
+      (nD>0?'<button class="expand-btn" onclick="toggleExpand(this)">▸ Xem '+nD+' câu hỏi phái sinh (trước/trong/sau)</button><div class="derived-box">'+dHtml+'</div>':'')+
+    '</div>';
+  }).join("");
+}
+
+function toggleExpand(btn){
+  const box = btn.nextElementSibling;
+  const opening = !box.classList.contains("open");
+  box.classList.toggle("open");
+  btn.textContent = btn.textContent.replace(opening?"▸":"▾", opening?"▾":"▸");
+}
+
+function toggleSelect(nhom, kind, di, el){
+  const g = DATA.find(x=>x.nhomCauHoi===nhom);
+  const uid = el.dataset.uid;
+  if(el.checked){
+    if(!selected.some(s=>s.uid===uid)){
+      if(kind==="c"){
+        const t = g.trungTam||{};
+        selected.push({uid,maQT:g.maQT,buoc:g.buoc,tenBuoc:g.tenBuoc,loai:"Trung tâm",cauHoi:t.cauHoi,bangChung:t.bangChung,ruiRo:t.ruiRo});
+      } else {
+        const d = g.phaiSinh[di];
+        selected.push({uid,maQT:g.maQT,buoc:g.buoc,tenBuoc:g.tenBuoc,loai:"Phái sinh - "+d.loai,cauHoi:d.cauHoi,bangChung:"",ruiRo:""});
+      }
+    }
+  } else { selected = selected.filter(s=>s.uid!==uid); }
+  localStorage.setItem(LS_SEL, JSON.stringify(selected));
+  rSelected();
+}
+
+function rSelected(){
+  const el = document.getElementById("selected-list");
+  if(!selected.length){ el.innerHTML='<p style="color:#aab;font-size:12px">Chưa chọn câu hỏi nào.</p>'; return; }
+  el.innerHTML = selected.map(s=>
+    '<div class="sel-item"><div><b>'+esc(s.maQT)+' / '+esc(s.buoc)+'</b>'+
+    (s.loai!=="Trung tâm"?' <i>('+esc(s.loai)+')</i>':'')+' — '+esc(s.cauHoi)+'</div>'+
+    '<button onclick="removeSel(\''+s.uid+'\')">Xóa</button></div>'
+  ).join("");
+}
+
+function removeSel(uid){
+  selected = selected.filter(s=>s.uid!==uid);
+  localStorage.setItem(LS_SEL, JSON.stringify(selected));
+  rSelected();
+  document.querySelectorAll('input[data-uid="'+uid+'"]').forEach(cb=>cb.checked=false);
+}
+
+function clearList(){
+  if(!confirm("Xóa toàn bộ danh sách đã chọn?")) return;
+  selected = [];
+  localStorage.setItem(LS_SEL, JSON.stringify(selected));
+  rSelected();
+  document.querySelectorAll('input[type=checkbox][data-uid]').forEach(cb=>cb.checked=false);
+}
+
+function copyList(){
+  if(!selected.length){ alert("Chưa có câu hỏi nào được chọn."); return; }
+  let text = "DANH SÁCH CÂU HỎI KIỂM TRA\n" + "=".repeat(40) + "\n\n";
+  selected.forEach((s,i)=>{
+    text += (i+1)+". ["+s.maQT+" / "+s.buoc+"] "+s.tenBuoc+"\n";
+    text += "   Câu hỏi: "+s.cauHoi+"\n";
+    if(s.bangChung) text += "   Bằng chứng cần yêu cầu: "+s.bangChung+"\n";
+    if(s.ruiRo) text += "   Lưu ý rủi ro: "+s.ruiRo+"\n";
+    text += "\n";
+  });
+  navigator.clipboard.writeText(text).then(()=>alert("Đã sao chép vào clipboard."));
+}
+
+document.getElementById("q").addEventListener("input", go);
+rFilters(); rSelected(); go();
+</script>
+</body>
+</html>
