@@ -7,16 +7,21 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#eef2f7;color:#1a1a1a;min-height:100vh;-webkit-font-smoothing:antialiased}
-.app-header{position:sticky;top:0;z-index:20;box-shadow:0 3px 10px rgba(0,0,0,.10)}
-.top{background:linear-gradient(135deg,#1F4E78,#164267);color:#fff;padding:13px 20px}
-.top-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;max-width:1300px;margin:0 auto}
+.app-header{position:sticky;top:0;z-index:20;box-shadow:0 3px 14px rgba(20,40,70,.14)}
+.top{background:linear-gradient(120deg,#1F4E78 0%,#164267 55%,#0d3a63 100%);color:#fff;padding:13px 20px;position:relative;overflow:hidden}
+.top::before{content:"";position:absolute;top:-40%;right:-5%;width:220px;height:220px;background:radial-gradient(circle,rgba(255,138,61,.18) 0%,transparent 70%);pointer-events:none}
+.top-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;max-width:1300px;margin:0 auto;position:relative}
 .top h1{font-size:16px;font-weight:600;letter-spacing:.2px}
-.top small{font-size:11px;opacity:.75}
+.top small{font-size:11px;opacity:.8}
+.accent-bar{height:3px;background:linear-gradient(90deg,#FF8A3D,#2E9E6C,#2E75B6,#8E44AD);background-size:300% 100%}
 .tabbar{background:#fff;border-bottom:1px solid #e5e9ee;display:flex;max-width:1300px;margin:0 auto}
-.tab-btn{flex:none;padding:11px 22px;font-size:13.5px;font-weight:600;border:none;background:none;cursor:pointer;color:#8a94a0;border-bottom:3px solid transparent}
-.tab-btn.active{color:#1F4E78;border-bottom-color:#1F4E78}
+.tab-btn{flex:none;padding:12px 22px;font-size:13.5px;font-weight:600;border:none;background:none;cursor:pointer;color:#8a94a0;border-bottom:3px solid transparent;transition:all .15s}
+.tab-btn:hover{color:#1F4E78;background:#f6f9fc}
+.tab-btn.active{color:#1F4E78;border-bottom-color:#FF8A3D;background:#f6f9fc}
 .tab-pane{display:none}
 .tab-pane.active{display:block}
+.tab-toolbar{display:none}
+.tab-toolbar.active{display:block}
 .search-wrap{background:#fff;padding:10px 20px;border-bottom:1px solid #e5e9ee}
 .search-inner{max-width:1300px;margin:0 auto;position:relative}
 .search-inner .icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;opacity:.5;pointer-events:none}
@@ -50,11 +55,12 @@ mark{background:#fff3cd;border-radius:2px;padding:0 2px}
 /* ---- Tab câu hỏi kiểm tra (prefix ch-) ---- */
 .layout{display:grid;grid-template-columns:1fr 340px;gap:16px;max-width:1300px;margin:14px auto 40px;padding:0 20px}
 @media(max-width:900px){.layout{grid-template-columns:1fr}}
-.ch-card{background:#fff;border:1px solid #e8edf2;border-left:4px solid #1F4E78;border-radius:10px;padding:13px 15px;margin-bottom:10px}
-.ch-tag-row{display:flex;gap:6px;margin-bottom:6px}
+.ch-card{background:#fff;border:1px solid #e8edf2;border-left:5px solid #1F4E78;border-radius:10px;padding:13px 15px;margin-bottom:12px;transition:box-shadow .15s,transform .1s}
+.ch-card:hover{box-shadow:0 6px 18px rgba(20,40,70,.10);transform:translateY(-1px)}
+.ch-tag-row{display:flex;gap:6px;align-items:center;margin-bottom:7px}
 .ch-tag{font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px}
 .ch-qt{background:#EAF1F8;color:#1F4E78}
-.ch-buoc{background:#F0E6CC;color:#8a6d1a}
+.ch-buoc-bubble{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;color:#fff;font-size:10.5px;font-weight:800;flex-shrink:0}
 .ch-ten-buoc{font-weight:600;font-size:14px;margin-bottom:3px}
 .ch-bo-phan{font-size:11.5px;color:#8a94a0;margin-bottom:7px}
 .ch-field{font-size:13px;margin-bottom:5px;line-height:1.5}
@@ -62,10 +68,13 @@ mark{background:#fff3cd;border-radius:2px;padding:0 2px}
 .ch-rui-ro{background:#fdf1f0;border-left:3px solid #c0392b;padding:6px 9px;border-radius:4px}
 .ch-rui-ro b{color:#c0392b}
 .ch-chk{display:flex;gap:7px;align-items:flex-start;margin-top:8px;font-size:13px;font-weight:600;color:#1F4E78;cursor:pointer}
-.ch-expand-btn{margin-top:9px;font-size:11.5px;background:none;border:1px solid #d8dee6;border-radius:14px;padding:3px 11px;cursor:pointer;color:#1F4E78}
-.ch-derived-box{display:none;margin-top:9px;border-top:1px dashed #e5e9ee;padding-top:9px}
+.ch-expand-btn{margin-top:10px;font-size:11.5px;background:#fff;border:1px solid #d8dee6;border-radius:14px;padding:4px 12px;cursor:pointer;color:#1F4E78;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.ch-expand-btn:hover{background:#f3f7fb;border-color:#1F4E78}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:2px}
+.dot.dv{background:#c98a12}.dot.th{background:#4c8c3f}.dot.dr{background:#c0392b}
+.ch-derived-box{display:none;margin-top:10px;border-top:1px dashed #e5e9ee;padding-top:10px}
 .ch-derived-box.open{display:block}
-.ch-derived-item{display:flex;gap:7px;align-items:flex-start;font-size:12px;margin-bottom:7px;padding:5px 7px;border-radius:5px}
+.ch-derived-item{display:flex;gap:7px;align-items:flex-start;font-size:12px;margin-bottom:7px;padding:6px 8px;border-radius:6px}
 .ch-derived-item .dtag{flex-shrink:0;font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:9px;color:#fff;margin-top:1px}
 .ch-derived-item.dv .dtag{background:#c98a12}.ch-derived-item.dv{background:#fff9ee}
 .ch-derived-item.th .dtag{background:#4c8c3f}.ch-derived-item.th{background:#f2f9f0}
@@ -103,27 +112,41 @@ mark{background:#fff3cd;border-radius:2px;padding:0 2px}
   <div class="top">
     <div class="top-row">
       <div><h1>📁 Ban KSNB — Cảng Đồng Nai</h1></div>
-      <small>Cập nhật: 08/07/2026 10:41</small>
+      <small>Cập nhật: 08/07/2026 10:51</small>
     </div>
   </div>
   <div class="tabbar">
     <button class="tab-btn active" id="tabbtn-vb" onclick="switchTab('vb')">📁 Tra cứu văn bản (917)</button>
     <button class="tab-btn" id="tabbtn-ch" onclick="switchTab('ch')">📋 Câu hỏi kiểm tra (32)</button>
   </div>
+  <div id="toolbar-vb" class="tab-toolbar active">
+    <div class="search-wrap">
+      <div class="search-inner">
+        <span class="icon">🔍</span>
+        <input type="text" id="q-vb" placeholder="Gõ từ khóa: số hiệu, năm, nội dung... (có dấu hoặc không dấu đều được)" autocomplete="off">
+      </div>
+    </div>
+    <div class="filters-wrap">
+      <div class="filters" id="filters-vb"><label>Lĩnh vực</label></div>
+      <div class="filters" id="filtersHL-vb"><label>Hiệu lực</label></div>
+    </div>
+  </div>
+  <div id="toolbar-ch" class="tab-toolbar">
+    <div class="search-wrap">
+      <div class="search-inner">
+        <span class="icon">🔍</span>
+        <input type="text" id="q-ch" placeholder="Tìm theo từ khóa: cầu bến, hóa đơn, xe ra vào..." autocomplete="off">
+      </div>
+    </div>
+    <div class="filters-wrap">
+      <div class="filters" id="filtersQT-ch"><label>Quy trình</label></div>
+    </div>
+  </div>
+  <div class="accent-bar"></div>
 </div>
 
 <!-- ==================== TAB 1: TRA CỨU VĂN BẢN ==================== -->
 <div id="tab-vb" class="tab-pane active">
-  <div class="search-wrap">
-    <div class="search-inner">
-      <span class="icon">🔍</span>
-      <input type="text" id="q-vb" placeholder="Gõ từ khóa: số hiệu, năm, nội dung... (có dấu hoặc không dấu đều được)" autocomplete="off">
-    </div>
-  </div>
-  <div class="filters-wrap">
-    <div class="filters" id="filters-vb"><label>Lĩnh vực</label></div>
-    <div class="filters" id="filtersHL-vb"><label>Hiệu lực</label></div>
-  </div>
   <div class="main">
     <div class="stats" id="stats-vb"></div>
     <div class="list" id="list-vb"></div>
@@ -132,15 +155,6 @@ mark{background:#fff3cd;border-radius:2px;padding:0 2px}
 
 <!-- ==================== TAB 2: CÂU HỎI KIỂM TRA ==================== -->
 <div id="tab-ch" class="tab-pane">
-  <div class="search-wrap">
-    <div class="search-inner">
-      <span class="icon">🔍</span>
-      <input type="text" id="q-ch" placeholder="Tìm theo từ khóa: cầu bến, hóa đơn, xe ra vào..." autocomplete="off">
-    </div>
-  </div>
-  <div class="filters-wrap">
-    <div class="filters" id="filtersQT-ch"><label>Quy trình</label></div>
-  </div>
   <div class="layout">
     <div>
       <div class="stats" id="stats-ch"></div>
@@ -171,6 +185,8 @@ function switchTab(tab){
   document.getElementById('tab-ch').classList.toggle('active', tab==='ch');
   document.getElementById('tabbtn-vb').classList.toggle('active', tab==='vb');
   document.getElementById('tabbtn-ch').classList.toggle('active', tab==='ch');
+  document.getElementById('toolbar-vb').classList.toggle('active', tab==='vb');
+  document.getElementById('toolbar-ch').classList.toggle('active', tab==='ch');
   localStorage.setItem('ksnb_active_tab', tab);
 }
 (function(){
@@ -289,9 +305,10 @@ function rPrintHeaderCH(){
 
 function rFiltersCH(){
   let h = '<span class="chip'+(actQT_CH===""?" on":"")+'" style="'+(actQT_CH===""?'background:#1F4E78;color:#fff':'')+'" data-qt="">Tất cả ('+DATA_CH.length+')</span>';
-  DANH_SACH_QT_CH.forEach(qt=>{
+  DANH_SACH_QT_CH.forEach((qt,qi)=>{
     const cnt = DATA_CH.filter(d=>d.maQT===qt.maQT).length;
-    h += '<span class="chip'+(actQT_CH===qt.maQT?" on":"")+'" style="'+(actQT_CH===qt.maQT?'background:#1F4E78;color:#fff':'')+'" data-qt="'+esc(qt.maQT)+'" title="'+esc(qt.tenQT)+'">'+esc(qt.maQT)+' ('+cnt+')</span>';
+    const c = BUOC_COLORS[qi % BUOC_COLORS.length];
+    h += '<span class="chip'+(actQT_CH===qt.maQT?" on":"")+'" style="'+(actQT_CH===qt.maQT?'background:'+c.main+';color:#fff':'')+'" data-qt="'+esc(qt.maQT)+'" title="'+esc(qt.tenQT)+'">'+esc(qt.maQT)+' ('+cnt+')</span>';
   });
   document.getElementById("filtersQT-ch").innerHTML = '<label>Quy trình</label>'+h;
   document.querySelectorAll("#filtersQT-ch .chip").forEach(c=>c.onclick=()=>{actQT_CH=c.dataset.qt;goCH();});
@@ -313,14 +330,33 @@ function goCH(){
   rFiltersCH();
 }
 
+const BUOC_COLORS = [
+  {main:'#1F4E78', bg:'#EAF1F8'},
+  {main:'#2E9E6C', bg:'#E8F6EF'},
+  {main:'#C98A12', bg:'#FFF7E6'},
+  {main:'#8E44AD', bg:'#F5EDFB'},
+  {main:'#E0578A', bg:'#FDEDF3'},
+  {main:'#2E75B6', bg:'#EAF3FB'},
+  {main:'#D9534F', bg:'#FDEEED'},
+  {main:'#17A2A2', bg:'#E6F7F7'},
+];
+function buocColor(buoc){
+  const n = parseInt(String(buoc).replace(/D/g,''),10) || 0;
+  return BUOC_COLORS[n % BUOC_COLORS.length];
+}
+
 function rListCH(groups){
   const el = document.getElementById("list-ch");
-  if(!groups.length){ el.innerHTML='<div class="empty">Không có kết quả phù hợp.</div>'; return; }
+  if(!groups.length){ el.innerHTML='<div class="empty">🔍 Không có kết quả phù hợp.<br><small>Thử từ khóa khác hoặc chọn "Tất cả"</small></div>'; return; }
   el.innerHTML = groups.map((g)=>{
     const t = g.trungTam||{};
+    const bc = buocColor(g.buoc);
     const uidC = g.nhomCauHoi+"_c";
     const checkedC = selectedCH.some(s=>s.uid===uidC);
     const nD = (g.phaiSinh||[]).length;
+    const cnt = {dv:0,th:0,dr:0};
+    (g.phaiSinh||[]).forEach(d=>{ const k=d.loai==="Đầu vào"?"dv":d.loai==="Thực hiện"?"th":"dr"; cnt[k]++; });
+    const dotsHtml = ['dv','th','dr'].filter(k=>cnt[k]>0).map(k=>'<span class="dot '+k+'"></span>'+cnt[k]).join(' &nbsp;');
     const dHtml = (g.phaiSinh||[]).map((d,di)=>{
       const uid = g.nhomCauHoi+"_d"+di;
       const checked = selectedCH.some(s=>s.uid===uid);
@@ -329,8 +365,12 @@ function rListCH(groups){
         '<label class="ch-chk"><input type="checkbox" data-uid="'+uid+'" '+(checked?"checked":"")+
         ' onchange="toggleSelectCH(\''+g.nhomCauHoi+'\',\'d\','+di+',this)">'+esc(d.cauHoi)+'</label></div>';
     }).join("");
-    return '<div class="ch-card">'+
-      '<div class="ch-tag-row"><span class="ch-tag ch-qt">'+esc(g.maQT)+'</span><span class="ch-tag ch-buoc">'+esc(g.buoc)+'</span></div>'+
+    return '<div class="ch-card" style="border-left-color:'+bc.main+'">'+
+      '<div class="ch-tag-row">'+
+        '<span class="ch-buoc-bubble" style="background:'+bc.main+'">'+esc(String(g.buoc).replace(/D/g,''))+'</span>'+
+        '<span class="ch-tag ch-qt">'+esc(g.maQT)+'</span>'+
+        '<span class="ch-tag" style="background:'+bc.bg+';color:'+bc.main+'">'+esc(g.buoc)+'</span>'+
+      '</div>'+
       '<div class="ch-ten-buoc">'+esc(g.tenBuoc)+'</div>'+
       '<div class="ch-bo-phan">Bộ phận chịu trách nhiệm: '+esc(g.boPhan)+'</div>'+
       '<div class="ch-field"><b>Câu hỏi kiểm tra:</b> '+esc(t.cauHoi)+'</div>'+
@@ -338,7 +378,7 @@ function rListCH(groups){
       (t.ruiRo?'<div class="ch-field ch-rui-ro"><b>⚠ Dấu hiệu rủi ro:</b> '+esc(t.ruiRo)+'</div>':'')+
       '<label class="ch-chk"><input type="checkbox" data-uid="'+uidC+'" '+(checkedC?"checked":"")+
       ' onchange="toggleSelectCH(\''+g.nhomCauHoi+'\',\'c\',null,this)">Thêm vào danh sách câu hỏi cho buổi làm việc</label>'+
-      (nD>0?'<button class="ch-expand-btn" onclick="toggleExpandCH(this)">▸ Xem '+nD+' câu hỏi phái sinh (trước/trong/sau)</button><div class="ch-derived-box">'+dHtml+'</div>':'')+
+      (nD>0?'<button class="ch-expand-btn" onclick="toggleExpandCH(this)">▸ '+nD+' câu hỏi phái sinh &nbsp;'+dotsHtml+'</button><div class="ch-derived-box">'+dHtml+'</div>':'')+
     '</div>';
   }).join("");
 }
