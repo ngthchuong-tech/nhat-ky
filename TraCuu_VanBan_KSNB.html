@@ -421,13 +421,14 @@ mark{background:#fff3cd;border-radius:2px;padding:0 2px}
   <div class="top">
     <div class="top-row">
       <div><h1>📁 Ban KSNB — Cảng Đồng Nai</h1></div>
-      <small>Cập nhật: 08/07/2026 11:07</small>
+      <small>Cập nhật: 08/07/2026 11:20</small>
     </div>
   </div>
   <div class="tabbar">
     <button class="tab-btn active" id="tabbtn-vb" onclick="switchTab('vb')">📁 Tra cứu văn bản (917)</button>
     <button class="tab-btn" id="tabbtn-ch" onclick="switchTab('ch')">📋 Câu hỏi kiểm tra (32)</button>
     <button class="tab-btn" id="tabbtn-bb" onclick="switchTab('bb')">📝 Lập biên bản</button>
+    <button class="tab-btn" id="tabbtn-pl" onclick="switchTab('pl')">📤 Phân loại nhanh (loại cũ)</button>
   </div>
   <div id="toolbar-vb" class="tab-toolbar active">
     <div class="search-wrap">
@@ -898,22 +899,40 @@ mark{background:#fff3cd;border-radius:2px;padding:0 2px}
 
 </div>
 
+<!-- ==================== TAB 4: PHÂN LOẠI NHANH (Web App riêng, nhúng qua iframe) ==================== -->
+<div id="tab-pl" class="tab-pane">
+  <div style="max-width:900px;margin:16px auto;padding:0 20px;">
+    <div style="background:#EAF6EC;border:1px solid #B8E0BE;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#2c5e30;margin-bottom:10px;">
+      ℹ️ Công cụ này chạy trên 1 Web App riêng (dùng cho hệ thống lưu trữ cũ theo Loại văn bản). Nếu khung bên dưới không hiện, mở trực tiếp:
+      <a href="https://script.google.com/macros/s/AKfycbw9IawTgcOGb0SdobRBWzCKeeOCIW3MVuL5H2kpt1Pt1-wFTm_o3kyJoJIHi2y3f2gt/exec" target="_blank" style="color:#1F4E78;font-weight:600;">mở ở tab mới ↗</a>
+    </div>
+    <iframe id="iframe-pl" data-src="https://script.google.com/macros/s/AKfycbw9IawTgcOGb0SdobRBWzCKeeOCIW3MVuL5H2kpt1Pt1-wFTm_o3kyJoJIHi2y3f2gt/exec"
+      style="width:100%;height:80vh;border:1px solid #e8edf2;border-radius:10px;background:#fff;"></iframe>
+  </div>
+</div>
+
 <script>
 // ================= TAB SWITCH =================
 function switchTab(tab){
   document.getElementById('tab-vb').classList.toggle('active', tab==='vb');
   document.getElementById('tab-ch').classList.toggle('active', tab==='ch');
   document.getElementById('tab-bb').classList.toggle('active', tab==='bb');
+  document.getElementById('tab-pl').classList.toggle('active', tab==='pl');
   document.getElementById('tabbtn-vb').classList.toggle('active', tab==='vb');
   document.getElementById('tabbtn-ch').classList.toggle('active', tab==='ch');
   document.getElementById('tabbtn-bb').classList.toggle('active', tab==='bb');
+  document.getElementById('tabbtn-pl').classList.toggle('active', tab==='pl');
   document.getElementById('toolbar-vb').classList.toggle('active', tab==='vb');
   document.getElementById('toolbar-ch').classList.toggle('active', tab==='ch');
+  if (tab === 'pl') {
+    var ifr = document.getElementById('iframe-pl');
+    if (ifr && !ifr.getAttribute('src')) ifr.setAttribute('src', ifr.getAttribute('data-src'));
+  }
   localStorage.setItem('ksnb_active_tab', tab);
 }
 (function(){
   var saved = localStorage.getItem('ksnb_active_tab');
-  if (saved === 'ch') switchTab('ch');
+  if (saved === 'ch' || saved === 'bb' || saved === 'pl') switchTab(saved);
 })();
 
 // ================= TAB 1: VĂN BẢN =================
