@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phiếu Bài Tập Toán Tuần - Kết Nối Tri Thức</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.js"></script>
+<style>
+  :root{
+    --ink:#1c2b33;
+    --paper:#fbf8f2;
+    --panel:#ffffff;
+    --line:#dfd6c4;
+    --accent:#2f6f5e;
+    --accent-dark:#204c40;
+    --gold:#b6862c;
+    --easy:#2f6f5e;
+    --med:#b6862c;
+    --hard:#a3402f;
+    --shadow: 0 1px 2px rgba(28,43,51,0.06), 0 4px 14px rgba(28,43,51,0.06);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background:var(--paper);
+    color:var(--ink);
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:28px 20px 60px;}
+  header.top{
+    display:flex;align-items:baseline;justify-content:space-between;
+    border-bottom:3px solid var(--ink);
+    padding-bottom:14px;margin-bottom:24px;
+  }
+  header.top h1{
+    font-size:1.5rem;margin:0;letter-spacing:0.3px;font-weight:700;
+  }
+  header.top .tag{
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size:0.72rem;text-transform:uppercase;letter-spacing:1.5px;color:#7a7062;
+  }
+  .grid{display:grid;grid-template-columns: 340px 1fr; gap:20px;}
+  @media (max-width:820px){ .grid{grid-template-columns:1fr;} }
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:20px;
+    box-shadow:var(--shadow);
+  }
+  .panel h2{
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:0.78rem;text-transform:uppercase;letter-spacing:1.2px;
+    color:var(--accent-dark);margin:0 0 14px;
+    border-bottom:1px solid var(--line);padding-bottom:8px;
+  }
+  label{
+    display:block;font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:0.78rem;color:#5b544a;margin:14px 0 5px;
+  }
+  label:first-of-type{margin-top:0;}
+  select, input[type=text], input[type=number], textarea, input[type=password]{
+    width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:3px;
+    font-family:'Helvetica Neue',Arial,sans-serif;font-size:0.92rem;background:#fffefb;
+    color:var(--ink);
+  }
+  textarea{resize:vertical;min-height:70px;font-family:inherit;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .diff-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px;}
+  .diff-box{border:1px solid var(--line);border-radius:3px;padding:8px;text-align:center;background:#fffefb;}
+  .diff-box .lbl{font-family:'Helvetica Neue',Arial,sans-serif;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.8px;}
+  .diff-box.easy .lbl{color:var(--easy);}
+  .diff-box.med .lbl{color:var(--med);}
+  .diff-box.hard .lbl{color:var(--hard);}
+  .diff-box input{margin-top:6px;text-align:center;padding:6px;}
+  .hint{font-family:'Helvetica Neue',Arial,sans-serif;font-size:0.74rem;color:#8a8272;margin-top:4px;line-height:1.4;}
+  button{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-weight:600;font-size:0.86rem;letter-spacing:0.3px;
+    border:none;border-radius:3px;padding:12px 16px;cursor:pointer;
+    width:100%;margin-top:16px;
+  }
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:hover{background:var(--accent-dark);}
+  .btn-primary:disabled{background:#a9b8b2;cursor:not-allowed;}
+  .btn-secondary{background:transparent;color:var(--accent-dark);border:1px solid var(--accent-dark);}
+  .btn-secondary:hover{background:#eef3f0;}
+  .status{
+    font-family:'Helvetica Neue',Arial,sans-serif;font-size:0.8rem;
+    margin-top:10px;padding:8px 10px;border-radius:3px;display:none;
+  }
+  .status.show{display:block;}
+  .status.info{background:#eef3f0;color:var(--accent-dark);}
+  .status.error{background:#fdece8;color:#8a3220;}
+  .preview{min-height:200px;}
+  .empty-state{
+    text-align:center;padding:60px 20px;color:#a49c8c;
+    font-family:'Helvetica Neue',Arial,sans-serif;font-size:0.9rem;
+  }
+  .empty-state .big{font-size:2.2rem;display:block;margin-bottom:10px;}
+  .qgroup{margin-bottom:22px;}
+  .qgroup h3{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;
+    padding:6px 10px;border-radius:3px;display:inline-block;margin-bottom:10px;
+  }
+  .qgroup.easy h3{background:#e4efe9;color:var(--easy);}
+  .qgroup.med h3{background:#f5ead2;color:var(--med);}
+  .qgroup.hard h3{background:#f3ddd6;color:var(--hard);}
+  .qitem{
+    display:flex;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);
+    font-size:0.95rem;line-height:1.5;
+  }
+  .qitem:last-child{border-bottom:none;}
+  .qnum{font-weight:700;color:var(--accent-dark);min-width:26px;}
+  .qtext{flex:1;}
+  .answer-toggle{
+    font-family:'Helvetica Neue',Arial,sans-serif;font-size:0.78rem;
+    color:var(--accent);cursor:pointer;margin:16px 0 6px;user-select:none;
+  }
+  .answer-box{
+    display:none;background:#f7f4ec;border-left:3px solid var(--gold);
+    padding:12px 14px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:0.84rem;
+    line-height:1.6;
+  }
+  .answer-box.show{display:block;}
+  .actions-bottom{display:flex;gap:10px;margin-top:20px;}
+  .actions-bottom button{margin-top:0;}
+  .curr-editor{margin-top:14px;}
+  .curr-editor summary{
+    font-family:'Helvetica Neue',Arial,sans-serif;font-size:0.78rem;
+    color:var(--accent-dark);cursor:pointer;padding:6px 0;
+  }
+  .note{
+    font-family:'Helvetica Neue',Arial,sans-serif;font-size:0.72rem;
+    color:#8a8272;background:#f7f4ec;border-radius:3px;padding:10px 12px;margin-top:10px;line-height:1.5;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Phiếu Bài Tập Toán — Tuần</h1>
+    <div class="tag">Kết nối tri thức · Lớp 2–5 · Ban hành nội bộ E‑PARTNER</div>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT PANEL: controls -->
+    <div class="panel">
+      <h2>1. Chọn phạm vi bài học</h2>
+
+      <label>Khối lớp</label>
+      <select id="grade">
+        <option value="2">Lớp 2</option>
+        <option value="3">Lớp 3</option>
+        <option value="4">Lớp 4</option>
+        <option value="5">Lớp 5</option>
+      </select>
+
+      <label>Tuần học (1–35)</label>
+      <select id="week"></select>
+
+      <label>Chủ đề / bài học (tự nhận theo tuần, có thể sửa)</label>
+      <textarea id="topic"></textarea>
+      <div class="hint">Danh sách bài học này được xây theo cấu trúc SGK Kết nối tri thức đã công bố (mục lục chủ đề), rồi chia đều theo 35 tuần — mang tính <b>gợi ý tham khảo</b>, chưa phải PPCT chính thức của trường. Anh nên đối chiếu với PPCT thực tế và chỉnh sửa ô trên trước khi tạo đề.</div>
+
+      <details class="curr-editor">
+        <summary>Xem / sửa toàn bộ khung chương trình của khối này</summary>
+        <textarea id="currDump" style="min-height:220px;font-size:0.8rem;"></textarea>
+        <button class="btn-secondary" id="saveCurr" type="button" style="margin-top:8px;">Lưu khung chương trình đã sửa</button>
+        <div class="hint">Mỗi dòng ứng với 1 tuần, theo đúng thứ tự Tuần 1 → 35. Sửa xong bấm Lưu — lưu vào máy này (localStorage), không ảnh hưởng người khác.</div>
+      </details>
+
+      <h2 style="margin-top:22px;">2. Số lượng câu hỏi</h2>
+      <div class="diff-row">
+        <div class="diff-box easy"><div class="lbl">Dễ</div><input type="number" id="nEasy" value="8" min="0" max="30"></div>
+        <div class="diff-box med"><div class="lbl">Vừa</div><input type="number" id="nMed" value="8" min="0" max="30"></div>
+        <div class="diff-box hard"><div class="lbl">Khó</div><input type="number" id="nHard" value="8" min="0" max="30"></div>
+      </div>
+      <div class="hint">Tổng hiện tại: <span id="totalQ">24</span> câu. Có thể chỉnh về 0 nếu không cần mức đó.</div>
+
+      <h2 style="margin-top:22px;">3. Thông tin phiếu</h2>
+      <div class="row2">
+        <div><label>Trường</label><input type="text" id="schoolName" placeholder="Tiểu học ..."></div>
+        <div><label>Lớp</label><input type="text" id="className" placeholder="2A1"></div>
+      </div>
+      <label>Ghi chú thêm cho đề (không bắt buộc)</label>
+      <input type="text" id="extraNote" placeholder="VD: ưu tiên toán có lời văn, thêm 1 câu đố vui...">
+
+      <h2 style="margin-top:22px;">4. Gemini API key</h2>
+      <input type="password" id="apiKey" placeholder="Dán API key của anh (Google AI Studio)">
+      <div class="hint">Key chỉ lưu trên trình duyệt này (localStorage), dùng để gọi thẳng Gemini từ máy anh — không gửi qua máy chủ nào khác. Lấy key tại <span style="text-decoration:underline;">aistudio.google.com</span>.</div>
+
+      <button class="btn-primary" id="genBtn">Tạo bộ đề bằng AI</button>
+      <div class="status" id="statusBox"></div>
+    </div>
+
+    <!-- RIGHT PANEL: preview -->
+    <div class="panel preview" id="previewPanel">
+      <h2>Xem trước phiếu bài tập</h2>
+      <div class="empty-state" id="emptyState">
+        <span class="big">✎</span>
+        Chọn khối lớp, tuần học, số lượng câu hỏi ở bên trái,<br>rồi bấm "Tạo bộ đề bằng AI" để xem trước tại đây.
+      </div>
+      <div id="resultArea"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ 1. CURRICULUM DATA ============
+   Best-effort weekly breakdown built from the published Kết nối tri thức Toán
+   table of contents (chủ đề order), spread across a 35-week year.
+   This is a reference scaffold, not an official PPCT — user can edit freely,
+   and edits persist in localStorage per grade.
+*/
+const DEFAULT_CURRICULUM = {
+  "2": [
+"Chủ đề 1: Ôn tập các số đến 100 – cấu tạo số, so sánh, thứ tự",
+"Tia số. Số liền trước, số liền sau. Luyện tập",
+"Các thành phần của phép cộng, phép trừ. Hơn – kém nhau bao nhiêu",
+"Luyện tập chung Chủ đề 1 (ôn số đến 100)",
+"Chủ đề 2: Phép cộng (qua 10) trong phạm vi 20",
+"Phép trừ (qua 10) trong phạm vi 20. Luyện tập",
+"Bài toán về nhiều hơn, ít hơn một số đơn vị",
+"Luyện tập chung Chủ đề 2 (cộng trừ qua 10 phạm vi 20)",
+"Chủ đề 3: Phép cộng (có nhớ) số có hai chữ số với số có một chữ số",
+"Phép cộng (có nhớ) số có hai chữ số với số có hai chữ số",
+"Phép trừ (có nhớ) số có hai chữ số cho số có một chữ số",
+"Phép trừ (có nhớ) số có hai chữ số cho số có hai chữ số. Luyện tập",
+"Bài toán về nhiều hơn, ít hơn (có nhớ). Luyện tập chung",
+"Ôn tập giữa học kì 1",
+"Chủ đề 4: Điểm, đoạn thẳng, đường thẳng, đường cong, ba điểm thẳng hàng",
+"Đường gấp khúc. Hình tứ giác",
+"Thực hành gấp, cắt, ghép, xếp hình, vẽ đoạn thẳng",
+"Chủ đề 5: Ngày – tháng. Xem đồng hồ, xem lịch",
+"Luyện tập chung Chủ đề 5 (thời gian)",
+"Chủ đề 6: Phép cộng (không nhớ) trong phạm vi 1000",
+"Phép trừ (không nhớ) trong phạm vi 1000. Luyện tập",
+"Ôn tập cuối học kì 1",
+"Chủ đề 7: Ôn tập và bổ sung – các số đến 1000 (đầu học kì 2)",
+"Chủ đề 8: Phép nhân – giới thiệu phép nhân, thừa số, tích",
+"Bảng nhân 2, bảng nhân 5",
+"Phép chia – giới thiệu phép chia, số bị chia, số chia, thương",
+"Bảng chia 2, bảng chia 5. Luyện tập chung Chủ đề 8",
+"Ôn tập giữa học kì 2",
+"Chủ đề 9: Một phần hai, một phần ba, một phần tư, một phần năm",
+"Chủ đề 10: Hình học – khối trụ, khối cầu, thực hành lắp ghép",
+"Chủ đề 11: Đề-xi-mét, mét, ki-lô-mét",
+"Giới thiệu tiền Việt Nam. Thực hành và trải nghiệm đo độ dài",
+"Chủ đề 12: Phép cộng, phép trừ (có nhớ) trong phạm vi 1000",
+"Chủ đề 13: Thu thập, phân loại, kiểm đếm số liệu (thống kê, xác suất đơn giản)",
+"Ôn tập cuối năm học – số học, hình học và đo lường"
+  ],
+  "3": [
+"Chủ đề 1: Ôn tập các số đến 1000. Ôn tập phép cộng, phép trừ trong phạm vi 1000",
+"Tìm thành phần trong phép cộng, phép trừ",
+"Ôn tập bảng nhân/chia 2, 5. Bảng nhân 3, bảng chia 3",
+"Bảng nhân 4, bảng chia 4. Ôn tập hình học và đo lường",
+"Luyện tập chung Chủ đề 1",
+"Chủ đề 2: Bảng nhân 6, chia 6. Bảng nhân 7, chia 7",
+"Bảng nhân 8, chia 8. Bảng nhân 9, chia 9",
+"Tìm thành phần trong phép nhân, phép chia. Một phần mấy",
+"Luyện tập chung Chủ đề 2 (bảng nhân, bảng chia)",
+"Chủ đề 3: Điểm ở giữa, trung điểm đoạn thẳng. Hình tròn",
+"Góc, góc vuông, góc không vuông. Hình tam giác, hình tứ giác, hình chữ nhật, hình vuông",
+"Thực hành vẽ góc vuông, đường tròn, hình vuông, hình chữ nhật",
+"Khối lập phương, khối hộp chữ nhật. Luyện tập chung Chủ đề 3",
+"Ôn tập giữa học kì 1",
+"Chủ đề 4: Nhân số có hai chữ số với số có một chữ số. Gấp một số lên một số lần",
+"Phép chia hết, phép chia có dư. Chia số có hai chữ số cho số có một chữ số",
+"Giảm một số đi một số lần. Bài toán giải bằng hai bước tính",
+"Luyện tập chung Chủ đề 4 (nhân chia phạm vi 100)",
+"Chủ đề 5: Mi-li-mét, gam, mi-li-lít, nhiệt độ và đơn vị đo nhiệt độ",
+"Thực hành và trải nghiệm với các đơn vị đo. Luyện tập chung Chủ đề 5",
+"Ôn tập cuối học kì 1",
+"Chủ đề 6: Nhân số có ba chữ số với số có một chữ số",
+"Chia số có ba chữ số cho số có một chữ số",
+"Biểu thức số. Tính giá trị của biểu thức số",
+"So sánh số lớn gấp mấy lần số bé, số bé bằng một phần mấy số lớn",
+"Ôn tập giữa học kì 2",
+"Chủ đề: Các số có bốn, năm chữ số. So sánh các số trong phạm vi 100000",
+"Làm tròn số đến hàng nghìn, hàng chục nghìn",
+"Chủ đề: Xem đồng hồ, xem lịch. Tiền Việt Nam",
+"Thực hành xem đồng hồ, xem lịch, sử dụng tiền Việt Nam",
+"Chủ đề: Thu thập, phân loại, ghi chép số liệu. Bảng số liệu",
+"Khả năng xảy ra của một sự kiện. Thực hành thu thập, đọc bảng số liệu",
+"Ôn tập các số trong phạm vi 10000, 100000",
+"Ôn tập phép cộng, trừ, nhân, chia trong phạm vi 100000",
+"Ôn tập cuối năm học – hình học, đo lường, thống kê"
+  ],
+  "4": [
+"Ôn tập các số đến 100 000 – đọc, viết, cấu tạo số, so sánh",
+"Các số trong phạm vi lớp triệu. Làm tròn số đến hàng nghìn",
+"So sánh các số có nhiều chữ số. Làm quen với dãy số tự nhiên",
+"Luyện tập chung (số tự nhiên). Yến, tạ, tấn",
+"Đề-xi-mét vuông, mét vuông, mi-li-mét vuông. Giây, thế kỉ",
+"Luyện tập chung (đơn vị đo). Phép cộng các số có nhiều chữ số",
+"Phép trừ các số có nhiều chữ số. Luyện tập chung",
+"Ôn tập hình học – góc nhọn, góc tù, góc bẹt, hai đường thẳng vuông góc/song song",
+"Ôn tập đo lường. Luyện tập chung Chủ đề (ôn tập bổ sung)",
+"Ôn tập giữa học kì 1",
+"Nhân với số có một chữ số. Chia cho số có một chữ số",
+"Tính chất giao hoán và kết hợp của phép nhân",
+"Nhân, chia với 10, 100, 1000... Tính chất phân phối của phép nhân với phép cộng",
+"Luyện tập chung (nhân, chia số tự nhiên)",
+"Chủ đề: Đường thẳng vuông góc, đường thẳng song song",
+"Hai đường thẳng vuông góc. Hai đường thẳng song song",
+"Thực hành vẽ hình vuông, hình chữ nhật. Luyện tập chung",
+"Ôn tập cuối học kì 1",
+"Chủ đề: Phân số – khái niệm phân số, phân số bằng nhau",
+"Rút gọn phân số. So sánh hai phân số",
+"Ôn tập giữa học kì 2",
+"Chủ đề: Phép cộng, phép trừ phân số",
+"Phép nhân, phép chia phân số",
+"Tìm phân số của một số. Luyện tập chung (phân số)",
+"Chủ đề: Tỉ lệ bản đồ. Ứng dụng của tỉ lệ bản đồ",
+"Chủ đề: Hình bình hành, hình thoi – diện tích",
+"Luyện tập chung (hình học lớp 4)",
+"Chủ đề: Biểu đồ – biểu đồ cột, biểu đồ tranh, số trung bình cộng",
+"Thu thập, phân loại và biểu diễn số liệu. Luyện tập chung (thống kê)",
+"Ôn tập các số đến lớp triệu. Ôn tập phép cộng, phép trừ",
+"Ôn tập hình học. Ôn tập đo lường",
+"Ôn tập phân số và các phép tính với phân số",
+"Ôn tập một số yếu tố thống kê và xác suất",
+"Ôn tập chung (toàn bộ chương trình lớp 4)",
+"Ôn tập cuối năm học – tổng hợp các dạng toán"
+  ],
+  "5": [
+"Ôn tập số tự nhiên. Ôn tập các phép tính với số tự nhiên",
+"Ôn tập phân số. Phân số thập phân",
+"Ôn tập các phép tính với phân số. Cộng, trừ hai phân số",
+"Hỗn số. Ôn tập hình học và đo lường (đầu năm)",
+"Luyện tập chung Chủ đề 1 (ôn tập, bổ sung)",
+"Chủ đề 2: Khái niệm số thập phân. So sánh các số thập phân",
+"Viết số đo đại lượng dưới dạng số thập phân",
+"Làm tròn số thập phân. Luyện tập chung Chủ đề 2",
+"Chủ đề 3: Ki-lô-mét vuông, héc-ta. Các đơn vị đo diện tích",
+"Thực hành với một số đơn vị đo đại lượng. Luyện tập chung Chủ đề 3",
+"Ôn tập giữa học kì 1",
+"Chủ đề 4: Phép cộng, phép trừ số thập phân",
+"Nhân, chia số thập phân với 10, 100, 1000 hoặc 0,1 ; 0,01 ; 0,001",
+"Phép nhân, phép chia số thập phân. Luyện tập chung Chủ đề 4",
+"Chủ đề 5: Hình tam giác – diện tích hình tam giác",
+"Hình thang – diện tích hình thang",
+"Đường tròn – chu vi và diện tích hình tròn",
+"Thực hành và trải nghiệm đo, vẽ, lắp ghép, tạo hình",
+"Ôn tập học kì 1 – số thập phân, hình học, đo lường",
+"Ôn tập cuối học kì 1",
+"Chủ đề 6: Ôn tập cuối học kì 1 (tiếp) – tổng hợp trước sang chủ đề mới",
+"Chủ đề 7: Tỉ số. Tỉ số phần trăm",
+"Tỉ lệ bản đồ. Tìm hai số khi biết tổng (hoặc hiệu) và tỉ số",
+"Luyện tập chung Chủ đề 7 (tỉ số, tỉ số phần trăm)",
+"Ôn tập giữa học kì 2",
+"Chủ đề 8: Thể tích – xăng-ti-mét khối, đề-xi-mét khối, mét khối",
+"Chủ đề 9: Diện tích, thể tích hình lập phương, hình hộp chữ nhật",
+"Luyện tập chung Chủ đề 8–9 (thể tích các hình khối)",
+"Chủ đề 10: Số đo thời gian. Vận tốc, quãng đường, thời gian (chuyển động đều)",
+"Thực hành tính toán, ước lượng vận tốc – quãng đường – thời gian",
+"Chủ đề 11: Thu thập, phân loại, sắp xếp số liệu. Biểu đồ hình quạt tròn",
+"Tỉ số của số lần lặp lại một sự kiện. Thực hành thống kê",
+"Ôn tập số tự nhiên, phân số, số thập phân và các phép tính",
+"Ôn tập tỉ số, tỉ số phần trăm. Ôn tập hình học và đo lường",
+"Ôn tập toán chuyển động đều. Ôn tập cuối năm học"
+  ]
+};
+
+const STORAGE_KEY = 'phieuToan_curriculum_v1';
+const SETTINGS_KEY = 'phieuToan_settings_v1';
+
+function loadCurriculum(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_CURRICULUM));
+}
+function saveCurriculum(curr){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(curr));
+}
+
+let curriculum = loadCurriculum();
+
+/* ============ 2. UI WIRING ============ */
+const gradeEl = document.getElementById('grade');
+const weekEl = document.getElementById('week');
+const topicEl = document.getElementById('topic');
+const currDumpEl = document.getElementById('currDump');
+
+function populateWeeks(){
+  weekEl.innerHTML = '';
+  for(let i=1;i<=35;i++){
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = 'Tuần ' + i;
+    weekEl.appendChild(opt);
+  }
+}
+
+function refreshTopic(){
+  const g = gradeEl.value;
+  const w = parseInt(weekEl.value,10);
+  const list = curriculum[g] || [];
+  topicEl.value = list[w-1] || '';
+}
+
+function refreshCurrDump(){
+  const g = gradeEl.value;
+  currDumpEl.value = (curriculum[g]||[]).join('\n');
+}
+
+document.getElementById('saveCurr').addEventListener('click', ()=>{
+  const g = gradeEl.value;
+  const lines = currDumpEl.value.split('\n').map(s=>s.trim());
+  while(lines.length < 35) lines.push('');
+  curriculum[g] = lines.slice(0,35);
+  saveCurriculum(curriculum);
+  refreshTopic();
+  flashStatus('Đã lưu khung chương trình cho khối ' + g + '.', 'info');
+});
+
+gradeEl.addEventListener('change', ()=>{ refreshTopic(); refreshCurrDump(); });
+weekEl.addEventListener('change', refreshTopic);
+
+populateWeeks();
+refreshTopic();
+refreshCurrDump();
+
+// difficulty count totals
+const nEasy = document.getElementById('nEasy');
+const nMed = document.getElementById('nMed');
+const nHard = document.getElementById('nHard');
+const totalQEl = document.getElementById('totalQ');
+function updateTotal(){
+  const t = (parseInt(nEasy.value)||0) + (parseInt(nMed.value)||0) + (parseInt(nHard.value)||0);
+  totalQEl.textContent = t;
+}
+[nEasy,nMed,nHard].forEach(el=>el.addEventListener('input', updateTotal));
+updateTotal();
+
+// persist small settings (school name, class, api key) locally
+function loadSettings(){
+  try{
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if(raw){
+      const s = JSON.parse(raw);
+      if(s.schoolName) document.getElementById('schoolName').value = s.schoolName;
+      if(s.className) document.getElementById('className').value = s.className;
+      if(s.apiKey) document.getElementById('apiKey').value = s.apiKey;
+    }
+  }catch(e){}
+}
+function saveSettings(){
+  const s = {
+    schoolName: document.getElementById('schoolName').value,
+    className: document.getElementById('className').value,
+    apiKey: document.getElementById('apiKey').value
+  };
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+}
+loadSettings();
+['schoolName','className','apiKey'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', saveSettings);
+});
+
+function flashStatus(msg, kind){
+  const box = document.getElementById('statusBox');
+  box.textContent = msg;
+  box.className = 'status show ' + (kind||'info');
+}
+function clearStatus(){
+  const box = document.getElementById('statusBox');
+  box.className = 'status';
+}
+
+/* ============ 3. GEMINI CALL ============ */
+let lastResult = null; // { easy:[], med:[], hard:[] } each item {question, answer}
+
+async function callGemini(apiKey, prompt){
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const body = {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.9, responseMimeType: "application/json" }
+  };
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  if(!res.ok){
+    const t = await res.text();
+    throw new Error('Gemini API lỗi (' + res.status + '): ' + t.slice(0,300));
+  }
+  const data = await res.json();
+  const text = (((data.candidates||[])[0]||{}).content||{}).parts?.map(p=>p.text||'').join('') || '';
+  if(!text) throw new Error('Gemini không trả về nội dung.');
+  let clean = text.trim().replace(/^```json/i,'').replace(/^```/,'').replace(/```$/,'').trim();
+  return JSON.parse(clean);
+}
+
+function buildPrompt({grade, topic, nEasy, nMed, nHard, extraNote}){
+  return `Bạn là một giáo viên Toán tiểu học Việt Nam giàu kinh nghiệm, biên soạn đề ôn luyện theo sách giáo khoa Toán lớp ${grade} bộ "Kết nối tri thức với cuộc sống".
+
+CHỦ ĐỀ / NỘI DUNG BÀI HỌC CẦN ÔN (tuần này):
+"""${topic}"""
+
+${extraNote ? 'YÊU CẦU THÊM TỪ GIÁO VIÊN: ' + extraNote + '\n' : ''}
+Hãy soạn một bộ câu hỏi ôn luyện bám sát đúng nội dung, dạng bài và mức độ kiến thức phù hợp với học sinh lớp ${grade} tại thời điểm học chủ đề trên (không dùng kiến thức chưa học, không dùng thuật ngữ vượt cấp).
+
+Số lượng cần soạn theo 3 mức độ:
+- Mức DỄ: ${nEasy} câu — nhận biết, tính toán trực tiếp, ít bước.
+- Mức VỪA: ${nMed} câu — vận dụng, có 1-2 bước suy luận, có thể là toán có lời văn ngắn.
+- Mức KHÓ: ${nHard} câu — vận dụng cao, toán có lời văn nhiều bước, hoặc đòi hỏi suy luận/so sánh/kết hợp nhiều kiến thức trong chủ đề.
+
+Mỗi câu phải có lời giải/đáp số ngắn gọn, chính xác, trình bày rõ các bước chính (đặc biệt với toán có lời văn).
+Các câu trong cùng một đề không được trùng lặp số liệu hay tình huống. Ưu tiên xen kẽ giữa bài tính toán thuần và bài có ngữ cảnh đời sống gần gũi với học sinh Việt Nam.
+
+CHỈ trả lời bằng JSON hợp lệ theo đúng cấu trúc sau, không thêm bất kỳ chữ nào khác, không dùng markdown:
+{
+  "easy": [ {"question": "...", "answer": "..."} ],
+  "medium": [ {"question": "...", "answer": "..."} ],
+  "hard": [ {"question": "...", "answer": "..."} ]
+}
+Mảng "easy" có đúng ${nEasy} phần tử, "medium" có đúng ${nMed} phần tử, "hard" có đúng ${nHard} phần tử. Nếu số lượng yêu cầu là 0 thì trả về mảng rỗng [] cho mức đó.`;
+}
+
+document.getElementById('genBtn').addEventListener('click', async ()=>{
+  clearStatus();
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const grade = gradeEl.value;
+  const topic = topicEl.value.trim();
+  const eN = parseInt(nEasy.value)||0, mN = parseInt(nMed.value)||0, hN = parseInt(nHard.value)||0;
+  const extraNote = document.getElementById('extraNote').value.trim();
+
+  if(!apiKey){ flashStatus('Anh cần nhập Gemini API key trước.', 'error'); return; }
+  if(!topic){ flashStatus('Chưa có nội dung chủ đề cho tuần này — nhập tay vào ô chủ đề.', 'error'); return; }
+  if(eN+mN+hN <= 0){ flashStatus('Tổng số câu phải lớn hơn 0.', 'error'); return; }
+
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  flashStatus('Đang gọi Gemini để soạn đề, vui lòng đợi (thường 10–30 giây)...', 'info');
+
+  try{
+    const prompt = buildPrompt({grade, topic, nEasy:eN, nMed:mN, nHard:hN, extraNote});
+    const json = await callGemini(apiKey, prompt);
+    lastResult = {
+      easy: json.easy || [],
+      medium: json.medium || [],
+      hard: json.hard || [],
+      meta: { grade, topic, schoolName: document.getElementById('schoolName').value, className: document.getElementById('className').value, week: weekEl.value }
+    };
+    renderPreview(lastResult);
+    flashStatus('Đã tạo xong bộ đề. Xem trước bên phải, kiểm tra rồi xuất file Word.', 'info');
+  }catch(err){
+    console.error(err);
+    flashStatus('Có lỗi khi tạo đề: ' + err.message, 'error');
+  }finally{
+    btn.disabled = false;
+  }
+});
+
+/* ============ 4. PREVIEW RENDER ============ */
+function renderPreview(result){
+  document.getElementById('emptyState').style.display = 'none';
+  const area = document.getElementById('resultArea');
+  area.innerHTML = '';
+
+  const groups = [
+    {key:'easy', label:'Mức độ Dễ', cls:'easy'},
+    {key:'medium', label:'Mức độ Vừa', cls:'med'},
+    {key:'hard', label:'Mức độ Khó', cls:'hard'}
+  ];
+
+  let counter = 1;
+  const allAnswers = [];
+
+  groups.forEach(g=>{
+    const items = result[g.key] || [];
+    if(items.length === 0) return;
+    const div = document.createElement('div');
+    div.className = 'qgroup ' + g.cls;
+    let html = `<h3>${g.label}</h3>`;
+    items.forEach(it=>{
+      html += `<div class="qitem"><span class="qnum">${counter}.</span><span class="qtext">${escapeHtml(it.question)}</span></div>`;
+      allAnswers.push({num: counter, answer: it.answer});
+      counter++;
+    });
+    div.innerHTML = html;
+    area.appendChild(div);
+  });
+
+  const toggle = document.createElement('div');
+  toggle.className = 'answer-toggle';
+  toggle.textContent = 'Xem đáp án / gợi ý chấm bài ▾';
+  const answerBox = document.createElement('div');
+  answerBox.className = 'answer-box';
+  answerBox.innerHTML = allAnswers.map(a=>`<div><b>${a.num}.</b> ${escapeHtml(a.answer)}</div>`).join('');
+  toggle.addEventListener('click', ()=>{ answerBox.classList.toggle('show'); });
+  area.appendChild(toggle);
+  area.appendChild(answerBox);
+
+  const actions = document.createElement('div');
+  actions.className = 'actions-bottom';
+  const wordBtn = document.createElement('button');
+  wordBtn.className = 'btn-primary';
+  wordBtn.textContent = 'Xuất file Word (.docx)';
+  wordBtn.addEventListener('click', exportToWord);
+  actions.appendChild(wordBtn);
+  area.appendChild(actions);
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s == null ? '' : String(s);
+  return d.innerHTML;
+}
+
+/* ============ 5. WORD EXPORT ============ */
+async function exportToWord(){
+  if(!lastResult) return;
+  const { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel, PageBreak } = docx;
+
+  const meta = lastResult.meta;
+  const children = [];
+
+  const mkRun = (text, opts={}) => new TextRun({ text, font:"Times New Roman", size:26, ...opts });
+
+  children.push(new Paragraph({
+    alignment: AlignmentType.CENTER,
+    children: [ mkRun(`PHIẾU BÀI TẬP TOÁN — TUẦN ${meta.week}`, {bold:true, size:30}) ]
+  }));
+  children.push(new Paragraph({
+    alignment: AlignmentType.CENTER,
+    children: [ mkRun(`Lớp ${meta.grade} — Sách Kết nối tri thức với cuộc sống`, {italics:true, size:24}) ]
+  }));
+  children.push(new Paragraph({ text: "" }));
+  children.push(new Paragraph({
+    children: [ mkRun(`Trường: ${meta.schoolName || '.......................................'}        Lớp: ${meta.className || '.............'}`) ]
+  }));
+  children.push(new Paragraph({
+    children: [ mkRun(`Họ và tên học sinh: .............................................................................   Ngày: ....../....../..........`) ]
+  }));
+  children.push(new Paragraph({ text: "" }));
+  children.push(new Paragraph({
+    children: [ mkRun(`Nội dung ôn tập: ${meta.topic}`, {italics:true}) ]
+  }));
+  children.push(new Paragraph({ text: "" }));
+
+  const groups = [
+    {key:'easy', label:'I. MỨC ĐỘ DỄ'},
+    {key:'medium', label:'II. MỨC ĐỘ VỪA'},
+    {key:'hard', label:'III. MỨC ĐỘ KHÓ'}
+  ];
+
+  let counter = 1;
+  const allAnswers = [];
+
+  groups.forEach(g=>{
+    const items = lastResult[g.key] || [];
+    if(items.length === 0) return;
+    children.push(new Paragraph({
+      spacing:{ before:200, after:120 },
+      children:[ mkRun(g.label, {bold:true, size:26}) ]
+    }));
+    items.forEach(it=>{
+      children.push(new Paragraph({
+        spacing:{ after: 160 },
+        children: [ mkRun(`Câu ${counter}. ${it.question}`) ]
+      }));
+      allAnswers.push({num: counter, answer: it.answer});
+      counter++;
+    });
+  });
+
+  // Answer key on new page
+  children.push(new Paragraph({ children:[ new PageBreak() ] }));
+  children.push(new Paragraph({
+    alignment: AlignmentType.CENTER,
+    children:[ mkRun('ĐÁP ÁN / HƯỚNG DẪN CHẤM', {bold:true, size:28}) ]
+  }));
+  children.push(new Paragraph({ text: "" }));
+  allAnswers.forEach(a=>{
+    children.push(new Paragraph({
+      spacing:{ after: 120 },
+      children: [ mkRun(`Câu ${a.num}: `, {bold:true}), mkRun(a.answer) ]
+    }));
+  });
+
+  const doc = new Document({
+    sections: [{
+      properties: {
+        page: { size: { width: 11906, height: 16838 }, margin:{top:1134, bottom:1134, left:1134, right:1134} }
+      },
+      children
+    }]
+  });
+
+  const blob = await Packer.toBlob(doc);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `PhieuBaiTapToan_L${meta.grade}_Tuan${meta.week}.docx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 3000);
+}
+</script>
+</body>
+</html>
