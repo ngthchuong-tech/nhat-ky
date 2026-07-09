@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Phiếu Bài Tập Toán Tuần - Kết Nối Tri Thức</title>
-<script src="https://cdn.jsdelivr.net/npm/docx@8.5/build/index.umd.min.js"></script>
+<!-- Xuất file Word bằng HTML nội bộ, không cần thư viện ngoài -->
+
 <style>
   :root{
     --ink:#1c2b33;
@@ -615,109 +616,87 @@ function escapeHtml(s){
   return d.innerHTML;
 }
 
-/* ============ 5. WORD EXPORT ============ */
-async function exportToWord(){
+/* ============ 5. WORD EXPORT (khong can thu vien ngoai) ============ */
+function escapeHtmlDoc(s){
+  return (s==null?'':String(s))
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function exportToWord(){
   if(!lastResult) return;
   clearStatus();
 
-  if(typeof docx === 'undefined' || !docx.Document){
-    flashStatus('Không tải được thư viện tạo file Word (docx.js) từ CDN. Nếu anh đang mở file bằng double-click (địa chỉ file://), trình duyệt có thể chặn tải thư viện này — hãy đưa file lên GitHub Pages rồi mở qua https:// và thử lại.', 'error');
-    return;
-  }
-
   try{
-  const { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel, PageBreak } = docx;
+    const meta = lastResult.meta;
+    const groups = [
+      {key:'easy', label:'I. MỨC ĐỘ DỄ'},
+      {key:'medium', label:'II. MỨC ĐỘ VỪA'},
+      {key:'hard', label:'III. MỨC ĐỘ KHÓ'}
+    ];
 
-  const meta = lastResult.meta;
-  const children = [];
+    let counter = 1;
+    const allAnswers = [];
+    let bodyHtml = '';
 
-  const mkRun = (text, opts={}) => new TextRun({ text, font:"Times New Roman", size:26, ...opts });
-
-  children.push(new Paragraph({
-    alignment: AlignmentType.CENTER,
-    children: [ mkRun(`PHIẾU BÀI TẬP TOÁN — TUẦN ${meta.week}`, {bold:true, size:30}) ]
-  }));
-  children.push(new Paragraph({
-    alignment: AlignmentType.CENTER,
-    children: [ mkRun(`Lớp ${meta.grade} — Sách Kết nối tri thức với cuộc sống`, {italics:true, size:24}) ]
-  }));
-  children.push(new Paragraph({ text: "" }));
-  children.push(new Paragraph({
-    children: [ mkRun(`Trường: ${meta.schoolName || '.......................................'}        Lớp: ${meta.className || '.............'}`) ]
-  }));
-  children.push(new Paragraph({
-    children: [ mkRun(`Họ và tên học sinh: .............................................................................   Ngày: ....../....../..........`) ]
-  }));
-  children.push(new Paragraph({ text: "" }));
-  children.push(new Paragraph({
-    children: [ mkRun(`Nội dung ôn tập: ${meta.topic}`, {italics:true}) ]
-  }));
-  children.push(new Paragraph({ text: "" }));
-
-  const groups = [
-    {key:'easy', label:'I. MỨC ĐỘ DỄ'},
-    {key:'medium', label:'II. MỨC ĐỘ VỪA'},
-    {key:'hard', label:'III. MỨC ĐỘ KHÓ'}
-  ];
-
-  let counter = 1;
-  const allAnswers = [];
-
-  groups.forEach(g=>{
-    const items = lastResult[g.key] || [];
-    if(items.length === 0) return;
-    children.push(new Paragraph({
-      spacing:{ before:200, after:120 },
-      children:[ mkRun(g.label, {bold:true, size:26}) ]
-    }));
-    items.forEach(it=>{
-      children.push(new Paragraph({
-        spacing:{ after: 160 },
-        children: [ mkRun(`Câu ${counter}. ${it.question}`) ]
-      }));
-      allAnswers.push({num: counter, answer: it.answer});
-      counter++;
+    groups.forEach(g=>{
+      const items = lastResult[g.key] || [];
+      if(items.length === 0) return;
+      bodyHtml += `<p style="font-weight:bold;font-size:14pt;margin-top:18pt;">${escapeHtmlDoc(g.label)}</p>`;
+      items.forEach(it=>{
+        bodyHtml += `<p style="margin:0 0 10pt 0;">Câu ${counter}. ${escapeHtmlDoc(it.question)}</p>`;
+        allAnswers.push({num: counter, answer: it.answer});
+        counter++;
+      });
     });
-  });
 
-  // Answer key on new page
-  children.push(new Paragraph({ children:[ new PageBreak() ] }));
-  children.push(new Paragraph({
-    alignment: AlignmentType.CENTER,
-    children:[ mkRun('ĐÁP ÁN / HƯỚNG DẪN CHẤM', {bold:true, size:28}) ]
-  }));
-  children.push(new Paragraph({ text: "" }));
-  allAnswers.forEach(a=>{
-    children.push(new Paragraph({
-      spacing:{ after: 120 },
-      children: [ mkRun(`Câu ${a.num}: `, {bold:true}), mkRun(a.answer) ]
-    }));
-  });
+    let answerHtml = `<p style="font-weight:bold;font-size:15pt;text-align:center;">ĐÁP ÁN / HƯỚNG DẪN CHẤM</p>`;
+    allAnswers.forEach(a=>{
+      answerHtml += `<p style="margin:0 0 8pt 0;"><b>Câu ${a.num}:</b> ${escapeHtmlDoc(a.answer)}</p>`;
+    });
 
-  const doc = new Document({
-    sections: [{
-      properties: {
-        page: { size: { width: 11906, height: 16838 }, margin:{top:1134, bottom:1134, left:1134, right:1134} }
-      },
-      children
-    }]
-  });
+    const fullHtml = `
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: "Times New Roman", serif; font-size: 13pt; }
+  @page Section1 { size: 21cm 29.7cm; margin: 2cm; }
+  div.Section1 { page: Section1; }
+</style>
+</head>
+<body>
+<div class="Section1">
+  <p style="text-align:center;font-weight:bold;font-size:16pt;margin-bottom:2pt;">PHIẾU BÀI TẬP TOÁN — TUẦN ${escapeHtmlDoc(meta.week)}</p>
+  <p style="text-align:center;font-style:italic;font-size:12pt;margin-top:0;">Lớp ${escapeHtmlDoc(meta.grade)} — Sách Kết nối tri thức với cuộc sống</p>
+  <p>&nbsp;</p>
+  <p>Trường: ${escapeHtmlDoc(meta.schoolName) || '.......................................'}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Lớp: ${escapeHtmlDoc(meta.className) || '.............'}</p>
+  <p>Họ và tên học sinh: .............................................................................&nbsp;&nbsp;&nbsp;Ngày: ....../....../..........</p>
+  <p>&nbsp;</p>
+  <p style="font-style:italic;">Nội dung ôn tập: ${escapeHtmlDoc(meta.topic)}</p>
+  <p>&nbsp;</p>
+  ${bodyHtml}
+  <br clear="all" style="page-break-before:always">
+  ${answerHtml}
+</div>
+</body>
+</html>`;
 
-  const blob = await Packer.toBlob(doc);
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `PhieuBaiTapToan_L${meta.grade}_Tuan${meta.week}.docx`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(()=>URL.revokeObjectURL(url), 3000);
-  flashStatus('Đã xuất file Word. Kiểm tra thư mục Download / tải xuống của trình duyệt.', 'info');
+    const blob = new Blob(['\ufeff', fullHtml], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `PhieuBaiTapToan_L${meta.grade}_Tuan${meta.week}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 3000);
+    flashStatus('Đã xuất file Word (.doc). Kiểm tra thư mục Download / tải xuống của trình duyệt, mở bằng Microsoft Word hoặc WPS.', 'info');
   }catch(err){
     console.error(err);
     flashStatus('Lỗi khi xuất file Word: ' + (err && err.message ? err.message : err), 'error');
   }
 }
+
 </script>
 </body>
 </html>
