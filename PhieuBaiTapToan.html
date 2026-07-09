@@ -564,7 +564,7 @@ function processMathText(raw, forWord){
     const num = escapeHtmlDoc(m[1].trim());
     const den = escapeHtmlDoc(m[2].trim());
     if(forWord){
-      result += `<table style="display:inline-table;vertical-align:middle;text-align:center;border-collapse:collapse;margin:0 2px;" cellpadding="0" cellspacing="0"><tr><td style="border-bottom:1px solid #000;padding:0 3px;font-size:11pt;line-height:1.15;">${num}</td></tr><tr><td style="padding:0 3px;font-size:11pt;line-height:1.15;">${den}</td></tr></table>`;
+      result += `<sup>${num}</sup>&#8260;<sub>${den}</sub>`;
     } else {
       result += `<span class="frac"><span class="fnum">${num}</span><span class="fden">${den}</span></span>`;
     }
@@ -772,6 +772,8 @@ async function exportToWord(){
     let counter = 1;
     const allAnswers = [];
     let bodyHtml = '';
+    const imageParts = []; // { location, base64 }
+    let imgCounter = 1;
 
     for(const g of groups){
       const items = lastResult[g.key] || [];
@@ -786,7 +788,10 @@ async function exportToWord(){
               const png = await svgToPngDataUrl(svg, 2.5);
               const wPt = Math.round(png.width * 0.7);
               const hPt = Math.round(png.height * 0.7);
-              bodyHtml += `<p style="margin:0 0 10pt 34pt;"><img src="${png.dataUrl}" width="${wPt}" height="${hPt}"></p>`;
+              const location = `shape_img_${imgCounter++}.png`;
+              const base64 = png.dataUrl.split(',')[1];
+              imageParts.push({ location, base64 });
+              bodyHtml += `<p style="margin:0 0 10pt 34pt;"><img src="${location}" width="${wPt}" height="${hPt}"></p>`;
             }catch(imgErr){ console.warn('Không dựng được hình cho câu', counter, imgErr); }
           }
         }
@@ -827,7 +832,33 @@ async function exportToWord(){
 </body>
 </html>`;
 
-    const blob = new Blob(['\ufeff', fullHtml], { type: 'application/msword' });
+    const boundary = "----=_NextPart_PhieuToan_" + Date.now();
+
+    function base64ToLines(b64){
+      const lines = [];
+      for(let i=0;i<b64.length;i+=76){ lines.push(b64.slice(i,i+76)); }
+      return lines.join('\r\n');
+    }
+
+    let mhtml = '';
+    mhtml += `MIME-Version: 1.0\r\n`;
+    mhtml += `Content-Type: multipart/related; boundary="${boundary}"\r\n\r\n`;
+
+    mhtml += `--${boundary}\r\n`;
+    mhtml += `Content-Type: text/html; charset="utf-8"\r\n`;
+    mhtml += `Content-Transfer-Encoding: 8bit\r\n\r\n`;
+    mhtml += fullHtml + `\r\n\r\n`;
+
+    imageParts.forEach(part=>{
+      mhtml += `--${boundary}\r\n`;
+      mhtml += `Content-Type: image/png\r\n`;
+      mhtml += `Content-Transfer-Encoding: base64\r\n`;
+      mhtml += `Content-Location: ${part.location}\r\n\r\n`;
+      mhtml += base64ToLines(part.base64) + `\r\n\r\n`;
+    });
+    mhtml += `--${boundary}--\r\n`;
+
+    const blob = new Blob([mhtml], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
