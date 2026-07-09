@@ -618,6 +618,14 @@ function escapeHtml(s){
 /* ============ 5. WORD EXPORT ============ */
 async function exportToWord(){
   if(!lastResult) return;
+  clearStatus();
+
+  if(typeof docx === 'undefined' || !docx.Document){
+    flashStatus('Không tải được thư viện tạo file Word (docx.js) từ CDN. Nếu anh đang mở file bằng double-click (địa chỉ file://), trình duyệt có thể chặn tải thư viện này — hãy đưa file lên GitHub Pages rồi mở qua https:// và thử lại.', 'error');
+    return;
+  }
+
+  try{
   const { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel, PageBreak } = docx;
 
   const meta = lastResult.meta;
@@ -704,6 +712,11 @@ async function exportToWord(){
   a.click();
   document.body.removeChild(a);
   setTimeout(()=>URL.revokeObjectURL(url), 3000);
+  flashStatus('Đã xuất file Word. Kiểm tra thư mục Download / tải xuống của trình duyệt.', 'info');
+  }catch(err){
+    console.error(err);
+    flashStatus('Lỗi khi xuất file Word: ' + (err && err.message ? err.message : err), 'error');
+  }
 }
 </script>
 </body>
