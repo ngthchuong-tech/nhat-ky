@@ -922,16 +922,43 @@ async function exportToWordDocx(){
     children.push(new Paragraph({ spacing:{before:200, after:120}, children:[ mkRun(g.label, {bold:true, size:26}) ] }));
     for(const it of items){
       const qParts = splitIntoSubParts(stripStrayHtml(it.question));
+      const hasShape = !!it.shape;
+
       qParts.forEach((part, idx)=>{
         const isStemOnly = idx===0 && qParts.length>1;
         const prefixText = idx===0 ? `Câu ${counter}. ` : '';
         const labelText = part.label ? `${part.label} ` : '';
-        children.push(new Paragraph({
-          indent: idx===0 ? undefined : { left: 400 },
-          spacing:{after:80},
-          children: [ mkRun(prefixText+labelText), ...buildMathRuns(part.content) ]
-        }));
+        const mathChildren = buildMathRuns(part.content);
+
+        if(isStemOnly){
+          children.push(new Paragraph({ spacing:{after:60}, children:[ mkRun(prefixText+labelText), ...mathChildren ] }));
+          return;
+        }
+
+        // Rough length check (fraction markers count as ~2 chars once rendered) to decide
+        // whether the answer space fits on the same line or needs full lines below.
+        const approxLen = part.content.replace(/@frac\{[^{}]*\}\{[^{}]*\}@/g, 'XX').length;
+        const isShort = approxLen < 55 && !hasShape;
+
+        if(isShort){
+          children.push(new Paragraph({
+            indent: idx===0 ? undefined : { left: 400 },
+            tabStops: [{ type: docx.TabStopType.RIGHT, position: 9600 }],
+            spacing:{after: (g.key==='hard' ? 220 : 180)},
+            children: [
+              mkRun(prefixText+labelText), ...mathChildren,
+              mkRun("\tBài làm: ", {italics:true}),
+              mkRun(".................................")
+            ]
+          }));
+        } else {
+          children.push(new Paragraph({ indent: idx===0?undefined:{left:400}, spacing:{after:60}, children:[ mkRun(prefixText+labelText), ...mathChildren ] }));
+          children.push(new Paragraph({ indent: idx===0?undefined:{left:400}, spacing:{after:40}, children:[ mkRun("Bài làm:", {italics:true}) ] }));
+          const linesCount = (qParts.length>1) ? (g.key==='hard'?2:1) : (g.key==='easy'?2:(g.key==='medium'?3:4));
+          for(let li=0; li<linesCount; li++) children.push(makeRuledLine());
+        }
       });
+
       if(it.shape){
         const svg = buildShapeSVG(it.shape);
         if(svg){
@@ -947,17 +974,6 @@ async function exportToWordDocx(){
             }));
           }catch(imgErr){ console.warn('Không dựng được hình cho câu', counter, imgErr); }
         }
-      }
-      // Blank ruled lines for students to write their answer on
-      const linesPerPart = (g.key === 'hard') ? 2 : 1;
-      if(qParts.length > 1){
-        const subCount = qParts.length - 1; // exclude the intro/stem line
-        for(let s=0; s<subCount; s++){
-          for(let li=0; li<linesPerPart; li++) children.push(makeRuledLine());
-        }
-      } else {
-        const linesCount = g.key==='easy' ? 2 : (g.key==='medium' ? 3 : 4);
-        for(let li=0; li<linesCount; li++) children.push(makeRuledLine());
       }
       children.push(new Paragraph({ spacing:{after:80}, children:[] }));
       allAnswers.push({num: counter, answer: it.answer});
@@ -985,7 +1001,12 @@ async function exportToWordDocx(){
     sections: [{
       properties: { page: { size:{width:11906, height:16838}, margin:{top:1134,bottom:1134,left:1134,right:1134} } },
       children
-    }]
+    }],
+    styles: {
+      default: {
+        document: { run: { font: "Times New Roman", size: 26 } }
+      }
+    }
   });
 
   const blob = await Packer.toBlob(doc);
