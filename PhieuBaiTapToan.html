@@ -724,6 +724,37 @@ function svgToPngDataUrl(svgString, scale){
   });
 }
 
+// Splits text like "...intro... a) phần 1 b) phần 2" into separate labeled parts
+// so a), b), c)... each render on their own line instead of running together.
+function splitIntoSubParts(text){
+  const labelRegex = /(^|\s)([a-e]\))\s*/g;
+  let m; const marks = [];
+  while((m = labelRegex.exec(text)) !== null){
+    marks.push({ start: m.index + m[1].length, end: labelRegex.lastIndex, label: m[2] });
+  }
+  if(marks.length < 2) return [{ label:'', content:text }];
+  const parts = [];
+  const stem = text.slice(0, marks[0].start).trim();
+  if(stem) parts.push({ label:'', content:stem });
+  for(let i=0;i<marks.length;i++){
+    const contentStart = marks[i].end;
+    const contentEnd = i+1<marks.length ? marks[i+1].start : text.length;
+    const content = text.slice(contentStart, contentEnd).trim();
+    parts.push({ label: marks[i].label, content });
+  }
+  return parts;
+}
+
+// An empty paragraph with a bottom border — a blank ruled line for students to write on.
+function makeRuledLine(){
+  const { Paragraph, TextRun, BorderStyle } = docx;
+  return new Paragraph({
+    spacing: { before: 260, after: 0 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: "999999" } },
+    children: [ new TextRun({ text: "", font:"Times New Roman", size:26 }) ]
+  });
+}
+
 document.getElementById('genBtn').addEventListener('click', async ()=>{
   clearStatus();
   const apiKey = document.getElementById('apiKey').value.trim();
@@ -890,10 +921,17 @@ async function exportToWordDocx(){
     if(items.length === 0) continue;
     children.push(new Paragraph({ spacing:{before:200, after:120}, children:[ mkRun(g.label, {bold:true, size:26}) ] }));
     for(const it of items){
-      children.push(new Paragraph({
-        spacing:{after:120},
-        children: [ mkRun(`Câu ${counter}. `), ...buildMathRuns(it.question) ]
-      }));
+      const qParts = splitIntoSubParts(stripStrayHtml(it.question));
+      qParts.forEach((part, idx)=>{
+        const isStemOnly = idx===0 && qParts.length>1;
+        const prefixText = idx===0 ? `Câu ${counter}. ` : '';
+        const labelText = part.label ? `${part.label} ` : '';
+        children.push(new Paragraph({
+          indent: idx===0 ? undefined : { left: 400 },
+          spacing:{after:80},
+          children: [ mkRun(prefixText+labelText), ...buildMathRuns(part.content) ]
+        }));
+      });
       if(it.shape){
         const svg = buildShapeSVG(it.shape);
         if(svg){
@@ -910,6 +948,18 @@ async function exportToWordDocx(){
           }catch(imgErr){ console.warn('Không dựng được hình cho câu', counter, imgErr); }
         }
       }
+      // Blank ruled lines for students to write their answer on
+      const linesPerPart = (g.key === 'hard') ? 2 : 1;
+      if(qParts.length > 1){
+        const subCount = qParts.length - 1; // exclude the intro/stem line
+        for(let s=0; s<subCount; s++){
+          for(let li=0; li<linesPerPart; li++) children.push(makeRuledLine());
+        }
+      } else {
+        const linesCount = g.key==='easy' ? 2 : (g.key==='medium' ? 3 : 4);
+        for(let li=0; li<linesCount; li++) children.push(makeRuledLine());
+      }
+      children.push(new Paragraph({ spacing:{after:80}, children:[] }));
       allAnswers.push({num: counter, answer: it.answer});
       counter++;
     }
@@ -919,10 +969,16 @@ async function exportToWordDocx(){
   children.push(new Paragraph({ alignment: AlignmentType.CENTER, children:[ mkRun('ĐÁP ÁN / HƯỚNG DẪN CHẤM', {bold:true, size:28}) ] }));
   children.push(new Paragraph({ text:"" }));
   allAnswers.forEach(a=>{
-    children.push(new Paragraph({
-      spacing:{after:120},
-      children: [ mkRun(`Câu ${a.num}: `, {bold:true}), ...buildMathRuns(a.answer) ]
-    }));
+    const aParts = splitIntoSubParts(stripStrayHtml(a.answer));
+    aParts.forEach((part, idx)=>{
+      const prefixText = idx===0 ? `Câu ${a.num}: ` : '';
+      const labelText = part.label ? `${part.label} ` : '';
+      children.push(new Paragraph({
+        indent: idx===0 ? undefined : { left: 360 },
+        spacing:{after:80},
+        children: [ mkRun(prefixText, {bold: idx===0}), mkRun(labelText), ...buildMathRuns(part.content) ]
+      }));
+    });
   });
 
   const doc = new Document({
