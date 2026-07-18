@@ -153,7 +153,7 @@ window.addEventListener('error', function(e){
    ở app kia dán vào đây.
 ====================================================================== */
 const CONFIG = {
-  WEB_APP_URL: "https://script.google.com/macros/s/AKfycbxPpsWCZtj3c7MnxMAeDsnedgwkLKFo2yiH-FaLcN_TkYnbU4IGRyyC8ECZctAJ0AlLXw/exec",
+  WEB_APP_URL: "https://script.google.com/macros/s/AKfycbxzbDnj34-CmbAay_RMxV__KiVq7SCuUVBcEorBbvGrJjnRQ3qwXG4HVqv3SKpg8Occ2w/exec",
   ACCESS_TOKEN: "123"
 };
 
@@ -431,6 +431,76 @@ function blobToBase64(blob){
   });
 }
 
+/* ------------------------------------------------------------------
+   Chuyển audio ghi được (thường là webm/opus hoặc mp4, tuỳ trình duyệt)
+   sang WAV — định dạng Gemini hỗ trợ chính thức. Trình duyệt ghi âm ra
+   nhiều định dạng/codec khác nhau và Gemini không nhận đúng các chuỗi
+   mime type kèm tham số codec (vd "audio/webm;codecs=opus"), nên quy
+   về WAV cho chắc chắn, tránh Gemini "bỏ qua" audio và tự bịa nội dung.
+------------------------------------------------------------------ */
+function writeWavString(view, offset, str){
+  for(let i=0; i<str.length; i++) view.setUint8(offset+i, str.charCodeAt(i));
+}
+function interleaveChannels(left, right){
+  const length = left.length + right.length;
+  const result = new Float32Array(length);
+  let index = 0, inputIndex = 0;
+  while(index < length){
+    result[index++] = left[inputIndex];
+    result[index++] = right[inputIndex];
+    inputIndex++;
+  }
+  return result;
+}
+function floatTo16BitPCM(view, offset, input){
+  for(let i=0; i<input.length; i++, offset+=2){
+    const s = Math.max(-1, Math.min(1, input[i]));
+    view.setInt16(offset, s < 0 ? s*0x8000 : s*0x7FFF, true);
+  }
+}
+function audioBufferToWavBlob(audioBuffer){
+  const numChannels = audioBuffer.numberOfChannels >= 2 ? 2 : 1;
+  const sampleRate = audioBuffer.sampleRate;
+  const bitDepth = 16;
+
+  const samples = numChannels === 2
+    ? interleaveChannels(audioBuffer.getChannelData(0), audioBuffer.getChannelData(1))
+    : audioBuffer.getChannelData(0);
+
+  const dataLength = samples.length * (bitDepth/8);
+  const buffer = new ArrayBuffer(44 + dataLength);
+  const view = new DataView(buffer);
+
+  writeWavString(view, 0, 'RIFF');
+  view.setUint32(4, 36 + dataLength, true);
+  writeWavString(view, 8, 'WAVE');
+  writeWavString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numChannels * bitDepth/8, true);
+  view.setUint16(32, numChannels * bitDepth/8, true);
+  view.setUint16(34, bitDepth, true);
+  writeWavString(view, 36, 'data');
+  view.setUint32(40, dataLength, true);
+
+  floatTo16BitPCM(view, 44, samples);
+  return new Blob([view], { type: 'audio/wav' });
+}
+async function blobToWavBase64(blob){
+  const arrayBuffer = await blob.arrayBuffer();
+  const AudioContextCls = window.AudioContext || window.webkitAudioContext;
+  const audioCtx = new AudioContextCls();
+  try{
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    const wavBlob = audioBufferToWavBlob(audioBuffer);
+    return await blobToBase64(wavBlob);
+  } finally {
+    audioCtx.close();
+  }
+}
+
 function parseTranscribeResult(text){
   const marker = /##\s*TRANSCRIPT/i;
   const match = text.search(marker);
@@ -459,14 +529,22 @@ Chép lại toàn bộ lời nói trong ghi âm, càng sát càng tốt.`;
       await new Promise(r=>setTimeout(r, 1200));
       resultText = "## Ý CHÍNH\n- (Dữ liệu mẫu) Đây là ý chính minh hoạ — sau khi dán WEB_APP_URL trong CONFIG, đoạn này sẽ là nội dung AI nghe được thật từ ghi âm của bạn.\n- Ý thứ hai minh hoạ.\n\n## TRANSCRIPT ĐẦY ĐỦ\n(Dữ liệu mẫu) Đây là bản chép lời minh hoạ, sẽ được thay bằng transcript thật khi gắn API.";
     } else {
-      const base64 = await blobToBase64(note.audioBlob);
+      let base64, mimeTypeToSend;
+      try{
+        base64 = await blobToWavBase64(note.audioBlob);
+        mimeTypeToSend = 'audio/wav';
+      }catch(convErr){
+        console.warn('Không chuyển được sang WAV, gửi nguyên định dạng gốc (có thể kém chính xác hơn):', convErr);
+        base64 = await blobToBase64(note.audioBlob);
+        mimeTypeToSend = (note.audioMime || 'audio/webm').split(';')[0];
+      }
       const res = await fetch(CONFIG.WEB_APP_URL, {
         method: 'POST',
         headers: {'Content-Type':'text/plain;charset=utf-8'},
         body: JSON.stringify({
           action: 'transcribe',
           audioBase64: base64,
-          mimeType: note.audioMime,
+          mimeType: mimeTypeToSend,
           prompt,
           token: CONFIG.ACCESS_TOKEN || undefined
         })
