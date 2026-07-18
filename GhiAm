@@ -139,6 +139,14 @@
 </footer>
 
 <script>
+window.addEventListener('error', function(e){
+  var box = document.createElement('div');
+  box.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#C0392B;color:#fff;padding:10px 14px;font-family:sans-serif;font-size:13px;';
+  box.textContent = '⚠ Có lỗi JavaScript khiến trang không hoạt động đúng: ' + e.message + ' (dòng ' + e.lineno + '). Trình duyệt bạn dùng có thể không hỗ trợ 1 tính năng JS trong file — thử mở bằng Chrome/Safari bản mới, hoặc chụp màn hình lỗi này gửi lại để được sửa.';
+  document.body.prepend(box);
+});
+</script>
+<script>
 /* ======================================================================
    CONFIG — dùng chung Web App với app Soạn Thảo Văn Bản (cùng 1 Code.gs
    đã được bổ sung action "transcribe"). Copy đúng URL + mã khoá đã dùng
@@ -169,7 +177,15 @@ function loadNotes(){
    chỉ phần chữ (tiêu đề, ý chính, transcript) được giữ lại giữa các lần mở trang. */
 function saveNotes(){
   try{
-    const serializable = notes.map(({audioBlob, audioUrl, hasAudioThisSession, ...rest}) => rest);
+    const serializable = notes.map(function(n){
+      var copy = {};
+      for(var key in n){
+        if(key !== 'audioBlob' && key !== 'audioUrl' && key !== 'hasAudioThisSession'){
+          copy[key] = n[key];
+        }
+      }
+      return copy;
+    });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable));
   }catch(err){
     console.warn('Lưu ghi chú thất bại:', err);
