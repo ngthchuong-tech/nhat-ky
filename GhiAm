@@ -145,7 +145,7 @@
    ở app kia dán vào đây.
 ====================================================================== */
 const CONFIG = {
-  WEB_APP_URL: "https://script.google.com/macros/s/AKfycbwtLb43EnsztOLKYJZlEqTMEkFqubMpg0ClOMm0yILo-rSSXcJpa6rzbM0lTVHY8MFzFg/exec",
+  WEB_APP_URL: "https://script.google.com/macros/s/AKfycbxPpsWCZtj3c7MnxMAeDsnedgwkLKFo2yiH-FaLcN_TkYnbU4IGRyyC8ECZctAJ0AlLXw/exec",
   };
 
 const STORAGE_KEY = 'ghichu_giongnoi_v1';
