@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ghi Chú Bằng Giọng Nói</title>
+<style>
+  :root{
+    --bg:#F5F3EF;
+    --ink:#2B2A28;
+    --ink-soft:#6B665C;
+    --accent:#3E6B8A;
+    --accent-soft:#7FA4BC;
+    --panel:#FFFFFF;
+    --panel-border:#DFDACF;
+    --rec:#C0392B;
+    --good:#3E6B4F;
+    --accent-bg:#EAF1F5;
+    --font-body:"Inter","Segoe UI",sans-serif;
+    --font-mono:"IBM Plex Mono",monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:var(--font-body); background:var(--bg); color:var(--ink);
+    min-height:100vh; padding-bottom:40px;
+  }
+
+  header{
+    padding:16px 20px; background:var(--panel); border-bottom:2px solid var(--accent);
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
+  header h1{font-size:17px; margin:0; font-weight:700;}
+  header .status{font-size:11.5px; color:var(--ink-soft);}
+
+  .container{max-width:640px; margin:0 auto; padding:20px 16px;}
+
+  /* ---------- Record area ---------- */
+  .record-panel{
+    background:var(--panel); border:1px solid var(--panel-border); border-radius:14px;
+    padding:26px 20px; text-align:center; margin-bottom:22px;
+  }
+  .rec-btn{
+    width:84px; height:84px; border-radius:50%; border:none; cursor:pointer;
+    background:var(--rec); color:#fff; font-size:28px;
+    display:flex; align-items:center; justify-content:center; margin:0 auto 14px;
+    box-shadow:0 4px 14px rgba(192,57,43,.35);
+    transition:transform .15s;
+  }
+  .rec-btn:active{transform:scale(0.94);}
+  .rec-btn.recording{
+    animation:pulse 1.4s infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(192,57,43,.45);}
+    70%{box-shadow:0 0 0 18px rgba(192,57,43,0);}
+    100%{box-shadow:0 0 0 0 rgba(192,57,43,0);}
+  }
+  .rec-timer{font-family:var(--font-mono); font-size:22px; font-weight:600; margin-bottom:4px;}
+  .rec-hint{font-size:12.5px; color:var(--ink-soft);}
+  .rec-error{
+    margin-top:12px; font-size:12.5px; color:var(--rec); background:#FDEDEB;
+    border:1px solid #F3C9C3; border-radius:8px; padding:8px 10px; text-align:left;
+  }
+  .rec-processing{
+    margin-top:12px; font-size:12.5px; color:var(--accent); display:none; align-items:center;
+    justify-content:center; gap:8px;
+  }
+  .spinner{
+    width:14px; height:14px; border:2px solid var(--accent-soft); border-top-color:var(--accent);
+    border-radius:50%; animation:spin .8s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* ---------- Notes list ---------- */
+  .notes-empty{
+    text-align:center; color:var(--ink-soft); font-size:13px; padding:30px 10px; line-height:1.6;
+  }
+  .note-card{
+    background:var(--panel); border:1px solid var(--panel-border); border-radius:12px;
+    padding:16px; margin-bottom:14px;
+  }
+  .note-head{display:flex; align-items:center; gap:8px; margin-bottom:4px;}
+  .note-title{
+    flex:1; border:none; background:transparent; font-size:14.5px; font-weight:700;
+    padding:3px 0; border-bottom:1px solid transparent;
+  }
+  .note-title:focus{outline:none; border-bottom-color:var(--accent);}
+  .note-time{font-size:10.5px; color:var(--ink-soft); white-space:nowrap;}
+  .note-body{margin-top:8px;}
+  .note-label{font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; color:var(--ink-soft); margin-bottom:5px;}
+  .note-points{
+    width:100%; border:1px solid var(--panel-border); border-radius:7px; padding:9px 10px;
+    font-size:13px; line-height:1.6; min-height:70px; resize:vertical; font-family:var(--font-body);
+    background:#FDFCFA;
+  }
+  .note-transcript-toggle{
+    font-size:11.5px; color:var(--accent); background:none; border:none; cursor:pointer;
+    padding:6px 0; font-weight:600;
+  }
+  .note-transcript{
+    display:none; font-size:12px; color:var(--ink-soft); line-height:1.6; background:#FAF9F6;
+    border:1px solid var(--panel-border); border-radius:7px; padding:9px 10px; margin-top:6px;
+    white-space:pre-wrap;
+  }
+  .note-actions{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;}
+  .note-actions button{
+    font-size:11.5px; padding:6px 10px; border-radius:6px; border:1px solid var(--panel-border);
+    background:#fff; cursor:pointer;
+  }
+  .note-actions button.danger{color:var(--rec); border-color:#EBBBB4;}
+  .note-status{font-size:11.5px; color:var(--ink-soft); font-style:italic;}
+
+  footer{max-width:640px; margin:0 auto; padding:0 16px; font-size:11px; color:var(--ink-soft); text-align:center;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎙️ Ghi Chú Bằng Giọng Nói</h1>
+  <div class="status">Bản dựng thử — chưa cấu hình Web App sẽ dùng dữ liệu mẫu để test</div>
+</header>
+
+<div class="container">
+  <div class="record-panel">
+    <button class="rec-btn" id="rec-btn">●</button>
+    <div class="rec-timer" id="rec-timer">00:00</div>
+    <div class="rec-hint" id="rec-hint">Bấm để bắt đầu ghi âm</div>
+    <div class="rec-processing" id="rec-processing"><div class="spinner"></div> Đang xử lý ghi âm...</div>
+    <div class="rec-error" id="rec-error" style="display:none;"></div>
+  </div>
+
+  <div id="notes-list"></div>
+  <div class="notes-empty" id="notes-empty">Chưa có ghi chú nào. Bấm nút đỏ ở trên để bắt đầu ghi âm — AI sẽ tự tách ra ý chính cho bạn.</div>
+</div>
+
+<footer>
+  Ghi chú được lưu trên trình duyệt này. File âm thanh không tự động lưu lại — tải về ngay sau khi ghi nếu cần giữ bản gốc.
+</footer>
+
+<script>
+window.addEventListener('error', function(e){
+  var box = document.createElement('div');
+  box.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#C0392B;color:#fff;padding:10px 14px;font-family:sans-serif;font-size:13px;';
+  box.textContent = '⚠ Có lỗi JavaScript khiến trang không hoạt động đúng: ' + e.message + ' (dòng ' + e.lineno + '). Trình duyệt bạn dùng có thể không hỗ trợ 1 tính năng JS trong file — thử mở bằng Chrome/Safari bản mới, hoặc chụp màn hình lỗi này gửi lại để được sửa.';
+  document.body.prepend(box);
+});
+</script>
+<script>
+/* ======================================================================
+   CONFIG — dùng chung Web App với app Soạn Thảo Văn Bản (cùng 1 Code.gs
+   đã được bổ sung action "transcribe"). Copy đúng URL + mã khoá đã dùng
+   ở app kia dán vào đây.
+====================================================================== */
+const CONFIG = {
+  WEB_APP_URL: "https://script.google.com/macros/s/AKfycbxPpsWCZtj3c7MnxMAeDsnedgwkLKFo2yiH-FaLcN_TkYnbU4IGRyyC8ECZctAJ0AlLXw/exec",
+  ACCESS_TOKEN: ""
+};
+
+const STORAGE_KEY = 'ghichu_giongnoi_v1';
+
+/* ======================================================================
+   LƯU / NẠP GHI CHÚ (chỉ lưu chữ, không lưu file âm thanh)
+====================================================================== */
+let notes = [];
+
+function loadNotes(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    notes = raw ? JSON.parse(raw) : [];
+  }catch(err){
+    console.warn('Không đọc được ghi chú đã lưu:', err);
+    notes = [];
+  }
+}
+/* Lưu ý: audioBlob/audioUrl không thể serialize vào localStorage nên bị loại ra khi lưu —
+   chỉ phần chữ (tiêu đề, ý chính, transcript) được giữ lại giữa các lần mở trang. */
+function saveNotes(){
+  try{
+    const serializable = notes.map(function(n){
+      var copy = {};
+      for(var key in n){
+        if(key !== 'audioBlob' && key !== 'audioUrl' && key !== 'hasAudioThisSession'){
+          copy[key] = n[key];
+        }
+      }
+      return copy;
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable));
+  }catch(err){
+    console.warn('Lưu ghi chú thất bại:', err);
+  }
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderNotes(){
+  const list = document.getElementById('notes-list');
+  const empty = document.getElementById('notes-empty');
+  if(notes.length === 0){
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  list.innerHTML = notes.map(n => `
+    <div class="note-card" data-id="${n.id}">
+      <div class="note-head">
+        <input class="note-title" value="${escapeHtml(n.title)}" data-id="${n.id}">
+        <span class="note-time">${escapeHtml(n.timeLabel)}</span>
+      </div>
+      ${n.status === 'processing' ? `<div class="note-status">Đang xử lý...</div>` : ''}
+      ${n.status === 'error' ? `<div class="note-status" style="color:var(--rec);">⚠ ${escapeHtml(n.error||'Có lỗi khi xử lý')}</div>` : ''}
+      ${n.status === 'done' ? `
+        <div class="note-body">
+          <div class="note-label">Ý chính</div>
+          <textarea class="note-points" data-id="${n.id}">${escapeHtml(n.keyPoints)}</textarea>
+          ${n.transcript ? `
+            <button class="note-transcript-toggle" data-id="${n.id}">▸ Xem transcript đầy đủ</button>
+            <div class="note-transcript" id="transcript-${n.id}">${escapeHtml(n.transcript)}</div>
+          ` : ''}
+        </div>
+      ` : ''}
+      <div class="note-actions">
+        ${n.hasAudioThisSession ? `<button class="btn-play" data-id="${n.id}">🔊 Nghe lại</button><button class="btn-download-audio" data-id="${n.id}">⬇ Tải audio</button>` : ''}
+        ${n.status === 'done' ? `<button class="btn-download-note" data-id="${n.id}">⬇ Tải ghi chú (.txt)</button>` : ''}
+        ${n.status === 'error' ? `<button class="btn-retry" data-id="${n.id}">↻ Thử lại</button>` : ''}
+        <button class="danger btn-delete" data-id="${n.id}">🗑 Xoá</button>
+      </div>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.note-title').forEach(el=>{
+    el.oninput = (e)=>{
+      const note = notes.find(n=>n.id===e.target.dataset.id);
+      if(note){ note.title = e.target.value; saveNotes(); }
+    };
+  });
+  list.querySelectorAll('.note-points').forEach(el=>{
+    el.oninput = (e)=>{
+      const note = notes.find(n=>n.id===e.target.dataset.id);
+      if(note){ note.keyPoints = e.target.value; saveNotes(); }
+    };
+  });
+  list.querySelectorAll('.note-transcript-toggle').forEach(btn=>{
+    btn.onclick = (e)=>{
+      const id = e.target.dataset.id;
+      const el = document.getElementById('transcript-'+id);
+      const showing = el.style.display === 'block';
+      el.style.display = showing ? 'none' : 'block';
+      e.target.textContent = (showing ? '▸' : '▾') + ' Xem transcript đầy đủ';
+    };
+  });
+  list.querySelectorAll('.btn-delete').forEach(btn=>{
+    btn.onclick = (e)=>{
+      const id = e.target.dataset.id;
+      if(!confirm('Xoá ghi chú này?')) return;
+      notes = notes.filter(n=>n.id!==id);
+      saveNotes();
+      renderNotes();
+    };
+  });
+  list.querySelectorAll('.btn-retry').forEach(btn=>{
+    btn.onclick = (e)=>{
+      const note = notes.find(n=>n.id===e.target.dataset.id);
+      if(note && note.audioBlob) processRecording(note);
+    };
+  });
+  list.querySelectorAll('.btn-play').forEach(btn=>{
+    btn.onclick = (e)=>{
+      const note = notes.find(n=>n.id===e.target.dataset.id);
+      if(note && note.audioUrl){
+        const audio = new Audio(note.audioUrl);
+        audio.play();
+      }
+    };
+  });
+  list.querySelectorAll('.btn-download-audio').forEach(btn=>{
+    btn.onclick = (e)=>{
+      const note = notes.find(n=>n.id===e.target.dataset.id);
+      if(!note || !note.audioUrl) return;
+      const a = document.createElement('a');
+      a.href = note.audioUrl;
+      a.download = (note.title || 'ghi-am') + '.' + (note.audioExt || 'webm');
+      a.click();
+    };
+  });
+  list.querySelectorAll('.btn-download-note').forEach(btn=>{
+    btn.onclick = (e)=>{
+      const note = notes.find(n=>n.id===e.target.dataset.id);
+      if(!note) return;
+      const text = `${note.title}\n${note.timeLabel}\n\nÝ CHÍNH:\n${note.keyPoints}\n\n${note.transcript ? 'TRANSCRIPT ĐẦY ĐỦ:\n'+note.transcript : ''}`;
+      const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = (note.title || 'ghi-chu').replace(/[\\/:*?"<>|]/g,'') + '.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+  });
+}
+
+/* ======================================================================
+   GHI ÂM (MediaRecorder)
+====================================================================== */
+let mediaRecorder = null;
+let audioChunks = [];
+let recordStartTime = null;
+let timerInterval = null;
+let currentStream = null;
+
+function pickMimeType(){
+  const candidates = ['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg;codecs=opus'];
+  for(const type of candidates){
+    if(window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type)) return type;
+  }
+  return '';
+}
+
+function formatTime(sec){
+  const m = Math.floor(sec/60).toString().padStart(2,'0');
+  const s = Math.floor(sec%60).toString().padStart(2,'0');
+  return `${m}:${s}`;
+}
+
+function showRecError(msg){
+  const el = document.getElementById('rec-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideRecError(){
+  document.getElementById('rec-error').style.display = 'none';
+}
+
+async function startRecording(){
+  hideRecError();
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    showRecError('Trình duyệt này không hỗ trợ ghi âm. Thử mở bằng Chrome hoặc Safari bản mới.');
+    return;
+  }
+  try{
+    currentStream = await navigator.mediaDevices.getUserMedia({ audio:true });
+  }catch(err){
+    showRecError('Không truy cập được micro — kiểm tra bạn đã cho phép quyền micro cho trang này chưa. Chi tiết: ' + err.message);
+    return;
+  }
+
+  const mimeType = pickMimeType();
+  try{
+    mediaRecorder = mimeType ? new MediaRecorder(currentStream, { mimeType }) : new MediaRecorder(currentStream);
+  }catch(err){
+    showRecError('Không khởi tạo được bộ ghi âm: ' + err.message);
+    return;
+  }
+
+  audioChunks = [];
+  mediaRecorder.ondataavailable = (e)=>{ if(e.data && e.data.size > 0) audioChunks.push(e.data); };
+  mediaRecorder.onstop = onRecordingStop;
+  mediaRecorder.start();
+
+  recordStartTime = Date.now();
+  timerInterval = setInterval(()=>{
+    document.getElementById('rec-timer').textContent = formatTime((Date.now()-recordStartTime)/1000);
+  }, 250);
+
+  const btn = document.getElementById('rec-btn');
+  btn.classList.add('recording');
+  btn.textContent = '■';
+  document.getElementById('rec-hint').textContent = 'Đang ghi âm — bấm lại để dừng';
+}
+
+function stopRecording(){
+  if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  if(currentStream) currentStream.getTracks().forEach(t=>t.stop());
+  clearInterval(timerInterval);
+  const btn = document.getElementById('rec-btn');
+  btn.classList.remove('recording');
+  btn.textContent = '●';
+  document.getElementById('rec-hint').textContent = 'Bấm để bắt đầu ghi âm';
+  document.getElementById('rec-timer').textContent = '00:00';
+}
+
+function onRecordingStop(){
+  const mimeType = mediaRecorder.mimeType || 'audio/webm';
+  const blob = new Blob(audioChunks, { type: mimeType });
+  if(blob.size === 0){
+    showRecError('Không ghi được âm thanh nào — thử lại nhé.');
+    return;
+  }
+  const ext = mimeType.includes('mp4') ? 'm4a' : (mimeType.includes('ogg') ? 'ogg' : 'webm');
+  const now = new Date();
+  const note = {
+    id: 'note_'+Math.random().toString(36).slice(2,9),
+    title: `Ghi chú ${now.toLocaleString('vi-VN')}`,
+    timeLabel: now.toLocaleString('vi-VN'),
+    status: 'processing',
+    keyPoints: '',
+    transcript: '',
+    error: '',
+    audioBlob: blob,
+    audioUrl: URL.createObjectURL(blob),
+    audioExt: ext,
+    audioMime: mimeType,
+    hasAudioThisSession: true
+  };
+  notes.unshift(note);
+  renderNotes();
+  processRecording(note);
+}
+
+document.getElementById('rec-btn').onclick = ()=>{
+  if(mediaRecorder && mediaRecorder.state === 'recording'){
+    stopRecording();
+  }else{
+    startRecording();
+  }
+};
+
+/* ======================================================================
+   GỌI AI XỬ LÝ GHI ÂM
+====================================================================== */
+function blobToBase64(blob){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onloadend = ()=> resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function parseTranscribeResult(text){
+  const marker = /##\s*TRANSCRIPT/i;
+  const match = text.search(marker);
+  if(match === -1) return { keyPoints: text.trim(), transcript: '' };
+  let keyPointsPart = text.slice(0, match).replace(/##\s*Ý\s*CHÍNH\s*/i, '').trim();
+  let transcriptPart = text.slice(match).replace(/##\s*TRANSCRIPT[^\n]*\n?/i, '').trim();
+  return { keyPoints: keyPointsPart || '(Không tách được ý chính rõ ràng — xem transcript đầy đủ bên dưới.)', transcript: transcriptPart };
+}
+
+async function processRecording(note){
+  note.status = 'processing';
+  note.error = '';
+  renderNotes();
+
+  const prompt = `Hãy nghe đoạn ghi âm này (tiếng Việt) và thực hiện đúng 2 việc, phân tách rõ bằng 2 tiêu đề dưới đây:
+## Ý CHÍNH
+Tóm tắt các ý chính dưới dạng gạch đầu dòng ngắn gọn, dễ đọc lại sau, giữ đúng các số liệu/tên riêng nếu có nhắc tới.
+
+## TRANSCRIPT ĐẦY ĐỦ
+Chép lại toàn bộ lời nói trong ghi âm, càng sát càng tốt.`;
+
+  document.getElementById('rec-processing').style.display = 'flex';
+  try{
+    let resultText;
+    if(!CONFIG.WEB_APP_URL){
+      await new Promise(r=>setTimeout(r, 1200));
+      resultText = "## Ý CHÍNH\n- (Dữ liệu mẫu) Đây là ý chính minh hoạ — sau khi dán WEB_APP_URL trong CONFIG, đoạn này sẽ là nội dung AI nghe được thật từ ghi âm của bạn.\n- Ý thứ hai minh hoạ.\n\n## TRANSCRIPT ĐẦY ĐỦ\n(Dữ liệu mẫu) Đây là bản chép lời minh hoạ, sẽ được thay bằng transcript thật khi gắn API.";
+    } else {
+      const base64 = await blobToBase64(note.audioBlob);
+      const res = await fetch(CONFIG.WEB_APP_URL, {
+        method: 'POST',
+        headers: {'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({
+          action: 'transcribe',
+          audioBase64: base64,
+          mimeType: note.audioMime,
+          prompt,
+          token: CONFIG.ACCESS_TOKEN || undefined
+        })
+      });
+      const data = await res.json();
+      if(data.error) throw new Error(data.error);
+      resultText = data.text || '';
+      if(!resultText) throw new Error('AI không trả về nội dung.');
+    }
+    const parsed = parseTranscribeResult(resultText);
+    note.keyPoints = parsed.keyPoints;
+    note.transcript = parsed.transcript;
+    note.status = 'done';
+  }catch(err){
+    console.error('Lỗi xử lý ghi âm:', err);
+    note.status = 'error';
+    note.error = err.message;
+  }
+  document.getElementById('rec-processing').style.display = 'none';
+  saveNotes();
+  renderNotes();
+}
+
+/* ======================================================================
+   KHỞI TẠO
+====================================================================== */
+loadNotes();
+// Ghi chú nạp lại từ localStorage sẽ không còn audioBlob/audioUrl (đã mất khi tải lại trang)
+notes.forEach(n => { n.hasAudioThisSession = false; });
+renderNotes();
+</script>
+
+</body>
+</html>
