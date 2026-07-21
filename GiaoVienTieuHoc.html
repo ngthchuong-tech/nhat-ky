@@ -388,6 +388,123 @@
     color:var(--ink-soft);
     pointer-events:none;
   }
+  .sub-tabs{
+    display:flex;
+    gap:8px;
+    margin-bottom:16px;
+  }
+  .sub-tab{
+    padding:7px 14px;
+    border-radius:8px;
+    font-size:0.85rem;
+    font-weight:600;
+    color:var(--ink-soft);
+    background:var(--card);
+    cursor:pointer;
+  }
+  .sub-tab.active{ background:var(--chalk-green); color:#F5F1E3; }
+  .task-form{
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:14px;
+    margin-bottom:16px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.05);
+  }
+  .task-form input[type=text]{
+    width:100%;
+    padding:10px 12px;
+    border-radius:8px;
+    border:1px solid var(--paper-line);
+    font-family:inherit;
+    font-size:0.9rem;
+    margin-bottom:10px;
+  }
+  .task-form-row{
+    display:flex;
+    gap:8px;
+  }
+  .task-form-row input[type=date]{
+    flex:1;
+    font-family:'JetBrains Mono', monospace;
+    padding:8px 10px;
+    border-radius:8px;
+    border:1px solid var(--paper-line);
+  }
+  .task-item{
+    background:var(--card);
+    border-radius:12px;
+    padding:12px 14px;
+    margin-bottom:10px;
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.05);
+    border-left:4px solid var(--paper-line);
+  }
+  .task-item.overdue{ border-left-color:var(--absent); }
+  .task-item.today{ border-left-color:var(--chalk-yellow); }
+  .task-item.done{ opacity:0.55; }
+  .task-item input[type=checkbox]{
+    width:20px; height:20px;
+    margin-top:2px;
+    accent-color:var(--chalk-green);
+    flex-shrink:0;
+  }
+  .task-body{ flex:1; }
+  .task-noidung{ font-weight:700; font-size:0.92rem; }
+  .task-item.done .task-noidung{ text-decoration:line-through; }
+  .task-date{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.75rem;
+    color:var(--ink-soft);
+    margin-top:2px;
+  }
+  .task-date.overdue-text{ color:var(--absent); font-weight:600; }
+  .task-del{
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    font-size:1.1rem;
+    cursor:pointer;
+    padding:0 4px;
+  }
+  .tkb-table{
+    width:100%;
+    border-collapse:collapse;
+    background:var(--card);
+    border-radius:var(--radius);
+    overflow:hidden;
+    box-shadow:0 2px 6px rgba(0,0,0,0.05);
+  }
+  .tkb-table th, .tkb-table td{
+    border:1px solid var(--paper-line);
+    padding:4px;
+    text-align:center;
+  }
+  .tkb-table th{
+    background:var(--chalk-green);
+    color:#F5F1E3;
+    font-size:0.72rem;
+    font-weight:600;
+    padding:8px 4px;
+  }
+  .tkb-table td:first-child{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    color:var(--ink-soft);
+    font-weight:600;
+    background:#FBF8F0;
+  }
+  .tkb-table input{
+    width:100%;
+    border:none;
+    background:transparent;
+    text-align:center;
+    font-family:inherit;
+    font-size:0.78rem;
+    padding:6px 2px;
+  }
+  .tkb-table input:focus{ background:#FFF7E2; outline:none; }
 </style>
 </head>
 <body>
@@ -405,6 +522,7 @@
   <div class="tab active" data-tab="diemdanh" onclick="switchTab('diemdanh')">Điểm danh</div>
   <div class="tab" data-tab="thongke" onclick="switchTab('thongke')">Thống kê</div>
   <div class="tab" data-tab="lienlac" onclick="switchTab('lienlac')">Liên lạc</div>
+  <div class="tab" data-tab="lichcongtac" onclick="switchTab('lichcongtac')">Lịch công tác</div>
 </div>
 
 <main>
@@ -450,6 +568,30 @@
         <button class="btn-primary" onclick="copyBroadcast()">📋 Sao chép nội dung</button>
         <span id="broadcastCopyStatus" class="hint" style="align-self:center;"></span>
       </div>
+    </div>
+  </div>
+
+  <div id="tab-lichcongtac" style="display:none;">
+    <div class="sub-tabs">
+      <div class="sub-tab active" data-subtab="viec" onclick="switchSubTab('viec')">Việc cần làm</div>
+      <div class="sub-tab" data-subtab="tkb" onclick="switchSubTab('tkb')">Thời khóa biểu</div>
+    </div>
+
+    <div id="subtab-viec">
+      <div class="task-form">
+        <input type="text" id="taskNoiDung" placeholder="Việc cần làm (vd: Họp phụ huynh, nộp báo cáo...)">
+        <div class="task-form-row">
+          <input type="date" id="taskNgay">
+          <button class="btn-primary" onclick="addTask()">+ Thêm việc</button>
+        </div>
+      </div>
+      <div id="taskList"><div class="empty">Đang tải danh sách việc cần làm…</div></div>
+    </div>
+
+    <div id="subtab-tkb" style="display:none;">
+      <div id="tkbGrid"><div class="empty">Đang tải thời khóa biểu…</div></div>
+      <button class="btn-primary" style="margin-top:12px;" onclick="saveTimetableUI()">Lưu thời khóa biểu</button>
+      <span id="tkbSaveStatus" class="hint" style="margin-left:10px;"></span>
     </div>
   </div>
 </main>
@@ -534,6 +676,10 @@ function switchTab(name){
       document.getElementById('vangHocDate').value = todayStr();
     }
     if(!parentsLoaded) loadParents();
+  }
+  if(name==='lichcongtac'){
+    if(!tasksLoaded) loadTasksUI();
+    if(!timetableLoaded) loadTimetableUI();
   }
 }
 
@@ -917,6 +1063,148 @@ function copyBroadcast(){
     el.textContent = '✓ Đã sao chép vào bộ nhớ tạm';
     setTimeout(()=>{ el.textContent = ''; }, 2500);
   });
+}
+
+/* ---------- Lịch công tác cá nhân ---------- */
+
+let tasks = [];
+let tasksLoaded = false;
+let timetableLoaded = false;
+const TKB_DAYS = ['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
+const TKB_ROWS = 5; // số tiết mỗi buổi
+
+function switchSubTab(name){
+  document.querySelectorAll('.sub-tab').forEach(t=>t.classList.toggle('active', t.dataset.subtab===name));
+  document.getElementById('subtab-viec').style.display = name==='viec' ? '' : 'none';
+  document.getElementById('subtab-tkb').style.display = name==='tkb' ? '' : 'none';
+}
+
+async function loadTasksUI(){
+  const el = document.getElementById('taskList');
+  el.innerHTML = '<div class="empty">Đang tải danh sách việc cần làm…</div>';
+  try{
+    tasks = await apiGet('getTasks');
+    tasksLoaded = true;
+    renderTasks();
+  }catch(err){
+    el.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
+  }
+}
+
+function renderTasks(){
+  const el = document.getElementById('taskList');
+  if(!tasks.length){
+    el.innerHTML = '<div class="empty">Chưa có việc nào. Thêm việc cần làm ở trên.</div>';
+    return;
+  }
+  const today = todayStr();
+  const sorted = [...tasks].sort((a,b) => a.ngay.localeCompare(b.ngay));
+  el.innerHTML = sorted.map(t=>{
+    let cls = '';
+    if(!t.daXong){
+      if(t.ngay < today) cls = 'overdue';
+      else if(t.ngay === today) cls = 'today';
+    }
+    if(t.daXong) cls += ' done';
+    return `<div class="task-item ${cls}">
+      <input type="checkbox" ${t.daXong?'checked':''} onchange="toggleTask('${t.id}', this.checked)">
+      <div class="task-body">
+        <div class="task-noidung">${t.noiDung}</div>
+        <div class="task-date ${!t.daXong && t.ngay<today ? 'overdue-text' : ''}">${t.ngay}${t.ghiChu ? ' — '+t.ghiChu : ''}</div>
+      </div>
+      <button class="task-del" onclick="removeTask('${t.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+async function addTask(){
+  const noiDung = document.getElementById('taskNoiDung').value.trim();
+  const ngay = document.getElementById('taskNgay').value;
+  if(!noiDung || !ngay){ alert('Nhập nội dung và chọn ngày trước nhé.'); return; }
+  const task = { id: String(Date.now()), noiDung, ngay, daXong:false, ghiChu:'' };
+  tasks.push(task);
+  renderTasks();
+  document.getElementById('taskNoiDung').value = '';
+  document.getElementById('taskNgay').value = '';
+  try{
+    await apiPost({ action:'saveTask', task });
+  }catch(err){
+    alert('Lỗi lưu việc: ' + err.message);
+  }
+}
+
+async function toggleTask(id, daXong){
+  const t = tasks.find(x=>x.id===id);
+  if(!t) return;
+  t.daXong = daXong;
+  renderTasks();
+  try{
+    await apiPost({ action:'updateTask', task:t });
+  }catch(err){
+    alert('Lỗi cập nhật: ' + err.message);
+  }
+}
+
+async function removeTask(id){
+  if(!confirm('Xóa việc này?')) return;
+  tasks = tasks.filter(t=>t.id!==id);
+  renderTasks();
+  try{
+    await apiPost({ action:'deleteTask', id });
+  }catch(err){
+    alert('Lỗi xóa: ' + err.message);
+  }
+}
+
+async function loadTimetableUI(){
+  const el = document.getElementById('tkbGrid');
+  el.innerHTML = '<div class="empty">Đang tải thời khóa biểu…</div>';
+  try{
+    const grid = await apiGet('getTimetable');
+    timetableLoaded = true;
+    renderTimetable(grid);
+  }catch(err){
+    el.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
+  }
+}
+
+function renderTimetable(grid){
+  const el = document.getElementById('tkbGrid');
+  // grid[0] = header row (bỏ qua), grid[r][c] = nội dung tiết r, thứ c (c bắt đầu từ 1)
+  const cell = (r,c) => (grid && grid[r] && grid[r][c] !== undefined) ? grid[r][c] : '';
+  let html = '<table class="tkb-table"><thead><tr><th>Tiết</th>';
+  TKB_DAYS.forEach(d => html += `<th>${d}</th>`);
+  html += '</tr></thead><tbody>';
+  for(let r=1; r<=TKB_ROWS; r++){
+    html += `<tr><td>Tiết ${r}</td>`;
+    for(let c=1; c<=TKB_DAYS.length; c++){
+      const val = cell(r, c);
+      html += `<td><input type="text" data-row="${r}" data-col="${c}" value="${val}"></td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+async function saveTimetableUI(){
+  const status = document.getElementById('tkbSaveStatus');
+  status.textContent = 'Đang lưu…';
+  const grid = [['Tiet', ...TKB_DAYS]];
+  for(let r=1; r<=TKB_ROWS; r++){
+    const row = ['Tiết ' + r];
+    for(let c=1; c<=TKB_DAYS.length; c++){
+      const input = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+      row.push(input ? input.value : '');
+    }
+    grid.push(row);
+  }
+  try{
+    await apiPost({ action:'saveTimetable', grid });
+    status.textContent = '✓ Đã lưu lúc ' + new Date().toLocaleTimeString('vi-VN');
+  }catch(err){
+    status.textContent = 'Lỗi: ' + err.message;
+  }
 }
 
 loadStudents();
