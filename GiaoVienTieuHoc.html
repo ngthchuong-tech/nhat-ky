@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sổ Điểm Danh</title>
+<title>Sổ Tay Giáo Viên</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -519,7 +519,7 @@
 
 <header>
   <button class="settings-btn" onclick="openSettings()">⚙</button>
-  <h1>Sổ Điểm Danh</h1>
+  <h1>Sổ Tay Giáo Viên</h1>
   <div class="sub" id="className">Chưa đặt tên lớp</div>
   <div class="datebar">
     <input type="date" id="datePicker">
@@ -1238,6 +1238,7 @@ async function saveTimetableUI(){
 }
 
 loadStudents();
+switchTab('lichcongtac');
 </script>
 </body>
 </html>
