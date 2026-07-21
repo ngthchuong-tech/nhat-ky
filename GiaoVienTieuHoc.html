@@ -301,6 +301,66 @@
     color:var(--ink-soft);
     line-height:1.4;
   }
+  .lienlac-type select{
+    width:100%;
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid var(--paper-line);
+    background:#fff;
+    font-family:inherit;
+    font-size:0.92rem;
+    margin-bottom:14px;
+  }
+  #broadcastText{
+    width:100%;
+    padding:14px;
+    border-radius:var(--radius);
+    border:1px solid var(--paper-line);
+    font-family:inherit;
+    font-size:0.92rem;
+    line-height:1.5;
+    resize:vertical;
+  }
+  .msg-card{
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    margin-bottom:12px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.05);
+  }
+  .msg-card .msg-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:8px;
+  }
+  .msg-card .msg-name{ font-weight:700; font-size:0.95rem; }
+  .msg-card .msg-status{
+    font-size:0.72rem;
+    font-weight:600;
+    padding:2px 8px;
+    border-radius:6px;
+    color:#fff;
+  }
+  .msg-card pre{
+    white-space:pre-wrap;
+    font-family:inherit;
+    font-size:0.85rem;
+    line-height:1.5;
+    color:var(--ink);
+    margin:0 0 10px;
+  }
+  .copy-btn{
+    background:var(--chalk-green);
+    color:#F5F1E3;
+    border:none;
+    border-radius:8px;
+    padding:7px 14px;
+    font-size:0.8rem;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .copy-btn.copied{ background:var(--present); }
 </style>
 </head>
 <body>
@@ -317,6 +377,7 @@
 <div class="tabs">
   <div class="tab active" data-tab="diemdanh" onclick="switchTab('diemdanh')">Điểm danh</div>
   <div class="tab" data-tab="thongke" onclick="switchTab('thongke')">Thống kê</div>
+  <div class="tab" data-tab="lienlac" onclick="switchTab('lienlac')">Liên lạc</div>
 </div>
 
 <main>
@@ -331,6 +392,33 @@
       <button class="btn-export" id="exportBtn" onclick="exportStatsExcel()" disabled>⬇ Tải Excel</button>
     </div>
     <div id="statsResult"><div class="empty">Chọn tháng để xem thống kê chuyên cần</div></div>
+  </div>
+
+  <div id="tab-lienlac" style="display:none;">
+    <div class="lienlac-type">
+      <select id="thongBaoType" onchange="onThongBaoTypeChange()">
+        <option value="vangHoc">Báo nghỉ học (tự động theo điểm danh)</option>
+        <option value="hopPH">Họp phụ huynh</option>
+        <option value="thuQuy">Thu quỹ lớp</option>
+        <option value="tuyChinh">Thông báo tùy chỉnh</option>
+      </select>
+    </div>
+
+    <div id="vangHocSection">
+      <div class="stats-controls">
+        <input type="date" id="vangHocDate">
+        <button class="btn-primary" onclick="loadVangHocMessages()">Tạo thông báo</button>
+      </div>
+      <div id="vangHocResult"><div class="empty">Chọn ngày để tạo thông báo nghỉ học cho phụ huynh</div></div>
+    </div>
+
+    <div id="broadcastSection" style="display:none;">
+      <textarea id="broadcastText" rows="9"></textarea>
+      <div class="modal-actions" style="justify-content:flex-start; margin-top:10px;">
+        <button class="btn-primary" onclick="copyBroadcast()">📋 Sao chép nội dung</button>
+        <span id="broadcastCopyStatus" class="hint" style="align-self:center;"></span>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -404,9 +492,16 @@ function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
   document.getElementById('tab-diemdanh').style.display = name==='diemdanh' ? '' : 'none';
   document.getElementById('tab-thongke').style.display = name==='thongke' ? '' : 'none';
+  document.getElementById('tab-lienlac').style.display = name==='lienlac' ? '' : 'none';
   document.getElementById('bottomBar').style.display = name==='diemdanh' && students.length ? 'flex' : 'none';
   if(name==='thongke' && !document.getElementById('statsMonth').value){
     document.getElementById('statsMonth').value = todayStr().slice(0,7);
+  }
+  if(name==='lienlac'){
+    if(!document.getElementById('vangHocDate').value){
+      document.getElementById('vangHocDate').value = todayStr();
+    }
+    if(!parentsLoaded) loadParents();
   }
 }
 
@@ -607,6 +702,118 @@ function exportStatsExcel(){
   const safeClass = className.replace(/[^a-zA-Z0-9À-ỹ\s-]/g, '').replace(/\s+/g, '_');
   const fileName = 'ThongKeDiemDanh_' + (safeClass || 'Lop') + '_' + lastStatsData.month + '.xlsx';
   XLSX.writeFile(wb, fileName);
+}
+
+/* ---------- Liên lạc phụ huynh ---------- */
+
+let parentsMap = {};
+let parentsLoaded = false;
+
+const BROADCAST_TEMPLATES = {
+  hopPH: `Kính gửi quý phụ huynh lớp {Lop},
+
+Lớp sẽ tổ chức họp phụ huynh vào lúc [GIỜ] ngày [NGÀY], tại [ĐỊA ĐIỂM].
+Kính mong quý phụ huynh sắp xếp thời gian tham dự đầy đủ.
+
+Trân trọng.`,
+  thuQuy: `Kính gửi quý phụ huynh lớp {Lop},
+
+Lớp thu quỹ đợt này với số tiền [SỐ TIỀN]/học sinh, hạn nộp đến hết ngày [HẠN NỘP].
+Quý phụ huynh vui lòng nộp qua [HÌNH THỨC NỘP].
+
+Cảm ơn quý phụ huynh.`,
+  tuyChinh: `Kính gửi quý phụ huynh lớp {Lop},
+
+[Nội dung thông báo...]
+
+Trân trọng.`
+};
+
+function onThongBaoTypeChange(){
+  const type = document.getElementById('thongBaoType').value;
+  document.getElementById('vangHocSection').style.display = type==='vangHoc' ? '' : 'none';
+  document.getElementById('broadcastSection').style.display = type==='vangHoc' ? 'none' : '';
+  if(type !== 'vangHoc'){
+    const className = localStorage.getItem('sdd_className') || 'lớp mình';
+    document.getElementById('broadcastText').value = BROADCAST_TEMPLATES[type].replace('{Lop}', className);
+  }
+}
+
+async function loadParents(){
+  try{
+    const parents = await apiGet('getParents');
+    parentsMap = {};
+    (parents || []).forEach(p => { parentsMap[p.maHS] = p.tenPH; });
+    parentsLoaded = true;
+  }catch(err){
+    parentsLoaded = true; // đừng chặn app nếu sheet PhuHuynh chưa có
+  }
+}
+
+async function loadVangHocMessages(){
+  const resultEl = document.getElementById('vangHocResult');
+  const date = document.getElementById('vangHocDate').value;
+  if(!date) return;
+  resultEl.innerHTML = '<div class="empty">Đang tải dữ liệu điểm danh…</div>';
+  if(!students.length){
+    try{ students = await apiGet('getStudents'); }catch(e){}
+  }
+  if(!parentsLoaded) await loadParents();
+
+  try{
+    const records = await apiGet('getAttendanceByDate', { date });
+    const vang = records.filter(r => r.trangThai === 'VangPhep' || r.trangThai === 'VangKP');
+    if(vang.length === 0){
+      resultEl.innerHTML = '<div class="empty">Ngày '+date+' không có học sinh nào vắng học.</div>';
+      return;
+    }
+    const className = localStorage.getItem('sdd_className') || '';
+    resultEl.innerHTML = vang.map(r=>{
+      const student = students.find(s=>s.maHS===r.maHS);
+      const hoTen = student ? student.hoTen : r.maHS;
+      const tenPH = parentsMap[r.maHS] || 'Anh/Chị';
+      const isPhep = r.trangThai === 'VangPhep';
+      const lyDo = isPhep
+        ? (r.ghiChu ? 'có phép, lý do: ' + r.ghiChu : 'có phép')
+        : (r.ghiChu ? 'chưa rõ lý do (' + r.ghiChu + '), mong anh/chị phản hồi giúp' : 'chưa rõ lý do, mong anh/chị phản hồi giúp');
+      const msg = `Kính gửi ${tenPH},
+
+Con ${hoTen}${className ? ' (lớp '+className+')' : ''} nghỉ học ngày ${date}, ${lyDo}.
+Mong ${tenPH} nhắc con theo kịp bài học nhé. Cảm ơn ${tenPH}.`;
+      const badgeColor = isPhep ? 'var(--excused)' : 'var(--absent)';
+      const badgeText = isPhep ? 'Vắng phép' : 'Vắng KP';
+      const msgId = 'msg_' + r.maHS;
+      return `<div class="msg-card">
+        <div class="msg-head">
+          <span class="msg-name">${hoTen}</span>
+          <span class="msg-status" style="background:${badgeColor}">${badgeText}</span>
+        </div>
+        <pre id="${msgId}">${msg}</pre>
+        <button class="copy-btn" onclick="copyMessage('${msgId}', this)">📋 Sao chép</button>
+      </div>`;
+    }).join('');
+  }catch(err){
+    resultEl.innerHTML = '<div class="empty">Lỗi: '+err.message+'</div>';
+  }
+}
+
+function copyMessage(id, btn){
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(()=>{
+    const original = btn.textContent;
+    btn.textContent = '✓ Đã sao chép';
+    btn.classList.add('copied');
+    setTimeout(()=>{ btn.textContent = original; btn.classList.remove('copied'); }, 1800);
+  });
+}
+
+function copyBroadcast(){
+  const text = document.getElementById('broadcastText').value;
+  navigator.clipboard.writeText(text).then(()=>{
+    const el = document.getElementById('broadcastCopyStatus');
+    el.textContent = '✓ Đã sao chép vào bộ nhớ tạm';
+    setTimeout(()=>{ el.textContent = ''; }, 2500);
+  });
 }
 
 loadStudents();
