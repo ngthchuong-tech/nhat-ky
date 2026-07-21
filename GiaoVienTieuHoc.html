@@ -856,27 +856,43 @@ async function loadVangHocMessages(){
     resultEl.innerHTML = vang.map(r=>{
       const student = students.find(s=>s.maHS===r.maHS);
       const hoTen = student ? student.hoTen : r.maHS;
-      const p = parentsMap[r.maHS];
-      const tenPH = (p && (p.tenBo || p.tenMe)) || 'Anh/Chị';
       const isPhep = r.trangThai === 'VangPhep';
       const lyDo = isPhep
         ? (r.ghiChu ? 'có phép, lý do: ' + r.ghiChu : 'có phép')
         : (r.ghiChu ? 'chưa rõ lý do (' + r.ghiChu + '), mong anh/chị phản hồi giúp' : 'chưa rõ lý do, mong anh/chị phản hồi giúp');
-      const msg = `Kính gửi ${tenPH},
-
-Con ${hoTen}${className ? ' (lớp '+className+')' : ''} nghỉ học ngày ${date}, ${lyDo}.
-Mong ${tenPH} nhắc con theo kịp bài học nhé. Cảm ơn ${tenPH}.`;
       const badgeColor = isPhep ? 'var(--excused)' : 'var(--absent)';
       const badgeText = isPhep ? 'Vắng phép' : 'Vắng KP';
-      const msgId = 'msg_' + r.maHS;
+
+      const p = parentsMap[r.maHS] || {};
+      const contacts = [];
+      if(p.tenBo) contacts.push({ label:'Gửi bố', xung:'Anh', ten:p.tenBo, sdt:p.sdtBo });
+      if(p.tenMe) contacts.push({ label:'Gửi mẹ', xung:'Chị', ten:p.tenMe, sdt:p.sdtMe });
+      if(contacts.length === 0) contacts.push({ label:'Gửi phụ huynh', xung:'Anh/Chị', ten:'', sdt:'' });
+
+      const contactBlocks = contacts.map((c, idx)=>{
+        const goi = c.ten ? (c.xung + ' ' + c.ten) : c.xung;
+        const msg = `Kính gửi ${goi},
+
+Con ${hoTen}${className ? ' (lớp '+className+')' : ''} nghỉ học ngày ${date}, ${lyDo}.
+Mong ${goi} nhắc con theo kịp bài học nhé. Cảm ơn ${goi}.`;
+        const msgId = 'msg_' + r.maHS + '_' + idx;
+        const link = toZaloLink(c.sdt);
+        return `<div class="contact-msg-block">
+          <p class="hint" style="margin:0 0 4px;">${c.label}${c.sdt ? ' — <span class="phone">'+c.sdt+'</span>' : ''}</p>
+          <pre id="${msgId}">${msg}</pre>
+          <div class="modal-actions" style="justify-content:flex-start;">
+            <button class="copy-btn" onclick="copyMessage('${msgId}', this)">📋 Sao chép</button>
+            ${link ? `<a class="zalo-btn" href="${link}" target="_blank" rel="noopener">💬 Nhắn Zalo</a>` : `<span class="zalo-btn disabled">Chưa có SĐT</span>`}
+          </div>
+        </div>`;
+      }).join('<hr style="border:none;border-top:1px dashed var(--paper-line);margin:12px 0;">');
+
       return `<div class="msg-card">
         <div class="msg-head">
           <span class="msg-name">${hoTen}</span>
           <span class="msg-status" style="background:${badgeColor}">${badgeText}</span>
         </div>
-        <pre id="${msgId}">${msg}</pre>
-        <button class="copy-btn" onclick="copyMessage('${msgId}', this)">📋 Sao chép</button>
-        ${renderContactRows(r.maHS)}
+        ${contactBlocks}
       </div>`;
     }).join('');
   }catch(err){
