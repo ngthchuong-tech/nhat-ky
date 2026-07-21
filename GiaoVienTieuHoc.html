@@ -559,10 +559,11 @@ async function loadStats(){
       counts[r.maHS][r.trangThai] = (counts[r.maHS][r.trangThai]||0) + 1;
     });
     const rows = Object.values(counts).map(c=>{
+      const tongCoMat = (c.CoMat||0) + (c.Tre||0);
       const warn = c.VangKP > 3 ? 'warn' : '';
       return `<tr class="${warn}">
         <td class="name">${c.hoTen}</td>
-        <td>${c.CoMat||0}</td>
+        <td>${tongCoMat}</td>
         <td>${c.Tre||0}</td>
         <td>${c.VangPhep||0}</td>
         <td>${c.VangKP||0}</td>
@@ -570,10 +571,10 @@ async function loadStats(){
     }).join('');
     resultEl.innerHTML = `
       <table class="stats">
-        <thead><tr><th>Học sinh</th><th>Có mặt</th><th>Trễ</th><th>Vắng phép</th><th>Vắng KP</th></tr></thead>
+        <thead><tr><th>Học sinh</th><th>Có mặt</th><th>Trong đó đi trễ</th><th>Vắng phép</th><th>Vắng KP</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
-      <p class="hint" style="margin-top:10px;">⚠ = vắng không phép hơn 3 buổi trong tháng, cần lưu ý.</p>
+      <p class="hint" style="margin-top:10px;">Cột "Có mặt" đã tính cả những buổi đi trễ. ⚠ = vắng không phép hơn 3 buổi trong tháng, cần lưu ý.</p>
     `;
     lastStatsData = { month, rows: Object.values(counts) };
     exportBtn.disabled = false;
@@ -591,10 +592,11 @@ function exportStatsExcel(){
   const wsData = [
     ['Thống kê chuyên cần tháng ' + lastStatsData.month + (className ? ' — ' + className : '')],
     [],
-    ['Học sinh', 'Có mặt', 'Đi trễ', 'Vắng phép', 'Vắng không phép']
+    ['Học sinh', 'Có mặt', 'Trong đó đi trễ', 'Vắng phép', 'Vắng không phép']
   ];
   lastStatsData.rows.forEach(c=>{
-    wsData.push([c.hoTen, c.CoMat||0, c.Tre||0, c.VangPhep||0, c.VangKP||0]);
+    const tongCoMat = (c.CoMat||0) + (c.Tre||0);
+    wsData.push([c.hoTen, tongCoMat, c.Tre||0, c.VangPhep||0, c.VangKP||0]);
   });
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   ws['!cols'] = [{wch:26},{wch:10},{wch:10},{wch:12},{wch:16}];
