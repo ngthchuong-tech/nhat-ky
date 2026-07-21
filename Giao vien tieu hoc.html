@@ -1,1 +1,557 @@
-# nhat-ky
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sổ Điểm Danh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #FAF6EC;
+    --paper-line: #E4DCC8;
+    --ink: #2A2B24;
+    --ink-soft: #6B6A5E;
+    --chalk-green: #1F4D3D;
+    --chalk-green-dark: #163A2E;
+    --chalk-yellow: #E3B341;
+    --present: #4C7A5A;
+    --late: #C88A2E;
+    --excused: #7A6FB0;
+    --absent: #B4472E;
+    --card: #FFFFFF;
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    background-image: radial-gradient(var(--paper-line) 1px, transparent 1px);
+    background-size: 22px 22px;
+    color:var(--ink);
+    font-family:'Be Vietnam Pro', system-ui, sans-serif;
+    min-height:100vh;
+    padding-bottom:90px;
+  }
+  header{
+    background:var(--chalk-green);
+    color:#F5F1E3;
+    padding:22px 20px 26px;
+    border-radius:0 0 22px 22px;
+    position:relative;
+    box-shadow:0 6px 18px rgba(31,77,61,0.25);
+  }
+  header h1{
+    margin:0 0 2px;
+    font-size:1.5rem;
+    font-weight:800;
+    letter-spacing:0.2px;
+  }
+  header .sub{
+    font-size:0.85rem;
+    opacity:0.75;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .settings-btn{
+    position:absolute;
+    top:20px; right:18px;
+    background:rgba(255,255,255,0.12);
+    border:1px solid rgba(255,255,255,0.25);
+    color:#F5F1E3;
+    border-radius:50%;
+    width:38px;height:38px;
+    font-size:1.1rem;
+    cursor:pointer;
+  }
+  .datebar{
+    margin-top:16px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .datebar input[type=date]{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.95rem;
+    padding:8px 10px;
+    border-radius:10px;
+    border:none;
+    background:#F5F1E3;
+    color:var(--chalk-green-dark);
+    font-weight:600;
+  }
+  .tabs{
+    display:flex;
+    margin:18px 20px 0;
+    background:var(--card);
+    border-radius:12px;
+    padding:4px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  }
+  .tab{
+    flex:1;
+    text-align:center;
+    padding:10px 0;
+    border-radius:9px;
+    font-weight:600;
+    font-size:0.92rem;
+    color:var(--ink-soft);
+    cursor:pointer;
+    user-select:none;
+  }
+  .tab.active{
+    background:var(--chalk-green);
+    color:#F5F1E3;
+  }
+  main{ padding:18px 20px; }
+  .empty{
+    text-align:center;
+    color:var(--ink-soft);
+    padding:60px 20px;
+    font-size:0.95rem;
+  }
+  .student-card{
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    margin-bottom:12px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.05);
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .student-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .student-name{
+    font-weight:700;
+    font-size:1rem;
+  }
+  .student-id{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    color:var(--ink-soft);
+  }
+  .note-btn{
+    background:none;
+    border:1px dashed var(--paper-line);
+    border-radius:8px;
+    padding:4px 8px;
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .note-btn.has-note{
+    border-color:var(--chalk-yellow);
+    color:var(--chalk-green-dark);
+    background:#FFF7E2;
+  }
+  .stamps{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+  }
+  .stamp{
+    border:2px solid var(--paper-line);
+    background:#fff;
+    border-radius:10px;
+    padding:8px 4px;
+    font-size:0.78rem;
+    font-weight:600;
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:transform 0.08s ease;
+    text-align:center;
+  }
+  .stamp:active{ transform:scale(0.95); }
+  .stamp.on-present{ background:var(--present); border-color:var(--present); color:#fff; transform:rotate(-1deg); }
+  .stamp.on-late{ background:var(--late); border-color:var(--late); color:#fff; transform:rotate(-1deg); }
+  .stamp.on-excused{ background:var(--excused); border-color:var(--excused); color:#fff; transform:rotate(-1deg); }
+  .stamp.on-absent{ background:var(--absent); border-color:var(--absent); color:#fff; transform:rotate(-1deg); }
+
+  .bottom-bar{
+    position:fixed;
+    bottom:0; left:0; right:0;
+    background:var(--card);
+    padding:12px 20px;
+    box-shadow:0 -4px 14px rgba(0,0,0,0.08);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .save-btn{
+    background:var(--chalk-green);
+    color:#F5F1E3;
+    border:none;
+    border-radius:12px;
+    padding:13px 22px;
+    font-weight:700;
+    font-size:0.95rem;
+    cursor:pointer;
+    flex:1;
+  }
+  .save-btn:disabled{ opacity:0.5; }
+  .status-text{
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    font-family:'JetBrains Mono', monospace;
+    min-width:90px;
+    text-align:right;
+  }
+
+  /* Stats tab */
+  .stats-controls{
+    display:flex;
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .stats-controls input[type=month]{
+    font-family:'JetBrains Mono', monospace;
+    padding:8px 10px;
+    border-radius:10px;
+    border:1px solid var(--paper-line);
+    background:#fff;
+  }
+  table.stats{
+    width:100%;
+    border-collapse:collapse;
+    background:var(--card);
+    border-radius:var(--radius);
+    overflow:hidden;
+    box-shadow:0 2px 6px rgba(0,0,0,0.05);
+  }
+  table.stats th, table.stats td{
+    padding:10px 8px;
+    text-align:center;
+    font-size:0.82rem;
+    border-bottom:1px solid var(--paper-line);
+  }
+  table.stats th{
+    background:var(--chalk-green);
+    color:#F5F1E3;
+    font-weight:600;
+    font-size:0.75rem;
+  }
+  table.stats td.name{ text-align:left; font-weight:600; }
+  tr.warn td.name{ color:var(--absent); }
+  tr.warn td.name::after{ content:" ⚠"; }
+
+  /* Modal */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(30,30,25,0.5);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+    z-index:50;
+  }
+  .modal{
+    background:var(--card);
+    border-radius:16px;
+    padding:22px;
+    width:100%;
+    max-width:380px;
+  }
+  .modal h3{ margin-top:0; }
+  .modal input[type=text], .modal input[type=url], .modal textarea{
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    border:1px solid var(--paper-line);
+    font-family:inherit;
+    margin-bottom:12px;
+    font-size:0.9rem;
+  }
+  .modal-actions{
+    display:flex;
+    gap:8px;
+    justify-content:flex-end;
+  }
+  .btn-secondary{
+    background:none;
+    border:1px solid var(--paper-line);
+    color:var(--ink-soft);
+    padding:9px 16px;
+    border-radius:9px;
+    cursor:pointer;
+  }
+  .btn-primary{
+    background:var(--chalk-green);
+    color:#F5F1E3;
+    border:none;
+    padding:9px 16px;
+    border-radius:9px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  .hint{
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    line-height:1.4;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <button class="settings-btn" onclick="openSettings()">⚙</button>
+  <h1>Sổ Điểm Danh</h1>
+  <div class="sub" id="className">Chưa đặt tên lớp</div>
+  <div class="datebar">
+    <input type="date" id="datePicker">
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-tab="diemdanh" onclick="switchTab('diemdanh')">Điểm danh</div>
+  <div class="tab" data-tab="thongke" onclick="switchTab('thongke')">Thống kê</div>
+</div>
+
+<main>
+  <div id="tab-diemdanh">
+    <div id="studentList"><div class="empty">Đang tải danh sách học sinh…</div></div>
+  </div>
+
+  <div id="tab-thongke" style="display:none;">
+    <div class="stats-controls">
+      <input type="month" id="statsMonth">
+      <button class="btn-primary" onclick="loadStats()">Xem</button>
+    </div>
+    <div id="statsResult"><div class="empty">Chọn tháng để xem thống kê chuyên cần</div></div>
+  </div>
+</main>
+
+<div class="bottom-bar" id="bottomBar" style="display:none;">
+  <button class="save-btn" id="saveBtn" onclick="saveAttendance()">Lưu điểm danh</button>
+  <div class="status-text" id="statusText"></div>
+</div>
+
+<div class="overlay" id="settingsOverlay" style="display:none;">
+  <div class="modal">
+    <h3>Cài đặt</h3>
+    <p class="hint">Dán URL Web App (Apps Script) đã deploy — xem hướng dẫn trong file Code.gs.</p>
+    <input type="url" id="webAppUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+    <input type="text" id="classNameInput" placeholder="Tên lớp (vd: 3A - Trường TH ABC)">
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeSettings()">Đóng</button>
+      <button class="btn-primary" onclick="saveSettings()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="noteOverlay" style="display:none;">
+  <div class="modal">
+    <h3>Ghi chú</h3>
+    <textarea id="noteInput" rows="3" placeholder="Lý do vắng, tình trạng…"></textarea>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeNote()">Hủy</button>
+      <button class="btn-primary" onclick="saveNote()">Lưu ghi chú</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STATUSES = [
+  { key: 'CoMat', label: 'Có mặt', cls: 'on-present' },
+  { key: 'Tre', label: 'Đi trễ', cls: 'on-late' },
+  { key: 'VangPhep', label: 'Vắng phép', cls: 'on-excused' },
+  { key: 'VangKP', label: 'Vắng KP', cls: 'on-absent' }
+];
+
+let webAppUrl = localStorage.getItem('sdd_webAppUrl') || '';
+let students = [];
+let attendanceState = {}; // maHS -> { trangThai, ghiChu }
+let noteTargetId = null;
+
+function todayStr(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+
+document.getElementById('datePicker').value = todayStr();
+document.getElementById('className').textContent = localStorage.getItem('sdd_className') || 'Chưa đặt tên lớp';
+
+function openSettings(){
+  document.getElementById('webAppUrlInput').value = webAppUrl;
+  document.getElementById('classNameInput').value = localStorage.getItem('sdd_className') || '';
+  document.getElementById('settingsOverlay').style.display = 'flex';
+}
+function closeSettings(){ document.getElementById('settingsOverlay').style.display = 'none'; }
+function saveSettings(){
+  webAppUrl = document.getElementById('webAppUrlInput').value.trim();
+  const cName = document.getElementById('classNameInput').value.trim();
+  localStorage.setItem('sdd_webAppUrl', webAppUrl);
+  localStorage.setItem('sdd_className', cName);
+  document.getElementById('className').textContent = cName || 'Chưa đặt tên lớp';
+  closeSettings();
+  loadStudents();
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  document.getElementById('tab-diemdanh').style.display = name==='diemdanh' ? '' : 'none';
+  document.getElementById('tab-thongke').style.display = name==='thongke' ? '' : 'none';
+  document.getElementById('bottomBar').style.display = name==='diemdanh' && students.length ? 'flex' : 'none';
+  if(name==='thongke' && !document.getElementById('statsMonth').value){
+    document.getElementById('statsMonth').value = todayStr().slice(0,7);
+  }
+}
+
+async function apiGet(action, params){
+  if(!webAppUrl){ throw new Error('Chưa cài đặt Web App URL'); }
+  const url = new URL(webAppUrl);
+  url.searchParams.set('action', action);
+  Object.entries(params||{}).forEach(([k,v])=>url.searchParams.set(k,v));
+  const res = await fetch(url.toString());
+  return res.json();
+}
+async function apiPost(payload){
+  if(!webAppUrl){ throw new Error('Chưa cài đặt Web App URL'); }
+  const res = await fetch(webAppUrl, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
+
+async function loadStudents(){
+  const listEl = document.getElementById('studentList');
+  if(!webAppUrl){
+    listEl.innerHTML = '<div class="empty">Bấm nút ⚙ ở góc trên để dán Web App URL trước khi dùng.</div>';
+    return;
+  }
+  listEl.innerHTML = '<div class="empty">Đang tải danh sách học sinh…</div>';
+  try{
+    students = await apiGet('getStudents');
+    await loadAttendanceForDate(document.getElementById('datePicker').value);
+  }catch(err){
+    listEl.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
+  }
+}
+
+async function loadAttendanceForDate(date){
+  const listEl = document.getElementById('studentList');
+  listEl.innerHTML = '<div class="empty">Đang tải điểm danh…</div>';
+  try{
+    const existing = await apiGet('getAttendanceByDate', { date });
+    attendanceState = {};
+    students.forEach(s=>{ attendanceState[s.maHS] = { trangThai:'CoMat', ghiChu:'' }; });
+    existing.forEach(r=>{ attendanceState[r.maHS] = { trangThai:r.trangThai, ghiChu:r.ghiChu||'' }; });
+    renderStudentList();
+  }catch(err){
+    listEl.innerHTML = '<div class="empty">Lỗi tải điểm danh: '+err.message+'</div>';
+  }
+}
+
+function renderStudentList(){
+  const listEl = document.getElementById('studentList');
+  if(!students.length){
+    listEl.innerHTML = '<div class="empty">Chưa có học sinh trong sheet "DanhSach".</div>';
+    document.getElementById('bottomBar').style.display = 'none';
+    return;
+  }
+  listEl.innerHTML = students.map(s=>{
+    const st = attendanceState[s.maHS] || { trangThai:'CoMat', ghiChu:'' };
+    const stamps = STATUSES.map(opt=>{
+      const active = st.trangThai === opt.key ? opt.cls : '';
+      return `<div class="stamp ${active}" onclick="setStatus('${s.maHS}','${opt.key}')">${opt.label}</div>`;
+    }).join('');
+    const hasNote = st.ghiChu && st.ghiChu.length;
+    return `
+      <div class="student-card">
+        <div class="student-top">
+          <div>
+            <div class="student-name">${s.hoTen}</div>
+            <div class="student-id">${s.maHS}</div>
+          </div>
+          <button class="note-btn ${hasNote?'has-note':''}" onclick="openNote('${s.maHS}')">${hasNote?'✎ Có ghi chú':'+ Ghi chú'}</button>
+        </div>
+        <div class="stamps">${stamps}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('bottomBar').style.display = 'flex';
+}
+
+function setStatus(maHS, key){
+  attendanceState[maHS].trangThai = key;
+  renderStudentList();
+}
+
+function openNote(maHS){
+  noteTargetId = maHS;
+  document.getElementById('noteInput').value = attendanceState[maHS].ghiChu || '';
+  document.getElementById('noteOverlay').style.display = 'flex';
+}
+function closeNote(){ document.getElementById('noteOverlay').style.display = 'none'; }
+function saveNote(){
+  attendanceState[noteTargetId].ghiChu = document.getElementById('noteInput').value.trim();
+  closeNote();
+  renderStudentList();
+}
+
+async function saveAttendance(){
+  const btn = document.getElementById('saveBtn');
+  const status = document.getElementById('statusText');
+  btn.disabled = true;
+  status.textContent = 'Đang lưu…';
+  const date = document.getElementById('datePicker').value;
+  const records = students.map(s=>({
+    maHS: s.maHS,
+    trangThai: attendanceState[s.maHS].trangThai,
+    ghiChu: attendanceState[s.maHS].ghiChu
+  }));
+  try{
+    await apiPost({ action:'saveAttendance', date, records });
+    status.textContent = 'Đã lưu lúc ' + new Date().toLocaleTimeString('vi-VN');
+  }catch(err){
+    status.textContent = 'Lỗi: ' + err.message;
+  }
+  btn.disabled = false;
+}
+
+document.getElementById('datePicker').addEventListener('change', (e)=>{
+  if(students.length) loadAttendanceForDate(e.target.value);
+});
+
+async function loadStats(){
+  const resultEl = document.getElementById('statsResult');
+  const month = document.getElementById('statsMonth').value;
+  if(!month) return;
+  resultEl.innerHTML = '<div class="empty">Đang tính thống kê…</div>';
+  try{
+    const all = await apiGet('getAllAttendance');
+    const filtered = all.filter(r => r.ngay.startsWith(month));
+    const counts = {};
+    students.forEach(s=>{ counts[s.maHS] = { hoTen:s.hoTen, CoMat:0, Tre:0, VangPhep:0, VangKP:0 }; });
+    filtered.forEach(r=>{
+      if(!counts[r.maHS]) counts[r.maHS] = { hoTen:r.maHS, CoMat:0, Tre:0, VangPhep:0, VangKP:0 };
+      counts[r.maHS][r.trangThai] = (counts[r.maHS][r.trangThai]||0) + 1;
+    });
+    const rows = Object.values(counts).map(c=>{
+      const warn = c.VangKP > 3 ? 'warn' : '';
+      return `<tr class="${warn}">
+        <td class="name">${c.hoTen}</td>
+        <td>${c.CoMat||0}</td>
+        <td>${c.Tre||0}</td>
+        <td>${c.VangPhep||0}</td>
+        <td>${c.VangKP||0}</td>
+      </tr>`;
+    }).join('');
+    resultEl.innerHTML = `
+      <table class="stats">
+        <thead><tr><th>Học sinh</th><th>Có mặt</th><th>Trễ</th><th>Vắng phép</th><th>Vắng KP</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p class="hint" style="margin-top:10px;">⚠ = vắng không phép hơn 3 buổi trong tháng, cần lưu ý.</p>
+    `;
+  }catch(err){
+    resultEl.innerHTML = '<div class="empty">Lỗi: '+err.message+'</div>';
+  }
+}
+
+loadStudents();
+</script>
+</body>
+</html>
