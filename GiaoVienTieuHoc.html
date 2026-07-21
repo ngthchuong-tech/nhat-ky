@@ -87,17 +87,20 @@
     border-radius:12px;
     padding:4px;
     box-shadow:0 2px 8px rgba(0,0,0,0.06);
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
   }
   .tab{
-    flex:1;
+    flex:0 0 auto;
     text-align:center;
-    padding:10px 0;
+    padding:10px 14px;
     border-radius:9px;
     font-weight:600;
-    font-size:0.92rem;
+    font-size:0.88rem;
     color:var(--ink-soft);
     cursor:pointer;
     user-select:none;
+    white-space:nowrap;
   }
   .tab.active{
     background:var(--chalk-green);
@@ -590,6 +593,35 @@
     font-family:inherit;
     margin-bottom:10px;
   }
+  .hs-card{
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:16px;
+    margin-bottom:14px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.05);
+  }
+  .hs-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .hs-grid.full{ grid-template-columns:1fr; }
+  .hs-field label{
+    display:block;
+    font-size:0.7rem;
+    color:var(--ink-soft);
+    margin-bottom:3px;
+    font-weight:600;
+  }
+  .hs-field input{
+    width:100%;
+    padding:8px 10px;
+    border-radius:8px;
+    border:1px solid var(--paper-line);
+    font-family:inherit;
+    font-size:0.85rem;
+  }
 </style>
 </head>
 <body>
@@ -609,6 +641,7 @@
   <div class="tab" data-tab="lienlac" onclick="switchTab('lienlac')">Liên lạc</div>
   <div class="tab" data-tab="lichcongtac" onclick="switchTab('lichcongtac')">Lịch công tác</div>
   <div class="tab" data-tab="hanhchinh" onclick="switchTab('hanhchinh')">Hành chính</div>
+  <div class="tab" data-tab="hocsinh" onclick="switchTab('hocsinh')">Học sinh</div>
 </div>
 
 <main>
@@ -738,6 +771,11 @@
       <div id="dgFormArea"></div>
     </div>
   </div>
+
+  <div id="tab-hocsinh" style="display:none;">
+    <button class="btn-primary" style="margin-bottom:14px;" onclick="openNewStudentCard()">+ Thêm học sinh mới</button>
+    <div id="hocSinhList"><div class="empty">Đang tải…</div></div>
+  </div>
 </main>
 
 <div class="bottom-bar" id="bottomBar" style="display:none;">
@@ -813,6 +851,7 @@ function switchTab(name){
   document.getElementById('tab-lienlac').style.display = name==='lienlac' ? '' : 'none';
   document.getElementById('tab-lichcongtac').style.display = name==='lichcongtac' ? '' : 'none';
   document.getElementById('tab-hanhchinh').style.display = name==='hanhchinh' ? '' : 'none';
+  document.getElementById('tab-hocsinh').style.display = name==='hocsinh' ? '' : 'none';
   document.getElementById('bottomBar').style.display = name==='diemdanh' && students.length ? 'flex' : 'none';
   if(name==='thongke' && !document.getElementById('statsMonth').value){
     document.getElementById('statsMonth').value = todayStr().slice(0,7);
@@ -830,6 +869,9 @@ function switchTab(name){
   if(name==='hanhchinh'){
     if(!hcLoaded) loadHanhChinh();
     if(!dgStudentsFilled) fillDgStudentSelect();
+  }
+  if(name==='hocsinh'){
+    if(!hocSinhLoaded) loadHocSinhFull();
   }
 }
 
@@ -1669,6 +1711,96 @@ function printDanhGia(){
     </body></html>`);
   w.document.close();
   setTimeout(()=>w.print(), 300);
+}
+
+/* ---------- Danh sách học sinh (thông tin đầy đủ) ---------- */
+
+let hocSinhFull = [];
+let hocSinhLoaded = false;
+
+async function loadHocSinhFull(){
+  const el = document.getElementById('hocSinhList');
+  el.innerHTML = '<div class="empty">Đang tải…</div>';
+  try{
+    hocSinhFull = await apiGet('getStudentsFull');
+    hocSinhLoaded = true;
+    renderHocSinhList();
+  }catch(err){
+    el.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
+  }
+}
+
+function hsFieldHtml(label, key, value){
+  const safe = (value||'').toString().replace(/"/g,'&quot;');
+  return `<div class="hs-field"><label>${label}</label><input type="text" data-field="${key}" value="${safe}"></div>`;
+}
+
+function hsCardHtml(s, idx){
+  return `<div class="hs-card" data-idx="${idx}">
+    <div class="hs-grid">
+      ${hsFieldHtml('Mã HS','maHS',s.maHS)}
+      ${hsFieldHtml('Họ tên','hoTen',s.hoTen)}
+    </div>
+    <div class="hs-grid">
+      ${hsFieldHtml('Ngày sinh (vd: 15/03/2018)','ngaySinh',s.ngaySinh)}
+      ${hsFieldHtml('Nơi sinh','noiSinh',s.noiSinh)}
+    </div>
+    <div class="hs-grid full">
+      ${hsFieldHtml('Địa chỉ','diaChi',s.diaChi)}
+    </div>
+    <div class="hs-grid">
+      ${hsFieldHtml('Tên bố','tenBo',s.tenBo)}
+      ${hsFieldHtml('SĐT bố','sdtBo',s.sdtBo)}
+    </div>
+    <div class="hs-grid">
+      ${hsFieldHtml('Tên mẹ','tenMe',s.tenMe)}
+      ${hsFieldHtml('SĐT mẹ','sdtMe',s.sdtMe)}
+    </div>
+    <div class="modal-actions" style="justify-content:flex-start;">
+      <button class="btn-primary" onclick="saveHocSinhCard(${idx})">Lưu</button>
+      <span class="hint" id="hsStatus_${idx}"></span>
+    </div>
+  </div>`;
+}
+
+function renderHocSinhList(){
+  const el = document.getElementById('hocSinhList');
+  if(!hocSinhFull.length){
+    el.innerHTML = '<div class="empty">Chưa có học sinh nào. Bấm "+ Thêm học sinh mới".</div>';
+    return;
+  }
+  el.innerHTML = hocSinhFull.map((s,idx)=>hsCardHtml(s, idx)).join('');
+}
+
+function openNewStudentCard(){
+  hocSinhFull.push({ maHS:'', hoTen:'', ngaySinh:'', noiSinh:'', diaChi:'', tenBo:'', sdtBo:'', tenMe:'', sdtMe:'' });
+  renderHocSinhList();
+  const cards = document.querySelectorAll('#hocSinhList .hs-card');
+  if(cards.length) cards[cards.length-1].scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+async function saveHocSinhCard(idx){
+  const card = document.querySelector(`#hocSinhList .hs-card[data-idx="${idx}"]`);
+  const status = document.getElementById('hsStatus_'+idx);
+  const record = {};
+  card.querySelectorAll('input[data-field]').forEach(inp => record[inp.dataset.field] = inp.value.trim());
+  if(!record.maHS || !record.hoTen){
+    alert('Cần nhập Mã HS và Họ tên.');
+    return;
+  }
+  status.textContent = 'Đang lưu…';
+  try{
+    await apiPost({ action:'saveStudentFull', record });
+    hocSinhFull[idx] = record;
+    status.textContent = '✓ Đã lưu';
+    setTimeout(()=>{ status.textContent=''; }, 2000);
+    // Làm mới dữ liệu học sinh dùng ở các module khác cho khớp thông tin vừa sửa
+    try{ students = await apiGet('getStudents'); }catch(e){}
+    parentsLoaded = false;
+    dgStudentsFilled = false;
+  }catch(err){
+    status.textContent = 'Lỗi: ' + err.message;
+  }
 }
 
 loadStudents();
