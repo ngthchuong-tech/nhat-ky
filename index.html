@@ -2,993 +2,556 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#1D9E75">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Nhật Ký">
-<title>Nhật Ký Công Việc</title>
-<link rel="manifest" href="manifest.json">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sổ Điểm Danh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{
-  --green:#1D9E75;--green-dark:#0F6E56;--green-light:#E1F5EE;
-  --blue-light:#E6F1FB;--blue-dark:#185FA5;
-  --pink-light:#FBEAF0;--pink-dark:#993556;
-  --red-light:#FCEBEB;--red-dark:#A32D2D;
-  --amber-light:#FAEEDA;--amber-dark:#854F0B;
-  --gray-light:#F1EFE8;
-  --surface:#ffffff;--surface2:#f7f7f5;--surface3:#f0f0ec;
-  --border:#e8e8e4;--border2:#d0d0ca;
-  --text:#1a1a18;--text2:#6b6b65;--text3:#a8a8a2;
-  --radius:12px;--radius-sm:8px;--radius-lg:16px;
-  --font:'Inter',system-ui,-apple-system,sans-serif;
-  --mono:'SF Mono','Fira Code',monospace;
-}
-@media(prefers-color-scheme:dark){
   :root{
-    --surface:#1c1c1a;--surface2:#242422;--surface3:#2e2e2a;
-    --border:#3a3a36;--border2:#4a4a45;
-    --text:#f0f0ec;--text2:#a8a8a2;--text3:#6b6b65;
-    --gray-light:#2e2e2a;
+    --paper: #FAF6EC;
+    --paper-line: #E4DCC8;
+    --ink: #2A2B24;
+    --ink-soft: #6B6A5E;
+    --chalk-green: #1F4D3D;
+    --chalk-green-dark: #163A2E;
+    --chalk-yellow: #E3B341;
+    --present: #4C7A5A;
+    --late: #C88A2E;
+    --excused: #7A6FB0;
+    --absent: #B4472E;
+    --card: #FFFFFF;
+    --radius: 14px;
   }
-}
-html,body{height:100%;overflow:hidden}
-body{font-family:var(--font);background:var(--surface);color:var(--text);font-size:14px;line-height:1.5}
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    background-image: radial-gradient(var(--paper-line) 1px, transparent 1px);
+    background-size: 22px 22px;
+    color:var(--ink);
+    font-family:'Be Vietnam Pro', system-ui, sans-serif;
+    min-height:100vh;
+    padding-bottom:90px;
+  }
+  header{
+    background:var(--chalk-green);
+    color:#F5F1E3;
+    padding:22px 20px 26px;
+    border-radius:0 0 22px 22px;
+    position:relative;
+    box-shadow:0 6px 18px rgba(31,77,61,0.25);
+  }
+  header h1{
+    margin:0 0 2px;
+    font-size:1.5rem;
+    font-weight:800;
+    letter-spacing:0.2px;
+  }
+  header .sub{
+    font-size:0.85rem;
+    opacity:0.75;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .settings-btn{
+    position:absolute;
+    top:20px; right:18px;
+    background:rgba(255,255,255,0.12);
+    border:1px solid rgba(255,255,255,0.25);
+    color:#F5F1E3;
+    border-radius:50%;
+    width:38px;height:38px;
+    font-size:1.1rem;
+    cursor:pointer;
+  }
+  .datebar{
+    margin-top:16px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .datebar input[type=date]{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.95rem;
+    padding:8px 10px;
+    border-radius:10px;
+    border:none;
+    background:#F5F1E3;
+    color:var(--chalk-green-dark);
+    font-weight:600;
+  }
+  .tabs{
+    display:flex;
+    margin:18px 20px 0;
+    background:var(--card);
+    border-radius:12px;
+    padding:4px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  }
+  .tab{
+    flex:1;
+    text-align:center;
+    padding:10px 0;
+    border-radius:9px;
+    font-weight:600;
+    font-size:0.92rem;
+    color:var(--ink-soft);
+    cursor:pointer;
+    user-select:none;
+  }
+  .tab.active{
+    background:var(--chalk-green);
+    color:#F5F1E3;
+  }
+  main{ padding:18px 20px; }
+  .empty{
+    text-align:center;
+    color:var(--ink-soft);
+    padding:60px 20px;
+    font-size:0.95rem;
+  }
+  .student-card{
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    margin-bottom:12px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.05);
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .student-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .student-name{
+    font-weight:700;
+    font-size:1rem;
+  }
+  .student-id{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    color:var(--ink-soft);
+  }
+  .note-btn{
+    background:none;
+    border:1px dashed var(--paper-line);
+    border-radius:8px;
+    padding:4px 8px;
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .note-btn.has-note{
+    border-color:var(--chalk-yellow);
+    color:var(--chalk-green-dark);
+    background:#FFF7E2;
+  }
+  .stamps{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+  }
+  .stamp{
+    border:2px solid var(--paper-line);
+    background:#fff;
+    border-radius:10px;
+    padding:8px 4px;
+    font-size:0.78rem;
+    font-weight:600;
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:transform 0.08s ease;
+    text-align:center;
+  }
+  .stamp:active{ transform:scale(0.95); }
+  .stamp.on-present{ background:var(--present); border-color:var(--present); color:#fff; transform:rotate(-1deg); }
+  .stamp.on-late{ background:var(--late); border-color:var(--late); color:#fff; transform:rotate(-1deg); }
+  .stamp.on-excused{ background:var(--excused); border-color:var(--excused); color:#fff; transform:rotate(-1deg); }
+  .stamp.on-absent{ background:var(--absent); border-color:var(--absent); color:#fff; transform:rotate(-1deg); }
 
-/* ===== LOGIN ===== */
-#login-screen{
-  position:fixed;inset:0;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:20px;
-  background:var(--surface);z-index:200;padding:32px;
-  transition:opacity .3s;
-}
-#login-screen.hidden{opacity:0;pointer-events:none}
-.login-logo{width:64px;height:64px;border-radius:20px;background:var(--green);
-  display:flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:4px}
-.login-title{font-size:22px;font-weight:600;color:var(--text)}
-.login-sub{font-size:14px;color:var(--text2);text-align:center;line-height:1.6;max-width:260px}
-.google-btn{
-  display:flex;align-items:center;gap:10px;padding:13px 24px;
-  background:var(--surface);border:1.5px solid var(--border2);
-  border-radius:var(--radius);font-size:15px;font-weight:500;
-  color:var(--text);cursor:pointer;width:100%;max-width:280px;
-  justify-content:center;transition:all .15s;
-}
-.google-btn:hover{background:var(--surface2);border-color:var(--green)}
-.google-btn svg{width:20px;height:20px;flex-shrink:0}
-.login-note{font-size:12px;color:var(--text3);text-align:center}
+  .bottom-bar{
+    position:fixed;
+    bottom:0; left:0; right:0;
+    background:var(--card);
+    padding:12px 20px;
+    box-shadow:0 -4px 14px rgba(0,0,0,0.08);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .save-btn{
+    background:var(--chalk-green);
+    color:#F5F1E3;
+    border:none;
+    border-radius:12px;
+    padding:13px 22px;
+    font-weight:700;
+    font-size:0.95rem;
+    cursor:pointer;
+    flex:1;
+  }
+  .save-btn:disabled{ opacity:0.5; }
+  .status-text{
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    font-family:'JetBrains Mono', monospace;
+    min-width:90px;
+    text-align:right;
+  }
 
-/* ===== APP ===== */
-#app-screen{position:fixed;inset:0;display:none;flex-direction:column}
-#app-screen.show{display:flex}
+  /* Stats tab */
+  .stats-controls{
+    display:flex;
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .stats-controls input[type=month]{
+    font-family:'JetBrains Mono', monospace;
+    padding:8px 10px;
+    border-radius:10px;
+    border:1px solid var(--paper-line);
+    background:#fff;
+  }
+  table.stats{
+    width:100%;
+    border-collapse:collapse;
+    background:var(--card);
+    border-radius:var(--radius);
+    overflow:hidden;
+    box-shadow:0 2px 6px rgba(0,0,0,0.05);
+  }
+  table.stats th, table.stats td{
+    padding:10px 8px;
+    text-align:center;
+    font-size:0.82rem;
+    border-bottom:1px solid var(--paper-line);
+  }
+  table.stats th{
+    background:var(--chalk-green);
+    color:#F5F1E3;
+    font-weight:600;
+    font-size:0.75rem;
+  }
+  table.stats td.name{ text-align:left; font-weight:600; }
+  tr.warn td.name{ color:var(--absent); }
+  tr.warn td.name::after{ content:" ⚠"; }
 
-.app-header{
-  background:var(--green);padding:env(safe-area-inset-top,0) 0 0;
-  flex-shrink:0;
-}
-.header-inner{padding:14px 16px 12px}
-.header-top{display:flex;align-items:center;justify-content:space-between}
-.header-title{font-size:18px;font-weight:600;color:#fff;display:flex;align-items:center;gap:8px}
-.user-avatar{width:32px;height:32px;border-radius:50%;border:2px solid rgba(255,255,255,.3);cursor:pointer;object-fit:cover}
-.user-avatar-placeholder{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.25);
-  display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:600;cursor:pointer}
-.header-date{font-size:12px;color:rgba(255,255,255,.75);margin-top:2px}
-.header-stats{display:flex;gap:8px;margin-top:10px;padding-bottom:2px}
-.stat-chip{background:rgba(255,255,255,.18);border-radius:20px;padding:4px 10px;
-  font-size:12px;color:#fff;display:flex;align-items:center;gap:4px;white-space:nowrap}
-
-.tabs{display:flex;background:var(--surface);border-bottom:0.5px solid var(--border);flex-shrink:0}
-.tab{flex:1;padding:11px 4px;text-align:center;font-size:12px;color:var(--text2);
-  cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;
-  display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .15s;font-family:var(--font)}
-.tab .ti{font-size:18px;display:block}
-.tab.active{color:var(--green);border-bottom-color:var(--green);font-weight:500}
-
-.content{flex:1;overflow-y:auto;padding:12px;-webkit-overflow-scrolling:touch}
-
-/* ===== CARDS ===== */
-.section-label{font-size:11px;font-weight:600;color:var(--text3);
-  text-transform:uppercase;letter-spacing:.6px;margin:10px 0 6px;padding:0 2px}
-
-.note-card{background:var(--surface);border:0.5px solid var(--border);
-  border-radius:var(--radius);padding:13px 14px;margin-bottom:8px;cursor:pointer;
-  transition:border-color .15s,transform .1s;active:scale(.99)}
-.note-card:hover{border-color:var(--green)}
-.note-card.pinned{border-left:3px solid var(--green)}
-.note-title{font-size:14px;font-weight:500;margin-bottom:4px;display:flex;align-items:center;gap:6px}
-.note-body{font-size:13px;color:var(--text2);
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5}
-.note-meta{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
-.tag{padding:2px 9px;border-radius:10px;font-size:11px;font-weight:500}
-.tag-work{background:var(--blue-light);color:var(--blue-dark)}
-.tag-personal{background:var(--pink-light);color:var(--pink-dark)}
-.tag-urgent{background:var(--red-light);color:var(--red-dark)}
-.tag-note{background:var(--green-light);color:var(--green-dark)}
-.meta-time{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:3px}
-
-.task-item{background:var(--surface);border:0.5px solid var(--border);
-  border-radius:var(--radius);padding:12px 14px;margin-bottom:6px;
-  display:flex;align-items:flex-start;gap:11px;transition:opacity .2s}
-.task-item.done-item{opacity:.55}
-.check-ring{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border2);
-  cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  transition:all .2s;background:var(--surface);margin-top:1px}
-.check-ring.checked{background:var(--green);border-color:var(--green)}
-.check-ring.checked::after{content:'';width:6px;height:10px;border:2px solid #fff;
-  border-top:none;border-left:none;transform:rotate(45deg) translateY(-1px);display:block}
-.task-content{flex:1;min-width:0}
-.task-title{font-size:14px;word-break:break-word}
-.task-title.crossed{text-decoration:line-through;color:var(--text3)}
-.task-due{font-size:11px;color:var(--text3);margin-top:3px;display:flex;align-items:center;gap:3px}
-.due-over{color:#E24B4A}
-.due-soon{color:#BA7517}
-.task-del{background:none;border:none;color:var(--text3);cursor:pointer;
-  padding:4px;font-size:16px;margin-left:auto;flex-shrink:0;border-radius:6px;transition:color .15s}
-.task-del:hover{color:#E24B4A}
-
-.remind-card{background:var(--surface);border:0.5px solid var(--border);
-  border-radius:var(--radius);padding:13px 14px;margin-bottom:8px;
-  display:flex;gap:12px;align-items:flex-start;transition:opacity .2s}
-.remind-card.past{opacity:.5}
-.remind-time-box{background:var(--green-light);border-radius:var(--radius-sm);
-  padding:8px 10px;text-align:center;min-width:52px;flex-shrink:0}
-.rt-hm{font-size:16px;font-weight:600;color:var(--green-dark);line-height:1.1}
-.rt-dm{font-size:10px;color:var(--green-dark);opacity:.8;margin-top:2px}
-.remind-body{flex:1;min-width:0}
-.remind-title{font-size:14px;font-weight:500}
-.remind-note{font-size:12px;color:var(--text2);margin-top:2px}
-.remind-badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;margin-top:5px}
-.rb-today{background:var(--red-light);color:var(--red-dark)}
-.rb-soon{background:var(--amber-light);color:var(--amber-dark)}
-.rb-ok{background:var(--green-light);color:var(--green-dark)}
-.rb-past{background:var(--gray-light);color:var(--text3)}
-
-/* ===== BOTTOM BAR ===== */
-.bottom-bar{background:var(--surface);border-top:0.5px solid var(--border);
-  padding:10px 12px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0));flex-shrink:0}
-.bottom-row{display:flex;gap:8px}
-.bb-btn{flex:1;padding:11px 6px;border-radius:var(--radius);border:0.5px solid var(--border);
-  background:var(--surface2);cursor:pointer;font-size:12px;color:var(--text2);
-  display:flex;align-items:center;justify-content:center;gap:6px;
-  transition:all .15s;font-family:var(--font);font-weight:500}
-.bb-btn:hover{border-color:var(--green);color:var(--green)}
-.bb-btn.bb-primary{background:var(--green);color:#fff;border-color:var(--green);flex:1.6}
-.bb-btn.bb-primary:hover{background:var(--green-dark)}
-.bb-btn.recording{background:var(--red-light);border-color:#E24B4A;color:#E24B4A}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-.recording{animation:pulse .7s infinite}
-
-/* ===== MODAL ===== */
-.modal-overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;
-  display:flex;align-items:flex-end;justify-content:center;
-  opacity:0;transition:opacity .2s;pointer-events:none}
-.modal-overlay.show{opacity:1;pointer-events:all}
-.modal-sheet{
-  background:var(--surface);border-radius:20px 20px 0 0;
-  padding:16px 16px calc(16px + env(safe-area-inset-bottom,0));
-  width:100%;max-width:480px;max-height:88vh;overflow-y:auto;
-  transform:translateY(100%);transition:transform .25s cubic-bezier(.32,0,.67,0);}
-.modal-overlay.show .modal-sheet{transform:translateY(0)}
-.modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;
-  margin:0 auto 14px}
-.modal-title{font-size:16px;font-weight:600;margin-bottom:16px;
-  display:flex;align-items:center;justify-content:space-between}
-.modal-close{background:none;border:none;font-size:22px;cursor:pointer;
-  color:var(--text2);padding:0 4px;line-height:1;border-radius:6px}
-.form-group{margin-bottom:14px}
-.form-label{font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:5px}
-.form-input,.form-textarea,.form-select{
-  width:100%;padding:10px 12px;border:0.5px solid var(--border2);
-  border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);
-  background:var(--surface);color:var(--text);transition:border-color .15s;resize:none}
-.form-input:focus,.form-textarea:focus{outline:none;border-color:var(--green)}
-.form-textarea{line-height:1.6}
-.tags-row{display:flex;gap:6px;flex-wrap:wrap}
-.tag-opt{padding:5px 13px;border-radius:20px;border:0.5px solid var(--border2);
-  font-size:13px;cursor:pointer;background:var(--surface2);color:var(--text2);
-  transition:all .15s;font-family:var(--font)}
-.tag-opt.sel{background:var(--green);color:#fff;border-color:var(--green)}
-.pin-row{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
-.pin-row input{width:16px;height:16px;accent-color:var(--green)}
-.save-btn{width:100%;padding:13px;background:var(--green);color:#fff;border:none;
-  border-radius:var(--radius);font-size:15px;font-weight:500;cursor:pointer;
-  font-family:var(--font);margin-top:6px;transition:background .15s}
-.save-btn:hover{background:var(--green-dark)}
-.save-btn:disabled{background:var(--text3);cursor:not-allowed}
-.del-btn{width:100%;padding:11px;background:var(--red-light);color:var(--red-dark);
-  border:none;border-radius:var(--radius);font-size:14px;cursor:pointer;
-  font-family:var(--font);margin-top:8px}
-
-/* ===== VOICE ===== */
-.voice-center{text-align:center;padding:8px 0 4px}
-.voice-ring{width:80px;height:80px;border-radius:50%;background:var(--green-light);
-  display:flex;align-items:center;justify-content:center;margin:0 auto 12px;transition:all .2s}
-.voice-ring.rec{background:var(--red-light);animation:pulse .7s infinite}
-.voice-ring .ti{font-size:36px;color:var(--green)}
-.voice-ring.rec .ti{color:#E24B4A}
-.voice-hint{font-size:13px;color:var(--text2);margin-bottom:10px}
-.voice-preview{background:var(--surface2);border:0.5px solid var(--border);
-  border-radius:var(--radius-sm);padding:12px;font-size:13px;color:var(--text);
-  min-height:72px;text-align:left;line-height:1.6;margin:8px 0;word-break:break-word}
-.voice-btns{display:flex;gap:8px;margin-top:4px}
-.vbtn{flex:1;padding:11px;border-radius:var(--radius-sm);border:0.5px solid var(--border2);
-  font-size:13px;cursor:pointer;background:var(--surface2);color:var(--text);
-  font-family:var(--font);font-weight:500;transition:all .15s}
-.vbtn:hover{border-color:var(--green);color:var(--green)}
-.vbtn.vprimary{background:var(--green);color:#fff;border-color:var(--green)}
-.vbtn.vprimary:hover{background:var(--green-dark)}
-
-/* ===== SEARCH ===== */
-.search-wrap{display:flex;align-items:center;background:var(--surface2);
-  border:0.5px solid var(--border);border-radius:var(--radius-sm);
-  padding:9px 12px;gap:8px;margin-bottom:12px}
-.search-wrap .ti{font-size:16px;color:var(--text3)}
-.search-wrap input{flex:1;border:none;background:none;font-size:14px;
-  color:var(--text);outline:none;font-family:var(--font)}
-
-/* ===== USER MENU ===== */
-.user-menu{background:var(--surface);border-radius:var(--radius);
-  border:0.5px solid var(--border);padding:16px;text-align:center}
-.user-menu-img{width:60px;height:60px;border-radius:50%;margin:0 auto 8px;display:block;object-fit:cover}
-.user-menu-name{font-size:16px;font-weight:500;margin-bottom:4px}
-.user-menu-email{font-size:13px;color:var(--text2);margin-bottom:16px}
-.signout-btn{width:100%;padding:11px;background:none;border:0.5px solid var(--border2);
-  border-radius:var(--radius-sm);font-size:14px;color:var(--text2);cursor:pointer;
-  font-family:var(--font);transition:all .15s}
-.signout-btn:hover{color:var(--red-dark);border-color:var(--red-dark)}
-
-/* ===== EMPTY ===== */
-.empty-state{text-align:center;padding:40px 20px;color:var(--text3)}
-.empty-state .ti{font-size:44px;opacity:.35;margin-bottom:10px;display:block}
-.empty-state p{font-size:14px;line-height:1.7}
-
-/* ===== SYNC INDICATOR ===== */
-.sync-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.5);display:inline-block}
-.sync-dot.syncing{animation:pulse .8s infinite;background:#fff}
-.sync-dot.ok{background:#9FE1CB}
-.sync-dot.err{background:#F09595}
-
-/* ===== TOAST ===== */
-.toast{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom,0));left:50%;
-  transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--surface);
-  padding:10px 18px;border-radius:20px;font-size:13px;opacity:0;
-  transition:all .25s;pointer-events:none;white-space:nowrap;z-index:300}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* ===== CLOUD STATUS BAR ===== */
-.status-bar{background:var(--green-dark);color:rgba(255,255,255,.9);
-  font-size:11px;text-align:center;padding:3px 0;display:none}
-.status-bar.show{display:block}
+  /* Modal */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(30,30,25,0.5);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+    z-index:50;
+  }
+  .modal{
+    background:var(--card);
+    border-radius:16px;
+    padding:22px;
+    width:100%;
+    max-width:380px;
+  }
+  .modal h3{ margin-top:0; }
+  .modal input[type=text], .modal input[type=url], .modal textarea{
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    border:1px solid var(--paper-line);
+    font-family:inherit;
+    margin-bottom:12px;
+    font-size:0.9rem;
+  }
+  .modal-actions{
+    display:flex;
+    gap:8px;
+    justify-content:flex-end;
+  }
+  .btn-secondary{
+    background:none;
+    border:1px solid var(--paper-line);
+    color:var(--ink-soft);
+    padding:9px 16px;
+    border-radius:9px;
+    cursor:pointer;
+  }
+  .btn-primary{
+    background:var(--chalk-green);
+    color:#F5F1E3;
+    border:none;
+    padding:9px 16px;
+    border-radius:9px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  .hint{
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    line-height:1.4;
+  }
 </style>
 </head>
 <body>
 
-<!-- LOGIN SCREEN -->
-<div id="login-screen">
-  <div class="login-logo">📓</div>
-  <div class="login-title">Nhật Ký Công Việc</div>
-  <div class="login-sub">Đăng nhập để đồng bộ ghi chép, công việc và nhắc nhở trên mọi thiết bị.</div>
-  <button class="google-btn" onclick="signInGoogle()">
-    <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-    Đăng nhập bằng Google
-  </button>
-  <div class="login-note">Dữ liệu được lưu an toàn trên tài khoản Google của bạn</div>
+<header>
+  <button class="settings-btn" onclick="openSettings()">⚙</button>
+  <h1>Sổ Điểm Danh</h1>
+  <div class="sub" id="className">Chưa đặt tên lớp</div>
+  <div class="datebar">
+    <input type="date" id="datePicker">
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-tab="diemdanh" onclick="switchTab('diemdanh')">Điểm danh</div>
+  <div class="tab" data-tab="thongke" onclick="switchTab('thongke')">Thống kê</div>
 </div>
 
-<!-- APP SCREEN -->
-<div id="app-screen">
-  <div class="app-header">
-    <div id="status-bar" class="status-bar"></div>
-    <div class="header-inner">
-      <div class="header-top">
-        <div class="header-title">
-          📓 Nhật Ký
-          <span class="sync-dot" id="sync-dot" title="Trạng thái đồng bộ"></span>
-        </div>
-        <div id="user-avatar-wrap" onclick="openUserMenu()" style="cursor:pointer"></div>
-      </div>
-      <div class="header-date" id="header-date"></div>
-      <div class="header-stats">
-        <span class="stat-chip">📝 <span id="s-notes">0</span> ghi chép</span>
-        <span class="stat-chip">✅ <span id="s-done">0</span>/<span id="s-total">0</span> việc</span>
-        <span class="stat-chip">🔔 <span id="s-remind">0</span> nhắc</span>
-      </div>
+<main>
+  <div id="tab-diemdanh">
+    <div id="studentList"><div class="empty">Đang tải danh sách học sinh…</div></div>
+  </div>
+
+  <div id="tab-thongke" style="display:none;">
+    <div class="stats-controls">
+      <input type="month" id="statsMonth">
+      <button class="btn-primary" onclick="loadStats()">Xem</button>
     </div>
+    <div id="statsResult"><div class="empty">Chọn tháng để xem thống kê chuyên cần</div></div>
   </div>
+</main>
 
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('notes')" id="tab-notes">
-      <span class="ti ti-notebook" aria-hidden="true"></span>Ghi chép
-    </button>
-    <button class="tab" onclick="switchTab('tasks')" id="tab-tasks">
-      <span class="ti ti-list-check" aria-hidden="true"></span>Việc làm
-    </button>
-    <button class="tab" onclick="switchTab('reminders')" id="tab-reminders">
-      <span class="ti ti-bell" aria-hidden="true"></span>Nhắc nhở
-    </button>
-  </div>
+<div class="bottom-bar" id="bottomBar" style="display:none;">
+  <button class="save-btn" id="saveBtn" onclick="saveAttendance()">Lưu điểm danh</button>
+  <div class="status-text" id="statusText"></div>
+</div>
 
-  <div class="content" id="content"></div>
-
-  <div class="bottom-bar">
-    <div class="bottom-row">
-      <button class="bb-btn" id="voice-btn" onclick="openVoice()">
-        <span class="ti ti-microphone" aria-hidden="true"></span> Giọng nói
-      </button>
-      <button class="bb-btn bb-primary" onclick="openAdd()" id="fab-main">
-        <span class="ti ti-plus" aria-hidden="true"></span> Thêm mới
-      </button>
-      <button class="bb-btn" onclick="openSearch()">
-        <span class="ti ti-search" aria-hidden="true"></span> Tìm
-      </button>
+<div class="overlay" id="settingsOverlay" style="display:none;">
+  <div class="modal">
+    <h3>Cài đặt</h3>
+    <p class="hint">Dán URL Web App (Apps Script) đã deploy — xem hướng dẫn trong file Code.gs.</p>
+    <input type="url" id="webAppUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+    <input type="text" id="classNameInput" placeholder="Tên lớp (vd: 3A - Trường TH ABC)">
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeSettings()">Đóng</button>
+      <button class="btn-primary" onclick="saveSettings()">Lưu</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL -->
-<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
-  <div class="modal-sheet" id="modal-sheet">
-    <div class="modal-handle"></div>
-    <div id="modal-content"></div>
+<div class="overlay" id="noteOverlay" style="display:none;">
+  <div class="modal">
+    <h3>Ghi chú</h3>
+    <textarea id="noteInput" rows="3" placeholder="Lý do vắng, tình trạng…"></textarea>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeNote()">Hủy</button>
+      <button class="btn-primary" onclick="saveNote()">Lưu ghi chú</button>
+    </div>
   </div>
 </div>
-
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
-
-<!-- Tabler Icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-
-<!-- Firebase SDK -->
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut }
-  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy }
-  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
-// ╔══════════════════════════════════════════════════════╗
-// ║   DÁN FIREBASE CONFIG CỦA BẠN VÀO ĐÂY              ║
-// ╚══════════════════════════════════════════════════════╝
-const firebaseConfig = {
-  apiKey: "AIzaSyAFchpROtPnbY9R9tQG_yECP4a1Xf0pw7U",
-  authDomain: "nhat-ky-cv.firebaseapp.com",
-  projectId: "nhat-ky-cv",
-  storageBucket: "nhat-ky-cv.firebasestorage.app",
-  messagingSenderId: "877286779903",
-  appId: "1:877286779903:web:c67a0053791884e52295ca"
-};
-// ══════════════════════════════════════════════════════
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-let uid = null;
-let unsubs = [];
-
-window.DB = { notes: [], tasks: [], reminders: [] };
-
-// --- Auth ---
-window.signInGoogle = async () => {
-  try {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
-  } catch(e) {
-    showToast('Đăng nhập thất bại. Thử lại nhé.');
-  }
-};
-window.signOutApp = () => {
-  signOut(auth);
-  unsubs.forEach(u => u());
-  unsubs = [];
-  window.DB = { notes: [], tasks: [], reminders: [] };
-};
-
-onAuthStateChanged(auth, user => {
-  if (user) {
-    uid = user.uid;
-    document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('app-screen').classList.add('show');
-    renderUserAvatar(user);
-    startSync();
-  } else {
-    uid = null;
-    document.getElementById('login-screen').classList.remove('hidden');
-    document.getElementById('app-screen').classList.remove('show');
-  }
-});
-
-function renderUserAvatar(user) {
-  const wrap = document.getElementById('user-avatar-wrap');
-  if (user.photoURL) {
-    wrap.innerHTML = `<img src="${user.photoURL}" class="user-avatar" alt="${user.displayName}">`;
-  } else {
-    const initials = (user.displayName || 'U').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-    wrap.innerHTML = `<div class="user-avatar-placeholder">${initials}</div>`;
-  }
-  window._currentUser = user;
-}
-
-// --- Firestore Sync ---
-function colRef(name) { return collection(db, 'users', uid, name); }
-
-function startSync() {
-  setSyncState('syncing');
-  ['notes','tasks','reminders'].forEach(name => {
-    const q = query(colRef(name), orderBy('ts', 'desc'));
-    const unsub = onSnapshot(q,
-      snap => {
-        window.DB[name] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        renderContent();
-        setSyncState('ok');
-      },
-      err => {
-        console.error(err);
-        setSyncState('err');
-      }
-    );
-    unsubs.push(unsub);
-  });
-}
-
-window.cloudSave = async (colName, item) => {
-  if (!uid) return;
-  setSyncState('syncing');
-  try {
-    await setDoc(doc(db, 'users', uid, colName, item.id), item);
-    setSyncState('ok');
-  } catch(e) {
-    setSyncState('err');
-    showToast('Lỗi lưu cloud. Kiểm tra kết nối.');
-  }
-};
-
-window.cloudDelete = async (colName, id) => {
-  if (!uid) return;
-  setSyncState('syncing');
-  try {
-    await deleteDoc(doc(db, 'users', uid, colName, id));
-    setSyncState('ok');
-  } catch(e) {
-    setSyncState('err');
-  }
-};
-
-function setSyncState(state) {
-  const dot = document.getElementById('sync-dot');
-  if (!dot) return;
-  dot.className = 'sync-dot ' + state;
-  dot.title = state === 'ok' ? 'Đã đồng bộ' : state === 'syncing' ? 'Đang đồng bộ...' : 'Lỗi kết nối';
-}
-</script>
 
 <script>
-// ===== APP LOGIC =====
-let curTab = 'notes';
-let selTag = '';
-let voiceRec = null;
-let isRecording = false;
-let voiceText = '';
+const STATUSES = [
+  { key: 'CoMat', label: 'Có mặt', cls: 'on-present' },
+  { key: 'Tre', label: 'Đi trễ', cls: 'on-late' },
+  { key: 'VangPhep', label: 'Vắng phép', cls: 'on-excused' },
+  { key: 'VangKP', label: 'Vắng KP', cls: 'on-absent' }
+];
 
-function uid_gen() { return Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
+let webAppUrl = localStorage.getItem('sdd_webAppUrl') || '';
+let students = [];
+let attendanceState = {}; // maHS -> { trangThai, ghiChu }
+let noteTargetId = null;
 
-// Date helpers
-function fmtDate(ts) {
-  return new Date(ts).toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric' });
-}
-function fmtTime(ts) {
-  return new Date(ts).toLocaleTimeString('vi-VN', { hour:'2-digit', minute:'2-digit' });
-}
-function fmtDateTime(ts) { return fmtDate(ts) + ' ' + fmtTime(ts); }
-function todayLabel() {
-  const n = new Date();
-  return n.toLocaleDateString('vi-VN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-}
-function localDatetimeVal(offsetMs = 0) {
-  const d = new Date(Date.now() + offsetMs);
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' +
-    String(d.getDate()).padStart(2,'0') + 'T' + String(d.getHours()).padStart(2,'0') + ':' +
-    String(d.getMinutes()).padStart(2,'0');
-}
-function dueStatus(ts) {
-  if (!ts) return { label:'', cls:'' };
-  const diff = ts - Date.now();
-  if (diff < 0) return { label:'⚠ Quá hạn', cls:'due-over' };
-  if (diff < 3600000) return { label:'⏰ Còn dưới 1 giờ', cls:'due-soon' };
-  if (diff < 86400000) return { label:'📅 Hôm nay', cls:'due-soon' };
-  return { label: fmtDate(ts), cls:'' };
-}
-function remindBadge(ts) {
-  const diff = ts - Date.now();
-  if (diff < 0) return '<span class="remind-badge rb-past">Đã qua</span>';
-  if (diff < 86400000) return '<span class="remind-badge rb-today">Hôm nay</span>';
-  if (diff < 259200000) return '<span class="remind-badge rb-soon">Sắp tới</span>';
-  return '<span class="remind-badge rb-ok">Đã lên lịch</span>';
+function todayStr(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
 }
 
-// UI init
-document.getElementById('header-date').textContent = todayLabel();
+document.getElementById('datePicker').value = todayStr();
+document.getElementById('className').textContent = localStorage.getItem('sdd_className') || 'Chưa đặt tên lớp';
 
-// Stats
-function updateStats() {
-  document.getElementById('s-notes').textContent = DB.notes.length;
-  const done = DB.tasks.filter(t => t.done).length;
-  document.getElementById('s-done').textContent = done;
-  document.getElementById('s-total').textContent = DB.tasks.length;
-  document.getElementById('s-remind').textContent = DB.reminders.filter(r => r.ts > Date.now()).length;
+function openSettings(){
+  document.getElementById('webAppUrlInput').value = webAppUrl;
+  document.getElementById('classNameInput').value = localStorage.getItem('sdd_className') || '';
+  document.getElementById('settingsOverlay').style.display = 'flex';
+}
+function closeSettings(){ document.getElementById('settingsOverlay').style.display = 'none'; }
+function saveSettings(){
+  webAppUrl = document.getElementById('webAppUrlInput').value.trim();
+  const cName = document.getElementById('classNameInput').value.trim();
+  localStorage.setItem('sdd_webAppUrl', webAppUrl);
+  localStorage.setItem('sdd_className', cName);
+  document.getElementById('className').textContent = cName || 'Chưa đặt tên lớp';
+  closeSettings();
+  loadStudents();
 }
 
-// Tab switching
-window.switchTab = function(t) {
-  curTab = t;
-  ['notes','tasks','reminders'].forEach(x => {
-    document.getElementById('tab-'+x).classList.toggle('active', x===t);
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  document.getElementById('tab-diemdanh').style.display = name==='diemdanh' ? '' : 'none';
+  document.getElementById('tab-thongke').style.display = name==='thongke' ? '' : 'none';
+  document.getElementById('bottomBar').style.display = name==='diemdanh' && students.length ? 'flex' : 'none';
+  if(name==='thongke' && !document.getElementById('statsMonth').value){
+    document.getElementById('statsMonth').value = todayStr().slice(0,7);
+  }
+}
+
+async function apiGet(action, params){
+  if(!webAppUrl){ throw new Error('Chưa cài đặt Web App URL'); }
+  const url = new URL(webAppUrl);
+  url.searchParams.set('action', action);
+  Object.entries(params||{}).forEach(([k,v])=>url.searchParams.set(k,v));
+  const res = await fetch(url.toString());
+  return res.json();
+}
+async function apiPost(payload){
+  if(!webAppUrl){ throw new Error('Chưa cài đặt Web App URL'); }
+  const res = await fetch(webAppUrl, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify(payload)
   });
-  const labels = { notes:'Ghi chép mới', tasks:'Thêm việc', reminders:'Đặt nhắc nhở' };
-  document.getElementById('fab-main').innerHTML =
-    `<span class="ti ti-plus" aria-hidden="true"></span> ${labels[t]}`;
-  renderContent();
-};
-
-window.renderContent = function() {
-  const el = document.getElementById('content');
-  if (!el) return;
-  if (curTab === 'notes') el.innerHTML = renderNotes();
-  else if (curTab === 'tasks') el.innerHTML = renderTasks();
-  else el.innerHTML = renderReminders();
-  updateStats();
-};
-
-// Notes
-function renderNotes() {
-  const pinned = DB.notes.filter(n => n.pin);
-  const normal = DB.notes.filter(n => !n.pin);
-  if (!DB.notes.length) return emptyState('ti-notebook', 'Chưa có ghi chép nào.<br>Nhấn <b>Thêm mới</b> hoặc dùng <b>Giọng nói</b>.');
-  let h = '';
-  if (pinned.length) {
-    h += `<div class="section-label">📌 Đã ghim</div>`;
-    pinned.forEach(n => h += noteCard(n));
-  }
-  if (normal.length) {
-    if (pinned.length) h += `<div class="section-label" style="margin-top:14px">Gần đây</div>`;
-    normal.forEach(n => h += noteCard(n));
-  }
-  return h;
-}
-function noteCard(n) {
-  const tagMap = { work:'Công việc', personal:'Cá nhân', urgent:'Khẩn cấp', note:'Ghi chú' };
-  const tagCls = { work:'tag-work', personal:'tag-personal', urgent:'tag-urgent', note:'tag-note' };
-  const tagHtml = n.tag ? `<span class="tag ${tagCls[n.tag]||'tag-note'}">${tagMap[n.tag]||n.tag}</span>` : '';
-  return `<div class="note-card${n.pin?' pinned':''}" onclick="viewNote('${n.id}')">
-    <div class="note-title">${n.pin?'📌 ':''}<span>${escHtml(n.title||'(Không có tiêu đề)')}</span></div>
-    <div class="note-body">${escHtml(n.body||'')}</div>
-    <div class="note-meta">${tagHtml}<span class="meta-time"><span class="ti ti-clock" style="font-size:11px"></span>${fmtDateTime(n.ts)}</span></div>
-  </div>`;
+  return res.json();
 }
 
-// Tasks
-function renderTasks() {
-  const todo = DB.tasks.filter(t => !t.done);
-  const done = DB.tasks.filter(t => t.done);
-  if (!DB.tasks.length) return emptyState('ti-list-check', 'Chưa có việc nào.<br>Nhấn <b>Thêm việc</b> để bắt đầu.');
-  let h = '';
-  if (todo.length) {
-    h += `<div class="section-label">Cần làm (${todo.length})</div>`;
-    todo.forEach(t => h += taskItem(t));
-  }
-  if (done.length) {
-    h += `<div class="section-label" style="margin-top:14px;opacity:.6">Đã hoàn thành (${done.length})</div>`;
-    done.forEach(t => h += taskItem(t));
-  }
-  return h;
-}
-function taskItem(t) {
-  const due = dueStatus(t.due);
-  return `<div class="task-item${t.done?' done-item':''}">
-    <div class="check-ring${t.done?' checked':''}" onclick="toggleTask('${t.id}')"></div>
-    <div class="task-content">
-      <div class="task-title${t.done?' crossed':''}">${escHtml(t.title)}</div>
-      ${due.label ? `<div class="task-due ${due.cls}">${due.label}</div>` : ''}
-    </div>
-    <button class="task-del" onclick="deleteItem('tasks','${t.id}')" aria-label="Xóa việc">
-      <span class="ti ti-trash" aria-hidden="true"></span>
-    </button>
-  </div>`;
-}
-
-// Reminders
-function renderReminders() {
-  if (!DB.reminders.length) return emptyState('ti-bell', 'Chưa có nhắc nhở nào.<br>Nhấn <b>Đặt nhắc nhở</b> để tạo mới.');
-  const sorted = [...DB.reminders].sort((a,b) => a.ts - b.ts);
-  const upcoming = sorted.filter(r => r.ts > Date.now());
-  const past = sorted.filter(r => r.ts <= Date.now()).reverse();
-  let h = '';
-  if (upcoming.length) {
-    h += `<div class="section-label">Sắp tới (${upcoming.length})</div>`;
-    upcoming.forEach(r => h += remindCard(r));
-  }
-  if (past.length) {
-    h += `<div class="section-label" style="margin-top:14px;opacity:.5">Đã qua</div>`;
-    past.forEach(r => h += remindCard(r, true));
-  }
-  return h;
-}
-function remindCard(r, faded=false) {
-  const d = new Date(r.ts);
-  const hm = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
-  const dm = String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
-  return `<div class="remind-card${faded?' past':''}">
-    <div class="remind-time-box">
-      <div class="rt-hm">${hm}</div>
-      <div class="rt-dm">${dm}</div>
-    </div>
-    <div class="remind-body">
-      <div class="remind-title">${escHtml(r.title)}</div>
-      ${r.note ? `<div class="remind-note">${escHtml(r.note)}</div>` : ''}
-      ${remindBadge(r.ts)}
-    </div>
-    <button class="task-del" onclick="deleteItem('reminders','${r.id}')" aria-label="Xóa nhắc nhở">
-      <span class="ti ti-trash" aria-hidden="true"></span>
-    </button>
-  </div>`;
-}
-
-function emptyState(icon, msg) {
-  return `<div class="empty-state"><span class="ti ${icon}"></span><p>${msg}</p></div>`;
-}
-
-// Modal helpers
-function openModal(html) {
-  document.getElementById('modal-content').innerHTML = html;
-  document.getElementById('modal-overlay').classList.add('show');
-}
-window.closeModal = function() {
-  document.getElementById('modal-overlay').classList.remove('show');
-};
-function selTagOpt(el, v) {
-  document.querySelectorAll('.tag-opt').forEach(e => e.classList.remove('sel'));
-  el.classList.add('sel');
-  selTag = v;
-}
-window.selTagOpt = selTagOpt;
-
-// Add dispatcher
-window.openAdd = function() {
-  if (curTab === 'notes') openAddNote();
-  else if (curTab === 'tasks') openAddTask();
-  else openAddReminder();
-};
-
-// ── Add Note ──
-function openAddNote(prefill='') {
-  selTag = '';
-  openModal(`
-    <div class="modal-title">Ghi chép mới <button class="modal-close" onclick="closeModal()">×</button></div>
-    <div class="form-group">
-      <label class="form-label">Tiêu đề</label>
-      <input id="n-title" class="form-input" placeholder="Tiêu đề ghi chép...">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Nội dung</label>
-      <textarea id="n-body" class="form-textarea" rows="5" placeholder="Nội dung...">${escHtml(prefill)}</textarea>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Nhãn</label>
-      <div class="tags-row">
-        <span class="tag-opt" onclick="selTagOpt(this,'work')">💼 Công việc</span>
-        <span class="tag-opt" onclick="selTagOpt(this,'personal')">👤 Cá nhân</span>
-        <span class="tag-opt" onclick="selTagOpt(this,'urgent')">🔴 Khẩn cấp</span>
-        <span class="tag-opt" onclick="selTagOpt(this,'note')">📝 Ghi chú</span>
-      </div>
-    </div>
-    <label class="pin-row form-group">
-      <input type="checkbox" id="n-pin"> 📌 Ghim ghi chép này lên đầu
-    </label>
-    <button class="save-btn" onclick="saveNote()">Lưu ghi chép</button>
-  `);
-  setTimeout(() => document.getElementById('n-title')?.focus(), 150);
-}
-window.saveNote = function() {
-  const title = document.getElementById('n-title').value.trim();
-  const body = document.getElementById('n-body').value.trim();
-  const pin = document.getElementById('n-pin').checked;
-  if (!title && !body) { showToast('Vui lòng nhập tiêu đề hoặc nội dung.'); return; }
-  const item = { id: uid_gen(), title, body, tag: selTag, pin, ts: Date.now() };
-  cloudSave('notes', item);
-  closeModal();
-  showToast('Đã lưu ghi chép ✓');
-};
-
-window.viewNote = function(id) {
-  const n = DB.notes.find(x => x.id === id);
-  if (!n) return;
-  const tagMap = { work:'Công việc', personal:'Cá nhân', urgent:'Khẩn cấp', note:'Ghi chú' };
-  const tagCls = { work:'tag-work', personal:'tag-personal', urgent:'tag-urgent', note:'tag-note' };
-  const tagHtml = n.tag ? `<span class="tag ${tagCls[n.tag]||''}">${tagMap[n.tag]||n.tag}</span>` : '';
-  openModal(`
-    <div class="modal-title">${escHtml(n.title||'Ghi chép')} <button class="modal-close" onclick="closeModal()">×</button></div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-      ${tagHtml}
-      <span class="meta-time" style="font-size:12px"><span class="ti ti-clock" style="font-size:12px"></span>${fmtDateTime(n.ts)}</span>
-    </div>
-    <div style="font-size:14px;line-height:1.8;white-space:pre-wrap;margin-bottom:16px;color:var(--text)">${escHtml(n.body||'')}</div>
-    <div style="display:flex;gap:8px">
-      <button class="save-btn" style="background:var(--surface2);color:var(--text);border:0.5px solid var(--border2)" onclick="togglePin('${n.id}')">
-        ${n.pin ? '📌 Bỏ ghim' : '📌 Ghim'}
-      </button>
-      <button class="del-btn" style="flex:1;margin-top:0" onclick="deleteItem('notes','${n.id}')">🗑 Xóa</button>
-    </div>
-  `);
-};
-window.togglePin = function(id) {
-  const n = DB.notes.find(x => x.id === id);
-  if (!n) return;
-  n.pin = !n.pin;
-  cloudSave('notes', n);
-  closeModal();
-};
-
-// ── Add Task ──
-function openAddTask() {
-  openModal(`
-    <div class="modal-title">Thêm việc cần làm <button class="modal-close" onclick="closeModal()">×</button></div>
-    <div class="form-group">
-      <label class="form-label">Tên công việc</label>
-      <input id="t-title" class="form-input" placeholder="Việc cần làm...">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Hạn chót (tùy chọn)</label>
-      <input type="datetime-local" id="t-due" class="form-input" value="${localDatetimeVal(86400000)}">
-    </div>
-    <button class="save-btn" onclick="saveTask()">Thêm công việc</button>
-  `);
-  setTimeout(() => document.getElementById('t-title')?.focus(), 150);
-}
-window.saveTask = function() {
-  const title = document.getElementById('t-title').value.trim();
-  const dueVal = document.getElementById('t-due').value;
-  if (!title) { showToast('Vui lòng nhập tên công việc.'); return; }
-  const item = { id: uid_gen(), title, due: dueVal ? new Date(dueVal).getTime() : null, done: false, ts: Date.now() };
-  cloudSave('tasks', item);
-  closeModal();
-  showToast('Đã thêm công việc ✓');
-};
-window.toggleTask = function(id) {
-  const t = DB.tasks.find(x => x.id === id);
-  if (!t) return;
-  t.done = !t.done;
-  cloudSave('tasks', t);
-};
-
-// ── Add Reminder ──
-function openAddReminder() {
-  selTag = 'deadline';
-  openModal(`
-    <div class="modal-title">Đặt nhắc nhở <button class="modal-close" onclick="closeModal()">×</button></div>
-    <div class="form-group">
-      <label class="form-label">Tiêu đề nhắc nhở</label>
-      <input id="r-title" class="form-input" placeholder="Nhắc nhở về...">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Thời điểm nhắc</label>
-      <input type="datetime-local" id="r-dt" class="form-input" value="${localDatetimeVal(3600000)}">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Ghi chú thêm (tùy chọn)</label>
-      <input id="r-note" class="form-input" placeholder="Chi tiết...">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Loại nhắc</label>
-      <div class="tags-row">
-        <span class="tag-opt sel" onclick="selTagOpt(this,'deadline')">⏰ Deadline</span>
-        <span class="tag-opt" onclick="selTagOpt(this,'meeting')">👥 Họp</span>
-        <span class="tag-opt" onclick="selTagOpt(this,'task')">✅ Việc làm</span>
-        <span class="tag-opt" onclick="selTagOpt(this,'other')">📎 Khác</span>
-      </div>
-    </div>
-    <button class="save-btn" onclick="saveReminder()">Lưu nhắc nhở</button>
-  `);
-  setTimeout(() => document.getElementById('r-title')?.focus(), 150);
-}
-window.saveReminder = function() {
-  const title = document.getElementById('r-title').value.trim();
-  const dtVal = document.getElementById('r-dt').value;
-  const note = document.getElementById('r-note').value.trim();
-  if (!title) { showToast('Vui lòng nhập tiêu đề.'); return; }
-  if (!dtVal) { showToast('Vui lòng chọn thời điểm nhắc.'); return; }
-  const ts = new Date(dtVal).getTime();
-  const item = { id: uid_gen(), title, ts, note, type: selTag, createdAt: Date.now() };
-  cloudSave('reminders', item);
-  closeModal();
-  showToast('Đã lưu nhắc nhở ✓');
-  scheduleNotif(title, ts);
-};
-
-// ── Delete ──
-window.deleteItem = function(col, id) {
-  if (!confirm('Xóa mục này?')) return;
-  cloudDelete(col, id);
-  closeModal();
-  showToast('Đã xóa.');
-};
-
-// ── Notification ──
-function scheduleNotif(title, ts) {
-  const delay = ts - Date.now();
-  if (delay <= 0 || delay > 86400000) return;
-  if (!('Notification' in window)) return;
-  Notification.requestPermission().then(p => {
-    if (p === 'granted') {
-      setTimeout(() => {
-        new Notification('🔔 Nhắc nhở', { body: title, icon: '' });
-      }, delay);
-    }
-  });
-}
-
-// ── Voice ──
-window.openVoice = function() {
-  voiceText = '';
-  openModal(`
-    <div class="modal-title">Ghi chép bằng giọng nói <button class="modal-close" onclick="stopVoice();closeModal()">×</button></div>
-    <div class="voice-center">
-      <div class="voice-ring" id="v-ring"><span class="ti ti-microphone" id="v-ico"></span></div>
-      <div class="voice-hint" id="v-hint">Nhấn nút micro để bắt đầu nói</div>
-    </div>
-    <div class="voice-preview" id="v-preview">Nội dung sẽ xuất hiện ở đây khi bạn nói...</div>
-    <div class="voice-btns">
-      <button class="vbtn" id="v-rec-btn" onclick="toggleVoice()">
-        <span class="ti ti-microphone"></span> Bắt đầu
-      </button>
-      <button class="vbtn vprimary" onclick="useVoiceText()" id="v-use-btn" style="display:none">
-        Dùng nội dung ↗
-      </button>
-    </div>
-  `);
-};
-window.toggleVoice = function() {
-  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-    document.getElementById('v-preview').textContent = '⚠ Trình duyệt chưa hỗ trợ. Hãy dùng Chrome hoặc Edge.';
+async function loadStudents(){
+  const listEl = document.getElementById('studentList');
+  if(!webAppUrl){
+    listEl.innerHTML = '<div class="empty">Bấm nút ⚙ ở góc trên để dán Web App URL trước khi dùng.</div>';
     return;
   }
-  if (isRecording) { stopVoice(); return; }
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  voiceRec = new SR();
-  voiceRec.lang = 'vi-VN';
-  voiceRec.continuous = true;
-  voiceRec.interimResults = true;
-  voiceRec.onresult = e => {
-    let t = '';
-    for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript + ' ';
-    voiceText = t.trim();
-    const el = document.getElementById('v-preview');
-    if (el) el.textContent = voiceText;
-  };
-  voiceRec.onerror = () => stopVoice();
-  voiceRec.onend = () => { if (isRecording) stopVoice(); };
-  voiceRec.start();
-  isRecording = true;
-  const ring = document.getElementById('v-ring');
-  const ico = document.getElementById('v-ico');
-  const hint = document.getElementById('v-hint');
-  const btn = document.getElementById('v-rec-btn');
-  if (ring) ring.classList.add('rec');
-  if (ico) { ico.className = 'ti ti-player-record'; }
-  if (hint) hint.textContent = 'Đang nghe... Nói rõ ràng nhé';
-  if (btn) btn.innerHTML = '<span class="ti ti-player-stop"></span> Dừng';
-};
-window.stopVoice = function() {
-  if (voiceRec) { try { voiceRec.stop(); } catch(e){} voiceRec = null; }
-  isRecording = false;
-  const ring = document.getElementById('v-ring');
-  const ico = document.getElementById('v-ico');
-  const hint = document.getElementById('v-hint');
-  const btn = document.getElementById('v-rec-btn');
-  const useBtn = document.getElementById('v-use-btn');
-  if (ring) ring.classList.remove('rec');
-  if (ico) { ico.className = 'ti ti-microphone'; }
-  if (hint) hint.textContent = 'Đã dừng. Xem lại nội dung bên dưới.';
-  if (btn) btn.innerHTML = '<span class="ti ti-microphone"></span> Ghi lại';
-  if (useBtn && voiceText) useBtn.style.display = '';
-};
-window.useVoiceText = function() {
-  closeModal();
-  if (curTab === 'tasks') {
-    const item = { id: uid_gen(), title: voiceText, due: null, done: false, ts: Date.now() };
-    cloudSave('tasks', item);
-    showToast('Đã thêm việc từ giọng nói ✓');
-  } else {
-    switchTab('notes');
-    openAddNote(voiceText);
+  listEl.innerHTML = '<div class="empty">Đang tải danh sách học sinh…</div>';
+  try{
+    students = await apiGet('getStudents');
+    await loadAttendanceForDate(document.getElementById('datePicker').value);
+  }catch(err){
+    listEl.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
   }
-};
-
-// ── Search ──
-window.openSearch = function() {
-  openModal(`
-    <div class="modal-title">Tìm kiếm <button class="modal-close" onclick="closeModal()">×</button></div>
-    <div class="search-wrap">
-      <span class="ti ti-search" aria-hidden="true"></span>
-      <input id="sq" placeholder="Tìm ghi chép, công việc..." oninput="doSearch(this.value)" autofocus
-        style="border:none;background:none;font-size:14px;color:var(--text);outline:none;flex:1;font-family:var(--font)">
-    </div>
-    <div id="search-results"></div>
-  `);
-  setTimeout(() => document.getElementById('sq')?.focus(), 150);
-};
-window.doSearch = function(q) {
-  const el = document.getElementById('search-results');
-  if (!q.trim()) { el.innerHTML = ''; return; }
-  const ql = q.toLowerCase();
-  const notes = DB.notes.filter(n => (n.title+n.body).toLowerCase().includes(ql));
-  const tasks = DB.tasks.filter(t => t.title.toLowerCase().includes(ql));
-  let h = '';
-  if (notes.length) { h += `<div class="section-label">Ghi chép</div>`; notes.forEach(n => h += noteCard(n)); }
-  if (tasks.length) { h += `<div class="section-label">Việc làm</div>`; tasks.forEach(t => h += taskItem(t)); }
-  if (!notes.length && !tasks.length)
-    h = `<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">Không tìm thấy kết quả nào</div>`;
-  el.innerHTML = h;
-};
-
-// ── User menu ──
-window.openUserMenu = function() {
-  const u = window._currentUser;
-  if (!u) return;
-  openModal(`
-    <div class="modal-title">Tài khoản <button class="modal-close" onclick="closeModal()">×</button></div>
-    <div class="user-menu">
-      <img src="${u.photoURL||''}" class="user-menu-img" alt="${u.displayName}" onerror="this.style.display='none'">
-      <div class="user-menu-name">${escHtml(u.displayName||'')}</div>
-      <div class="user-menu-email">${escHtml(u.email||'')}</div>
-      <button class="signout-btn" onclick="signOutApp();closeModal()">Đăng xuất</button>
-    </div>
-    <div style="margin-top:14px;font-size:12px;color:var(--text3);text-align:center;line-height:1.7">
-      Dữ liệu đồng bộ realtime qua Firebase Firestore.<br>
-      <b>${DB.notes.length}</b> ghi chép · <b>${DB.tasks.length}</b> việc làm · <b>${DB.reminders.length}</b> nhắc nhở
-    </div>
-  `);
-};
-
-// ── Notification check ──
-setInterval(() => {
-  const now = Date.now();
-  DB.reminders.forEach(r => {
-    const diff = r.ts - now;
-    if (diff > 0 && diff < 60000 && !r._fired) {
-      r._fired = true;
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('🔔 ' + r.title, { body: r.note || 'Nhắc nhở từ Nhật Ký Công Việc' });
-      }
-    }
-  });
-}, 30000);
-
-// ── Toast ──
-let toastTimer;
-window.showToast = function(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
-};
-
-// ── Escape HTML ──
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── Swipe to close modal ──
-let touchStartY = 0;
-document.getElementById('modal-sheet').addEventListener('touchstart', e => {
-  touchStartY = e.touches[0].clientY;
+async function loadAttendanceForDate(date){
+  const listEl = document.getElementById('studentList');
+  listEl.innerHTML = '<div class="empty">Đang tải điểm danh…</div>';
+  try{
+    const existing = await apiGet('getAttendanceByDate', { date });
+    attendanceState = {};
+    students.forEach(s=>{ attendanceState[s.maHS] = { trangThai:'CoMat', ghiChu:'' }; });
+    existing.forEach(r=>{ attendanceState[r.maHS] = { trangThai:r.trangThai, ghiChu:r.ghiChu||'' }; });
+    renderStudentList();
+  }catch(err){
+    listEl.innerHTML = '<div class="empty">Lỗi tải điểm danh: '+err.message+'</div>';
+  }
+}
+
+function renderStudentList(){
+  const listEl = document.getElementById('studentList');
+  if(!students.length){
+    listEl.innerHTML = '<div class="empty">Chưa có học sinh trong sheet "DanhSach".</div>';
+    document.getElementById('bottomBar').style.display = 'none';
+    return;
+  }
+  listEl.innerHTML = students.map(s=>{
+    const st = attendanceState[s.maHS] || { trangThai:'CoMat', ghiChu:'' };
+    const stamps = STATUSES.map(opt=>{
+      const active = st.trangThai === opt.key ? opt.cls : '';
+      return `<div class="stamp ${active}" onclick="setStatus('${s.maHS}','${opt.key}')">${opt.label}</div>`;
+    }).join('');
+    const hasNote = st.ghiChu && st.ghiChu.length;
+    return `
+      <div class="student-card">
+        <div class="student-top">
+          <div>
+            <div class="student-name">${s.hoTen}</div>
+            <div class="student-id">${s.maHS}</div>
+          </div>
+          <button class="note-btn ${hasNote?'has-note':''}" onclick="openNote('${s.maHS}')">${hasNote?'✎ Có ghi chú':'+ Ghi chú'}</button>
+        </div>
+        <div class="stamps">${stamps}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('bottomBar').style.display = 'flex';
+}
+
+function setStatus(maHS, key){
+  attendanceState[maHS].trangThai = key;
+  renderStudentList();
+}
+
+function openNote(maHS){
+  noteTargetId = maHS;
+  document.getElementById('noteInput').value = attendanceState[maHS].ghiChu || '';
+  document.getElementById('noteOverlay').style.display = 'flex';
+}
+function closeNote(){ document.getElementById('noteOverlay').style.display = 'none'; }
+function saveNote(){
+  attendanceState[noteTargetId].ghiChu = document.getElementById('noteInput').value.trim();
+  closeNote();
+  renderStudentList();
+}
+
+async function saveAttendance(){
+  const btn = document.getElementById('saveBtn');
+  const status = document.getElementById('statusText');
+  btn.disabled = true;
+  status.textContent = 'Đang lưu…';
+  const date = document.getElementById('datePicker').value;
+  const records = students.map(s=>({
+    maHS: s.maHS,
+    trangThai: attendanceState[s.maHS].trangThai,
+    ghiChu: attendanceState[s.maHS].ghiChu
+  }));
+  try{
+    await apiPost({ action:'saveAttendance', date, records });
+    status.textContent = 'Đã lưu lúc ' + new Date().toLocaleTimeString('vi-VN');
+  }catch(err){
+    status.textContent = 'Lỗi: ' + err.message;
+  }
+  btn.disabled = false;
+}
+
+document.getElementById('datePicker').addEventListener('change', (e)=>{
+  if(students.length) loadAttendanceForDate(e.target.value);
 });
-document.getElementById('modal-sheet').addEventListener('touchend', e => {
-  const diff = e.changedTouches[0].clientY - touchStartY;
-  if (diff > 80) closeModal();
-});
+
+async function loadStats(){
+  const resultEl = document.getElementById('statsResult');
+  const month = document.getElementById('statsMonth').value;
+  if(!month) return;
+  resultEl.innerHTML = '<div class="empty">Đang tính thống kê…</div>';
+  try{
+    const all = await apiGet('getAllAttendance');
+    const filtered = all.filter(r => r.ngay.startsWith(month));
+    const counts = {};
+    students.forEach(s=>{ counts[s.maHS] = { hoTen:s.hoTen, CoMat:0, Tre:0, VangPhep:0, VangKP:0 }; });
+    filtered.forEach(r=>{
+      if(!counts[r.maHS]) counts[r.maHS] = { hoTen:r.maHS, CoMat:0, Tre:0, VangPhep:0, VangKP:0 };
+      counts[r.maHS][r.trangThai] = (counts[r.maHS][r.trangThai]||0) + 1;
+    });
+    const rows = Object.values(counts).map(c=>{
+      const warn = c.VangKP > 3 ? 'warn' : '';
+      return `<tr class="${warn}">
+        <td class="name">${c.hoTen}</td>
+        <td>${c.CoMat||0}</td>
+        <td>${c.Tre||0}</td>
+        <td>${c.VangPhep||0}</td>
+        <td>${c.VangKP||0}</td>
+      </tr>`;
+    }).join('');
+    resultEl.innerHTML = `
+      <table class="stats">
+        <thead><tr><th>Học sinh</th><th>Có mặt</th><th>Trễ</th><th>Vắng phép</th><th>Vắng KP</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p class="hint" style="margin-top:10px;">⚠ = vắng không phép hơn 3 buổi trong tháng, cần lưu ý.</p>
+    `;
+  }catch(err){
+    resultEl.innerHTML = '<div class="empty">Lỗi: '+err.message+'</div>';
+  }
+}
+
+loadStudents();
 </script>
 </body>
 </html>
