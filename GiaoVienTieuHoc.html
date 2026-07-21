@@ -522,7 +522,19 @@ async function loadStats(){
   resultEl.innerHTML = '<div class="empty">Đang tính thống kê…</div>';
   try{
     const all = await apiGet('getAllAttendance');
-    const filtered = all.filter(r => r.ngay.startsWith(month));
+    if(!Array.isArray(all)){
+      resultEl.innerHTML = '<div class="empty">Lỗi từ server: '+(all && all.error ? all.error : 'phản hồi không hợp lệ')+'</div>';
+      return;
+    }
+    const filtered = all.filter(r => r.ngay && r.ngay.startsWith(month));
+    if(all.length === 0){
+      resultEl.innerHTML = '<div class="empty">Sheet "DiemDanh" chưa có dữ liệu nào. Hãy điểm danh và bấm Lưu trước, sau đó quay lại tab này.</div>';
+      return;
+    }
+    if(filtered.length === 0){
+      resultEl.innerHTML = '<div class="empty">Đã tải được '+all.length+' bản ghi tổng cộng, nhưng không có bản ghi nào thuộc tháng '+month+'. Kiểm tra lại tháng đã chọn.</div>';
+      return;
+    }
     const counts = {};
     students.forEach(s=>{ counts[s.maHS] = { hoTen:s.hoTen, CoMat:0, Tre:0, VangPhep:0, VangKP:0 }; });
     filtered.forEach(r=>{
