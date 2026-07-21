@@ -513,6 +513,83 @@
     padding:6px 2px;
   }
   .tkb-table input:focus{ background:#FFF7E2; outline:none; }
+  .hc-card{
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    margin-bottom:12px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.05);
+  }
+  .hc-card .hc-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+  }
+  .hc-card .hc-title{ font-weight:700; font-size:0.95rem; }
+  .hc-card .hc-meta{ font-size:0.75rem; color:var(--ink-soft); margin-top:2px; }
+  .hc-tag{
+    font-size:0.68rem;
+    font-weight:600;
+    padding:2px 8px;
+    border-radius:6px;
+    background:var(--chalk-green);
+    color:#F5F1E3;
+    white-space:nowrap;
+  }
+  .hc-preview{
+    font-size:0.83rem;
+    color:var(--ink-soft);
+    margin:8px 0 10px;
+    max-height:2.8em;
+    overflow:hidden;
+  }
+  .hc-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .dg-section-title{
+    font-weight:700;
+    font-size:0.9rem;
+    color:var(--chalk-green-dark);
+    margin:20px 0 10px;
+    padding-bottom:6px;
+    border-bottom:2px solid var(--paper-line);
+  }
+  .rate-row{
+    background:var(--card);
+    border-radius:10px;
+    padding:10px 12px;
+    margin-bottom:8px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.04);
+  }
+  .rate-label{ font-weight:600; font-size:0.85rem; margin-bottom:6px; }
+  .rate-btns{ display:flex; gap:6px; margin-bottom:6px; }
+  .rate-btn{
+    flex:1;
+    text-align:center;
+    border:2px solid var(--paper-line);
+    border-radius:8px;
+    padding:6px 0;
+    font-size:0.8rem;
+    font-weight:700;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .rate-btn.on{ background:var(--chalk-green); border-color:var(--chalk-green); color:#F5F1E3; }
+  .rate-note{
+    width:100%;
+    padding:6px 8px;
+    border-radius:6px;
+    border:1px solid var(--paper-line);
+    font-family:inherit;
+    font-size:0.78rem;
+  }
+  .dg-tonghop select, .dg-tonghop input{
+    width:100%;
+    padding:9px 12px;
+    border-radius:8px;
+    border:1px solid var(--paper-line);
+    font-family:inherit;
+    margin-bottom:10px;
+  }
 </style>
 </head>
 <body>
@@ -531,6 +608,7 @@
   <div class="tab" data-tab="thongke" onclick="switchTab('thongke')">Thống kê</div>
   <div class="tab" data-tab="lienlac" onclick="switchTab('lienlac')">Liên lạc</div>
   <div class="tab" data-tab="lichcongtac" onclick="switchTab('lichcongtac')">Lịch công tác</div>
+  <div class="tab" data-tab="hanhchinh" onclick="switchTab('hanhchinh')">Hành chính</div>
 </div>
 
 <main>
@@ -600,6 +678,64 @@
       <div id="tkbGrid"><div class="empty">Đang tải thời khóa biểu…</div></div>
       <button class="btn-primary" style="margin-top:12px;" onclick="saveTimetableUI()">Lưu thời khóa biểu</button>
       <span id="tkbSaveStatus" class="hint" style="margin-left:10px;"></span>
+    </div>
+  </div>
+
+  <div id="tab-hanhchinh" style="display:none;">
+    <div class="sub-tabs">
+      <div class="sub-tab active" data-subtab="hoso" onclick="switchHcSubTab('hoso')">Hồ sơ - Sổ sách</div>
+      <div class="sub-tab" data-subtab="danhgia" onclick="switchHcSubTab('danhgia')">Đánh giá học sinh (TT27)</div>
+    </div>
+
+    <div id="hcSub-hoso">
+      <div id="hcListView">
+        <div class="lienlac-type">
+          <select id="hcLoaiFilter" onchange="renderHanhChinhList()">
+            <option value="">Tất cả loại</option>
+            <option value="Biên bản họp">Biên bản họp</option>
+            <option value="Báo cáo">Báo cáo</option>
+            <option value="Kế hoạch chủ nhiệm">Kế hoạch chủ nhiệm</option>
+            <option value="Ghi chú khác">Ghi chú khác</option>
+          </select>
+        </div>
+        <button class="btn-primary" style="margin-bottom:14px;" onclick="openHcEditor(null)">+ Thêm mới</button>
+        <div id="hcList"><div class="empty">Đang tải…</div></div>
+      </div>
+
+      <div id="hcEditorView" style="display:none;">
+        <div class="task-form">
+          <select id="hcLoai" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--paper-line);margin-bottom:10px;font-family:inherit;">
+            <option value="Biên bản họp">Biên bản họp</option>
+            <option value="Báo cáo">Báo cáo</option>
+            <option value="Kế hoạch chủ nhiệm">Kế hoạch chủ nhiệm</option>
+            <option value="Ghi chú khác">Ghi chú khác</option>
+          </select>
+          <input type="text" id="hcTieuDe" placeholder="Tiêu đề (vd: Biên bản họp phụ huynh HK1)">
+          <input type="date" id="hcNgay" style="margin-bottom:10px;">
+          <textarea id="hcNoiDung" rows="10" placeholder="Nội dung..." style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.9rem;"></textarea>
+        </div>
+        <div class="modal-actions" style="justify-content:flex-start;">
+          <button class="btn-secondary" onclick="closeHcEditor()">Hủy</button>
+          <button class="btn-primary" onclick="saveHcRecord()">Lưu</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="hcSub-danhgia" style="display:none;">
+      <p class="hint" style="margin-bottom:12px;">Công cụ hỗ trợ tổng hợp nhanh theo Thông tư 27/2020/TT-BGDĐT — dùng để ghi nháp trước khi nhập vào Học bạ chính thức, không thay thế Học bạ.</p>
+      <div class="task-form">
+        <div class="task-form-row">
+          <select id="dgHocSinh" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);"></select>
+          <select id="dgKy" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
+            <option>Giữa học kỳ 1</option>
+            <option>Cuối học kỳ 1</option>
+            <option>Giữa học kỳ 2</option>
+            <option>Cuối học kỳ 2 (Cuối năm)</option>
+          </select>
+        </div>
+        <button class="btn-primary" style="margin-top:10px;width:100%;" onclick="loadDanhGiaForm()">Tải phiếu đánh giá</button>
+      </div>
+      <div id="dgFormArea"></div>
     </div>
   </div>
 </main>
@@ -676,6 +812,7 @@ function switchTab(name){
   document.getElementById('tab-thongke').style.display = name==='thongke' ? '' : 'none';
   document.getElementById('tab-lienlac').style.display = name==='lienlac' ? '' : 'none';
   document.getElementById('tab-lichcongtac').style.display = name==='lichcongtac' ? '' : 'none';
+  document.getElementById('tab-hanhchinh').style.display = name==='hanhchinh' ? '' : 'none';
   document.getElementById('bottomBar').style.display = name==='diemdanh' && students.length ? 'flex' : 'none';
   if(name==='thongke' && !document.getElementById('statsMonth').value){
     document.getElementById('statsMonth').value = todayStr().slice(0,7);
@@ -690,6 +827,16 @@ function switchTab(name){
     if(!tasksLoaded) loadTasksUI();
     if(!timetableLoaded) loadTimetableUI();
   }
+  if(name==='hanhchinh'){
+    if(!hcLoaded) loadHanhChinh();
+    if(!dgStudentsFilled) fillDgStudentSelect();
+  }
+}
+
+function switchHcSubTab(name){
+  document.querySelectorAll('#tab-hanhchinh .sub-tab').forEach(t=>t.classList.toggle('active', t.dataset.subtab===name));
+  document.getElementById('hcSub-hoso').style.display = name==='hoso' ? '' : 'none';
+  document.getElementById('hcSub-danhgia').style.display = name==='danhgia' ? '' : 'none';
 }
 
 async function apiGet(action, params){
@@ -1086,7 +1233,7 @@ const TKB_SESSIONS = [
 ];
 
 function switchSubTab(name){
-  document.querySelectorAll('.sub-tab').forEach(t=>t.classList.toggle('active', t.dataset.subtab===name));
+  document.querySelectorAll('#tab-lichcongtac .sub-tab').forEach(t=>t.classList.toggle('active', t.dataset.subtab===name));
   document.getElementById('subtab-viec').style.display = name==='viec' ? '' : 'none';
   document.getElementById('subtab-tkb').style.display = name==='tkb' ? '' : 'none';
 }
@@ -1235,6 +1382,293 @@ async function saveTimetableUI(){
   }catch(err){
     status.textContent = 'Lỗi: ' + err.message;
   }
+}
+
+/* ---------- Hành chính - sổ sách chủ nhiệm ---------- */
+
+let hcRecords = [];
+let hcLoaded = false;
+let hcEditingId = null;
+
+async function loadHanhChinh(){
+  const el = document.getElementById('hcList');
+  el.innerHTML = '<div class="empty">Đang tải…</div>';
+  try{
+    hcRecords = await apiGet('getHanhChinh');
+    hcLoaded = true;
+    renderHanhChinhList();
+  }catch(err){
+    el.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
+  }
+}
+
+function renderHanhChinhList(){
+  const el = document.getElementById('hcList');
+  const filter = document.getElementById('hcLoaiFilter').value;
+  const filtered = filter ? hcRecords.filter(r=>r.loai===filter) : hcRecords;
+  if(!filtered.length){
+    el.innerHTML = '<div class="empty">Chưa có hồ sơ nào. Bấm "+ Thêm mới" để tạo.</div>';
+    return;
+  }
+  const sorted = [...filtered].sort((a,b)=> b.ngay.localeCompare(a.ngay));
+  el.innerHTML = sorted.map(r=>{
+    const preview = (r.noiDung || '').slice(0, 120);
+    return `<div class="hc-card">
+      <div class="hc-head">
+        <div>
+          <div class="hc-title">${r.tieuDe || '(Không có tiêu đề)'}</div>
+          <div class="hc-meta">${r.ngay}</div>
+        </div>
+        <span class="hc-tag">${r.loai}</span>
+      </div>
+      <div class="hc-preview">${preview}${(r.noiDung||'').length>120?'…':''}</div>
+      <div class="hc-actions">
+        <button class="copy-btn" onclick="openHcEditor('${r.id}')">✎ Sửa</button>
+        <button class="copy-btn" onclick="printHcRecord('${r.id}')">🖨 In / Lưu PDF</button>
+        <button class="task-del" onclick="deleteHcRecord('${r.id}')">✕ Xóa</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openHcEditor(id){
+  hcEditingId = id;
+  document.getElementById('hcListView').style.display = 'none';
+  document.getElementById('hcEditorView').style.display = '';
+  if(id){
+    const r = hcRecords.find(x=>x.id===id);
+    document.getElementById('hcLoai').value = r.loai;
+    document.getElementById('hcTieuDe').value = r.tieuDe;
+    document.getElementById('hcNgay').value = r.ngay;
+    document.getElementById('hcNoiDung').value = r.noiDung;
+  }else{
+    document.getElementById('hcLoai').value = 'Biên bản họp';
+    document.getElementById('hcTieuDe').value = '';
+    document.getElementById('hcNgay').value = todayStr();
+    document.getElementById('hcNoiDung').value = '';
+  }
+}
+
+function closeHcEditor(){
+  document.getElementById('hcEditorView').style.display = 'none';
+  document.getElementById('hcListView').style.display = '';
+}
+
+async function saveHcRecord(){
+  const record = {
+    id: hcEditingId || String(Date.now()),
+    loai: document.getElementById('hcLoai').value,
+    tieuDe: document.getElementById('hcTieuDe').value.trim(),
+    ngay: document.getElementById('hcNgay').value,
+    noiDung: document.getElementById('hcNoiDung').value
+  };
+  if(!record.tieuDe || !record.ngay){
+    alert('Nhập tiêu đề và chọn ngày trước nhé.');
+    return;
+  }
+  try{
+    if(hcEditingId){
+      await apiPost({ action:'updateHanhChinh', record });
+      const idx = hcRecords.findIndex(r=>r.id===hcEditingId);
+      if(idx>=0) hcRecords[idx] = record;
+    }else{
+      await apiPost({ action:'saveHanhChinh', record });
+      hcRecords.push(record);
+    }
+    closeHcEditor();
+    renderHanhChinhList();
+  }catch(err){
+    alert('Lỗi lưu: ' + err.message);
+  }
+}
+
+async function deleteHcRecord(id){
+  if(!confirm('Xóa hồ sơ này?')) return;
+  hcRecords = hcRecords.filter(r=>r.id!==id);
+  renderHanhChinhList();
+  try{
+    await apiPost({ action:'deleteHanhChinh', id });
+  }catch(err){
+    alert('Lỗi xóa: ' + err.message);
+  }
+}
+
+function printHcRecord(id){
+  const r = hcRecords.find(x=>x.id===id);
+  if(!r) return;
+  const className = localStorage.getItem('sdd_className') || '';
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8">
+    <title>${r.tieuDe}</title>
+    <style>
+      body{ font-family:'Times New Roman', serif; padding:50px; line-height:1.7; color:#111; }
+      h1{ font-size:20px; text-align:center; text-transform:uppercase; margin-bottom:4px; }
+      .meta{ text-align:center; color:#444; font-size:14px; margin-bottom:28px; }
+      pre{ white-space:pre-wrap; font-family:inherit; font-size:15px; }
+    </style></head><body>
+    <h1>${r.tieuDe}</h1>
+    <div class="meta">${r.loai}${className ? ' — Lớp '+className : ''} — Ngày ${r.ngay}</div>
+    <pre>${(r.noiDung||'').replace(/</g,'&lt;')}</pre>
+    </body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(), 300);
+}
+
+/* ---------- Đánh giá học sinh theo Thông tư 27 ---------- */
+
+const MON_HOC = ['Tiếng Việt','Toán','Đạo đức','Tự nhiên và Xã hội','Giáo dục thể chất','Âm nhạc','Mĩ thuật','Hoạt động trải nghiệm'];
+const PHAM_CHAT = ['Yêu nước','Nhân ái','Chăm chỉ','Trung thực','Trách nhiệm'];
+const NANG_LUC = ['Tự chủ và tự học','Giao tiếp và hợp tác','Giải quyết vấn đề và sáng tạo','Ngôn ngữ','Tính toán','Khoa học','Công nghệ','Tin học','Thẩm mỹ','Thể chất'];
+const TONG_HOP_OPTIONS = ['Hoàn thành xuất sắc','Hoàn thành tốt','Hoàn thành','Chưa hoàn thành'];
+let dgStudentsFilled = false;
+let dgAllRecords = [];
+
+function fillDgStudentSelect(){
+  const sel = document.getElementById('dgHocSinh');
+  if(!students.length){
+    sel.innerHTML = '<option value="">(chưa có danh sách học sinh)</option>';
+    return;
+  }
+  sel.innerHTML = students.map(s=>`<option value="${s.maHS}">${s.hoTen}</option>`).join('');
+  dgStudentsFilled = true;
+}
+
+function ratingRowHtml(loai, ten, mucOptions){
+  const key = loai + '|' + ten;
+  const btns = mucOptions.map(m=>`<div class="rate-btn" onclick="selectRating(this,'${m}')">${m}</div>`).join('');
+  return `<div class="rate-row" data-key="${key}">
+    <div class="rate-label">${ten}</div>
+    <div class="rate-btns">${btns}</div>
+    <input type="text" class="rate-note" placeholder="Nhận xét (không bắt buộc)">
+  </div>`;
+}
+
+function selectRating(btn, muc){
+  const group = btn.parentElement;
+  group.querySelectorAll('.rate-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  group.dataset.muc = muc;
+}
+
+async function loadDanhGiaForm(){
+  const maHS = document.getElementById('dgHocSinh').value;
+  const ky = document.getElementById('dgKy').value;
+  const area = document.getElementById('dgFormArea');
+  if(!maHS){ area.innerHTML = ''; return; }
+  area.innerHTML = '<div class="empty">Đang tải…</div>';
+  try{
+    dgAllRecords = await apiGet('getDanhGia');
+  }catch(err){
+    area.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
+    return;
+  }
+  let html = '<div class="dg-section-title">Môn học và hoạt động giáo dục</div>';
+  MON_HOC.forEach(m => html += ratingRowHtml('MonHoc', m, ['T','H','C']));
+  html += '<div class="dg-section-title">Phẩm chất</div>';
+  PHAM_CHAT.forEach(p => html += ratingRowHtml('PhamChat', p, ['T','Đ','C']));
+  html += '<div class="dg-section-title">Năng lực</div>';
+  NANG_LUC.forEach(n => html += ratingRowHtml('NangLuc', n, ['T','Đ','C']));
+  html += `<div class="dg-section-title">Tổng hợp cuối kỳ</div>
+    <div class="dg-tonghop">
+      <select id="dgTongHopMuc">
+        ${TONG_HOP_OPTIONS.map(o=>`<option>${o}</option>`).join('')}
+      </select>
+      <input type="text" id="dgKhenThuong" placeholder="Khen thưởng (nếu có, vd: Học sinh Xuất sắc...)">
+    </div>
+    <div class="modal-actions" style="justify-content:flex-start;">
+      <button class="btn-primary" onclick="saveDanhGiaForm()">Lưu phiếu đánh giá</button>
+      <button class="copy-btn" onclick="printDanhGia()">🖨 In phiếu</button>
+      <span id="dgSaveStatus" class="hint" style="align-self:center;"></span>
+    </div>`;
+  area.innerHTML = html;
+
+  // Điền dữ liệu đã lưu trước đó (nếu có)
+  const existing = dgAllRecords.filter(r => r.maHS===maHS && r.ky===ky);
+  existing.forEach(r=>{
+    if(r.loai === 'TongHop'){
+      if(r.tenTieuChi === 'Muc') document.getElementById('dgTongHopMuc').value = r.muc;
+      if(r.tenTieuChi === 'KhenThuong') document.getElementById('dgKhenThuong').value = r.nhanXet || '';
+      return;
+    }
+    const key = r.loai + '|' + r.tenTieuChi;
+    const row = area.querySelector(`.rate-row[data-key="${CSS.escape(key)}"]`);
+    if(!row) return;
+    const btn = [...row.querySelectorAll('.rate-btn')].find(b=>b.textContent===r.muc);
+    if(btn) selectRating(btn, r.muc);
+    row.querySelector('.rate-note').value = r.nhanXet || '';
+  });
+}
+
+function collectDanhGiaRecords(){
+  const area = document.getElementById('dgFormArea');
+  const records = [];
+  area.querySelectorAll('.rate-row').forEach(row=>{
+    const [loai, tenTieuChi] = row.dataset.key.split('|');
+    const muc = row.querySelector('.rate-btns').dataset.muc || '';
+    const nhanXet = row.querySelector('.rate-note').value.trim();
+    if(muc || nhanXet){
+      records.push({ loai, tenTieuChi, muc, nhanXet });
+    }
+  });
+  records.push({ loai:'TongHop', tenTieuChi:'Muc', muc: document.getElementById('dgTongHopMuc').value, nhanXet:'' });
+  records.push({ loai:'TongHop', tenTieuChi:'KhenThuong', muc:'', nhanXet: document.getElementById('dgKhenThuong').value.trim() });
+  return records;
+}
+
+async function saveDanhGiaForm(){
+  const maHS = document.getElementById('dgHocSinh').value;
+  const ky = document.getElementById('dgKy').value;
+  const status = document.getElementById('dgSaveStatus');
+  status.textContent = 'Đang lưu…';
+  const records = collectDanhGiaRecords();
+  try{
+    await apiPost({ action:'saveDanhGia', maHS, ky, records });
+    status.textContent = '✓ Đã lưu lúc ' + new Date().toLocaleTimeString('vi-VN');
+  }catch(err){
+    status.textContent = 'Lỗi: ' + err.message;
+  }
+}
+
+function printDanhGia(){
+  const maHS = document.getElementById('dgHocSinh').value;
+  const ky = document.getElementById('dgKy').value;
+  const student = students.find(s=>s.maHS===maHS);
+  const hoTen = student ? student.hoTen : maHS;
+  const className = localStorage.getItem('sdd_className') || '';
+  const records = collectDanhGiaRecords();
+  const byLoai = (loai) => records.filter(r=>r.loai===loai && (r.muc || r.nhanXet));
+  const sectionHtml = (title, items) => `<h3>${title}</h3><table border="1" cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+    <tr style="background:#eee;"><th>Nội dung</th><th style="width:60px;">Mức</th><th>Nhận xét</th></tr>
+    ${items.map(r=>`<tr><td>${r.tenTieuChi}</td><td style="text-align:center;">${r.muc}</td><td>${r.nhanXet||''}</td></tr>`).join('')}
+    </table>`;
+  const tongHop = records.find(r=>r.loai==='TongHop' && r.tenTieuChi==='Muc');
+  const khenThuong = records.find(r=>r.loai==='TongHop' && r.tenTieuChi==='KhenThuong');
+
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8">
+    <title>Phiếu đánh giá - ${hoTen}</title>
+    <style>
+      body{ font-family:'Times New Roman', serif; padding:40px; line-height:1.5; color:#111; }
+      h1{ font-size:19px; text-align:center; text-transform:uppercase; margin-bottom:4px; }
+      h2{ font-size:15px; text-align:center; font-weight:normal; margin-bottom:4px; }
+      h3{ font-size:15px; margin-bottom:6px; }
+      .meta{ text-align:center; color:#444; font-size:13px; margin-bottom:8px; }
+      .warning{ text-align:center; font-size:12px; color:#a33; font-style:italic; margin-bottom:24px; }
+      table{ font-size:13px; }
+    </style></head><body>
+    <h1>Phiếu tổng hợp đánh giá học sinh</h1>
+    <h2>Theo Thông tư 27/2020/TT-BGDĐT</h2>
+    <div class="meta">Học sinh: <b>${hoTen}</b>${className?' — Lớp '+className:''} — ${ky}</div>
+    <div class="warning">Tài liệu hỗ trợ ghi chép nội bộ — không thay thế Học bạ chính thức</div>
+    ${sectionHtml('I. Môn học và hoạt động giáo dục', byLoai('MonHoc'))}
+    ${sectionHtml('II. Phẩm chất', byLoai('PhamChat'))}
+    ${sectionHtml('III. Năng lực', byLoai('NangLuc'))}
+    <h3>IV. Tổng hợp cuối kỳ</h3>
+    <p><b>Mức đạt được:</b> ${tongHop ? tongHop.muc : ''}</p>
+    <p><b>Khen thưởng:</b> ${khenThuong ? khenThuong.nhanXet : ''}</p>
+    </body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(), 300);
 }
 
 loadStudents();
