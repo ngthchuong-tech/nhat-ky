@@ -361,6 +361,33 @@
     cursor:pointer;
   }
   .copy-btn.copied{ background:var(--present); }
+  .contact-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:8px 0;
+    border-top:1px solid var(--paper-line);
+  }
+  .contact-row:first-of-type{ border-top:none; margin-top:6px; }
+  .contact-info{ font-size:0.85rem; }
+  .contact-info .role{ color:var(--ink-soft); font-size:0.72rem; display:block; }
+  .contact-info .phone{ font-family:'JetBrains Mono', monospace; font-size:0.8rem; color:var(--ink-soft); }
+  .zalo-btn{
+    background:#0068FF;
+    color:#fff;
+    text-decoration:none;
+    border-radius:8px;
+    padding:7px 14px;
+    font-size:0.8rem;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .zalo-btn.disabled{
+    background:var(--paper-line);
+    color:var(--ink-soft);
+    pointer-events:none;
+  }
 </style>
 </head>
 <body>
@@ -398,6 +425,7 @@
     <div class="lienlac-type">
       <select id="thongBaoType" onchange="onThongBaoTypeChange()">
         <option value="vangHoc">Báo nghỉ học (tự động theo điểm danh)</option>
+        <option value="danhBa">Danh bạ phụ huynh (nhắn Zalo nhanh)</option>
         <option value="hopPH">Họp phụ huynh</option>
         <option value="thuQuy">Thu quỹ lớp</option>
         <option value="tuyChinh">Thông báo tùy chỉnh</option>
@@ -410,6 +438,10 @@
         <button class="btn-primary" onclick="loadVangHocMessages()">Tạo thông báo</button>
       </div>
       <div id="vangHocResult"><div class="empty">Chọn ngày để tạo thông báo nghỉ học cho phụ huynh</div></div>
+    </div>
+
+    <div id="danhBaSection" style="display:none;">
+      <div id="danhBaResult"><div class="empty">Đang tải danh bạ…</div></div>
     </div>
 
     <div id="broadcastSection" style="display:none;">
@@ -732,18 +764,71 @@ Trân trọng.`
 function onThongBaoTypeChange(){
   const type = document.getElementById('thongBaoType').value;
   document.getElementById('vangHocSection').style.display = type==='vangHoc' ? '' : 'none';
-  document.getElementById('broadcastSection').style.display = type==='vangHoc' ? 'none' : '';
-  if(type !== 'vangHoc'){
+  document.getElementById('danhBaSection').style.display = type==='danhBa' ? '' : 'none';
+  document.getElementById('broadcastSection').style.display = (type!=='vangHoc' && type!=='danhBa') ? '' : 'none';
+  if(type === 'danhBa'){
+    renderDanhBa();
+  } else if(type !== 'vangHoc'){
     const className = localStorage.getItem('sdd_className') || 'lớp mình';
     document.getElementById('broadcastText').value = BROADCAST_TEMPLATES[type].replace('{Lop}', className);
   }
+}
+
+function toZaloLink(phone){
+  if(!phone) return null;
+  let digits = String(phone).replace(/\D/g, '');
+  if(!digits) return null;
+  if(digits.startsWith('0')) digits = '84' + digits.slice(1);
+  else if(!digits.startsWith('84')) digits = '84' + digits;
+  return 'https://zalo.me/' + digits;
+}
+
+function renderContactRows(maHS){
+  const p = parentsMap[maHS];
+  if(!p) return '<p class="hint">Chưa có thông tin phụ huynh cho học sinh này.</p>';
+  const rows = [
+    { role:'Bố', ten:p.tenBo, sdt:p.sdtBo },
+    { role:'Mẹ', ten:p.tenMe, sdt:p.sdtMe }
+  ];
+  return rows.map(r=>{
+    const link = toZaloLink(r.sdt);
+    const label = r.ten || (r.role === 'Bố' ? 'Bố' : 'Mẹ');
+    return `<div class="contact-row">
+      <div class="contact-info">
+        <span class="role">${r.role}</span>
+        ${label}${r.sdt ? ' — <span class="phone">'+r.sdt+'</span>' : ''}
+      </div>
+      ${link
+        ? `<a class="zalo-btn" href="${link}" target="_blank" rel="noopener">💬 Nhắn Zalo</a>`
+        : `<span class="zalo-btn disabled">Chưa có SĐT</span>`}
+    </div>`;
+  }).join('');
+}
+
+async function renderDanhBa(){
+  const el = document.getElementById('danhBaResult');
+  el.innerHTML = '<div class="empty">Đang tải danh bạ…</div>';
+  if(!students.length){
+    try{ students = await apiGet('getStudents'); }catch(e){}
+  }
+  if(!parentsLoaded) await loadParents();
+  if(!students.length){
+    el.innerHTML = '<div class="empty">Chưa có danh sách học sinh.</div>';
+    return;
+  }
+  el.innerHTML = students.map(s=>{
+    return `<div class="msg-card">
+      <div class="msg-head"><span class="msg-name">${s.hoTen}</span><span class="student-id">${s.maHS}</span></div>
+      ${renderContactRows(s.maHS)}
+    </div>`;
+  }).join('');
 }
 
 async function loadParents(){
   try{
     const parents = await apiGet('getParents');
     parentsMap = {};
-    (parents || []).forEach(p => { parentsMap[p.maHS] = p.tenPH; });
+    (parents || []).forEach(p => { parentsMap[p.maHS] = p; });
     parentsLoaded = true;
   }catch(err){
     parentsLoaded = true; // đừng chặn app nếu sheet PhuHuynh chưa có
@@ -771,7 +856,8 @@ async function loadVangHocMessages(){
     resultEl.innerHTML = vang.map(r=>{
       const student = students.find(s=>s.maHS===r.maHS);
       const hoTen = student ? student.hoTen : r.maHS;
-      const tenPH = parentsMap[r.maHS] || 'Anh/Chị';
+      const p = parentsMap[r.maHS];
+      const tenPH = (p && (p.tenBo || p.tenMe)) || 'Anh/Chị';
       const isPhep = r.trangThai === 'VangPhep';
       const lyDo = isPhep
         ? (r.ghiChu ? 'có phép, lý do: ' + r.ghiChu : 'có phép')
@@ -790,6 +876,7 @@ Mong ${tenPH} nhắc con theo kịp bài học nhé. Cảm ơn ${tenPH}.`;
         </div>
         <pre id="${msgId}">${msg}</pre>
         <button class="copy-btn" onclick="copyMessage('${msgId}', this)">📋 Sao chép</button>
+        ${renderContactRows(r.maHS)}
       </div>`;
     }).join('');
   }catch(err){
