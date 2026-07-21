@@ -855,7 +855,7 @@
   </div>
 
   <div id="tab-phieubaitap" style="display:none;">
-    <iframe src="phieu-bai-tap-toan.html" style="width:100%;height:85vh;border:none;border-radius:12px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.06);"></iframe>
+    <iframe src="PhieuBaiTapToan.html" style="width:100%;height:85vh;border:none;border-radius:12px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.06);"></iframe>
   </div>
 </main>
 
@@ -923,6 +923,11 @@ function saveSettings(){
   document.getElementById('className').textContent = cName || 'Chưa đặt tên lớp';
   closeSettings();
   loadStudents();
+}
+
+function isDiemDanhTabActive(){
+  const activeTab = document.querySelector('.tab.active');
+  return !!activeTab && activeTab.dataset.tab === 'diemdanh';
 }
 
 function switchTab(name){
@@ -1036,7 +1041,7 @@ function renderStudentList(){
         <div class="stamps">${stamps}</div>
       </div>`;
   }).join('');
-  document.getElementById('bottomBar').style.display = 'flex';
+  document.getElementById('bottomBar').style.display = isDiemDanhTabActive() ? 'flex' : 'none';
 }
 
 function setStatus(maHS, key){
