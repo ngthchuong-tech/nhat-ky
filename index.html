@@ -902,7 +902,8 @@ const STATUSES = [
   { key: 'VangKP', label: 'Vắng KP', cls: 'on-absent' }
 ];
 
-let webAppUrl = localStorage.getItem('sdd_webAppUrl') || '';
+const DEFAULT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwHdDbn_Ove_QpLoyQNbyX5bac9K4mhj-tkgaVCVHRBPsxggmqjoTR5Io1IA70Lwxhv/exec';
+let webAppUrl = localStorage.getItem('sdd_webAppUrl') || DEFAULT_WEB_APP_URL;
 let students = [];
 let attendanceState = {}; // maHS -> { trangThai, ghiChu }
 let noteTargetId = null;
