@@ -495,6 +495,14 @@
     font-weight:600;
     background:#FBF8F0;
   }
+  .tkb-table td.tkb-buoi{
+    background:var(--chalk-green);
+    color:#F5F1E3;
+    font-family:'Be Vietnam Pro', sans-serif;
+    font-weight:700;
+    font-size:0.8rem;
+    vertical-align:middle;
+  }
   .tkb-table input{
     width:100%;
     border:none;
@@ -1072,7 +1080,10 @@ let tasks = [];
 let tasksLoaded = false;
 let timetableLoaded = false;
 const TKB_DAYS = ['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
-const TKB_ROWS = 5; // số tiết mỗi buổi
+const TKB_SESSIONS = [
+  { key:'Sang', label:'Sáng', tiet:5 },
+  { key:'Chieu', label:'Chiều', tiet:3 }
+];
 
 function switchSubTab(name){
   document.querySelectorAll('.sub-tab').forEach(t=>t.classList.toggle('active', t.dataset.subtab===name));
@@ -1171,19 +1182,35 @@ async function loadTimetableUI(){
 
 function renderTimetable(grid){
   const el = document.getElementById('tkbGrid');
-  // grid[0] = header row (bỏ qua), grid[r][c] = nội dung tiết r, thứ c (c bắt đầu từ 1)
-  const cell = (r,c) => (grid && grid[r] && grid[r][c] !== undefined) ? grid[r][c] : '';
-  let html = '<table class="tkb-table"><thead><tr><th>Tiết</th>';
+  // grid[0] = header, các dòng sau: [Buoi, Tiet, giá trị Thứ2..Thứ7]
+  const lookup = {};
+  if(grid && grid.length > 1){
+    for(let i=1; i<grid.length; i++){
+      const row = grid[i];
+      lookup[row[0] + '_' + row[1]] = row.slice(2);
+    }
+  }
+  const cell = (buoiKey, tiet, dayIdx) => {
+    const vals = lookup[buoiKey + '_' + tiet];
+    return (vals && vals[dayIdx] !== undefined) ? vals[dayIdx] : '';
+  };
+  let html = '<table class="tkb-table"><thead><tr><th>Buổi</th><th>Tiết</th>';
   TKB_DAYS.forEach(d => html += `<th>${d}</th>`);
   html += '</tr></thead><tbody>';
-  for(let r=1; r<=TKB_ROWS; r++){
-    html += `<tr><td>Tiết ${r}</td>`;
-    for(let c=1; c<=TKB_DAYS.length; c++){
-      const val = cell(r, c);
-      html += `<td><input type="text" data-row="${r}" data-col="${c}" value="${val}"></td>`;
+  TKB_SESSIONS.forEach(session => {
+    for(let t=1; t<=session.tiet; t++){
+      html += '<tr>';
+      if(t === 1){
+        html += `<td class="tkb-buoi" rowspan="${session.tiet}">${session.label}</td>`;
+      }
+      html += `<td>Tiết ${t}</td>`;
+      for(let d=0; d<TKB_DAYS.length; d++){
+        const val = cell(session.key, t, d);
+        html += `<td><input type="text" data-buoi="${session.key}" data-tiet="${t}" data-day="${d}" value="${val}"></td>`;
+      }
+      html += '</tr>';
     }
-    html += '</tr>';
-  }
+  });
   html += '</tbody></table>';
   el.innerHTML = html;
 }
@@ -1191,15 +1218,17 @@ function renderTimetable(grid){
 async function saveTimetableUI(){
   const status = document.getElementById('tkbSaveStatus');
   status.textContent = 'Đang lưu…';
-  const grid = [['Tiet', ...TKB_DAYS]];
-  for(let r=1; r<=TKB_ROWS; r++){
-    const row = ['Tiết ' + r];
-    for(let c=1; c<=TKB_DAYS.length; c++){
-      const input = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
-      row.push(input ? input.value : '');
+  const grid = [['Buoi', 'Tiet', ...TKB_DAYS]];
+  TKB_SESSIONS.forEach(session => {
+    for(let t=1; t<=session.tiet; t++){
+      const row = [session.key, String(t)];
+      for(let d=0; d<TKB_DAYS.length; d++){
+        const input = document.querySelector(`input[data-buoi="${session.key}"][data-tiet="${t}"][data-day="${d}"]`);
+        row.push(input ? input.value : '');
+      }
+      grid.push(row);
     }
-    grid.push(row);
-  }
+  });
   try{
     await apiPost({ action:'saveTimetable', grid });
     status.textContent = '✓ Đã lưu lúc ' + new Date().toLocaleTimeString('vi-VN');
