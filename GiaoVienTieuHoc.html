@@ -6,6 +6,7 @@
 <title>Sổ Điểm Danh</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --paper: #FAF6EC;
@@ -285,6 +286,16 @@
     cursor:pointer;
     font-weight:600;
   }
+  .btn-export{
+    background:var(--chalk-yellow);
+    color:var(--chalk-green-dark);
+    border:none;
+    padding:9px 16px;
+    border-radius:9px;
+    cursor:pointer;
+    font-weight:700;
+  }
+  .btn-export:disabled{ opacity:0.45; cursor:not-allowed; }
   .hint{
     font-size:0.78rem;
     color:var(--ink-soft);
@@ -317,6 +328,7 @@
     <div class="stats-controls">
       <input type="month" id="statsMonth">
       <button class="btn-primary" onclick="loadStats()">Xem</button>
+      <button class="btn-export" id="exportBtn" onclick="exportStatsExcel()" disabled>⬇ Tải Excel</button>
     </div>
     <div id="statsResult"><div class="empty">Chọn tháng để xem thống kê chuyên cần</div></div>
   </div>
@@ -515,10 +527,15 @@ document.getElementById('datePicker').addEventListener('change', (e)=>{
   if(students.length) loadAttendanceForDate(e.target.value);
 });
 
+let lastStatsData = null;
+
 async function loadStats(){
   const resultEl = document.getElementById('statsResult');
+  const exportBtn = document.getElementById('exportBtn');
   const month = document.getElementById('statsMonth').value;
   if(!month) return;
+  exportBtn.disabled = true;
+  lastStatsData = null;
   resultEl.innerHTML = '<div class="empty">Đang tính thống kê…</div>';
   try{
     const all = await apiGet('getAllAttendance');
@@ -558,9 +575,36 @@ async function loadStats(){
       </table>
       <p class="hint" style="margin-top:10px;">⚠ = vắng không phép hơn 3 buổi trong tháng, cần lưu ý.</p>
     `;
+    lastStatsData = { month, rows: Object.values(counts) };
+    exportBtn.disabled = false;
   }catch(err){
     resultEl.innerHTML = '<div class="empty">Lỗi: '+err.message+'</div>';
   }
+}
+
+function exportStatsExcel(){
+  if(!lastStatsData || !lastStatsData.rows.length){
+    alert('Chưa có dữ liệu thống kê để tải. Bấm "Xem" trước.');
+    return;
+  }
+  const className = (localStorage.getItem('sdd_className') || 'Lop').trim();
+  const wsData = [
+    ['Thống kê chuyên cần tháng ' + lastStatsData.month + (className ? ' — ' + className : '')],
+    [],
+    ['Học sinh', 'Có mặt', 'Đi trễ', 'Vắng phép', 'Vắng không phép']
+  ];
+  lastStatsData.rows.forEach(c=>{
+    wsData.push([c.hoTen, c.CoMat||0, c.Tre||0, c.VangPhep||0, c.VangKP||0]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [{wch:26},{wch:10},{wch:10},{wch:12},{wch:16}];
+  ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:4} }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'ThongKe_' + lastStatsData.month);
+
+  const safeClass = className.replace(/[^a-zA-Z0-9À-ỹ\s-]/g, '').replace(/\s+/g, '_');
+  const fileName = 'ThongKeDiemDanh_' + (safeClass || 'Lop') + '_' + lastStatsData.month + '.xlsx';
+  XLSX.writeFile(wb, fileName);
 }
 
 loadStudents();
