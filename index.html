@@ -115,13 +115,13 @@
   }
   .student-card{
     background:var(--card);
-    border-radius:var(--radius);
-    padding:14px 16px;
-    margin-bottom:12px;
-    box-shadow:0 2px 6px rgba(0,0,0,0.05);
+    border-radius:10px;
+    padding:8px 10px;
+    margin-bottom:6px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.05);
     display:flex;
     flex-direction:column;
-    gap:10px;
+    gap:6px;
   }
   .student-top{
     display:flex;
@@ -130,19 +130,19 @@
   }
   .student-name{
     font-weight:700;
-    font-size:1rem;
+    font-size:0.86rem;
   }
   .student-id{
     font-family:'JetBrains Mono', monospace;
-    font-size:0.72rem;
+    font-size:0.64rem;
     color:var(--ink-soft);
   }
   .note-btn{
     background:none;
     border:1px dashed var(--paper-line);
-    border-radius:8px;
-    padding:4px 8px;
-    font-size:0.78rem;
+    border-radius:6px;
+    padding:3px 6px;
+    font-size:0.68rem;
     color:var(--ink-soft);
     cursor:pointer;
   }
@@ -154,14 +154,14 @@
   .stamps{
     display:grid;
     grid-template-columns:repeat(4,1fr);
-    gap:8px;
+    gap:5px;
   }
   .stamp{
-    border:2px solid var(--paper-line);
+    border:1.5px solid var(--paper-line);
     background:#fff;
-    border-radius:10px;
-    padding:8px 4px;
-    font-size:0.78rem;
+    border-radius:7px;
+    padding:5px 2px;
+    font-size:0.68rem;
     font-weight:600;
     color:var(--ink-soft);
     cursor:pointer;
@@ -673,7 +673,6 @@
 
 <div class="tabs">
   <div class="tab active" data-tab="diemdanh" onclick="switchTab('diemdanh')">Điểm danh</div>
-  <div class="tab" data-tab="thongke" onclick="switchTab('thongke')">Thống kê</div>
   <div class="tab" data-tab="lienlac" onclick="switchTab('lienlac')">Liên lạc</div>
   <div class="tab" data-tab="lichcongtac" onclick="switchTab('lichcongtac')">Lịch công tác</div>
   <div class="tab" data-tab="hanhchinh" onclick="switchTab('hanhchinh')">Hành chính</div>
@@ -683,16 +682,23 @@
 
 <main>
   <div id="tab-diemdanh">
-    <div id="studentList"><div class="empty">Đang tải danh sách học sinh…</div></div>
-  </div>
-
-  <div id="tab-thongke" style="display:none;">
-    <div class="stats-controls">
-      <input type="month" id="statsMonth">
-      <button class="btn-primary" onclick="loadStats()">Xem</button>
-      <button class="btn-export" id="exportBtn" onclick="exportStatsExcel()" disabled>⬇ Tải Excel</button>
+    <div class="sub-tabs">
+      <div class="sub-tab active" data-subtab="diemdanh" onclick="switchDiemDanhSubTab('diemdanh')">Điểm danh</div>
+      <div class="sub-tab" data-subtab="thongke" onclick="switchDiemDanhSubTab('thongke')">Thống kê</div>
     </div>
-    <div id="statsResult"><div class="empty">Chọn tháng để xem thống kê chuyên cần</div></div>
+
+    <div id="ddSub-diemdanh">
+      <div id="studentList"><div class="empty">Đang tải danh sách học sinh…</div></div>
+    </div>
+
+    <div id="ddSub-thongke" style="display:none;">
+      <div class="stats-controls">
+        <input type="month" id="statsMonth">
+        <button class="btn-primary" onclick="loadStats()">Xem</button>
+        <button class="btn-export" id="exportBtn" onclick="exportStatsExcel()" disabled>⬇ Tải Excel</button>
+      </div>
+      <div id="statsResult"><div class="empty">Chọn tháng để xem thống kê chuyên cần</div></div>
+    </div>
   </div>
 
   <div id="tab-lienlac" style="display:none;">
@@ -925,24 +931,33 @@ function saveSettings(){
   loadStudents();
 }
 
+let diemDanhSubTab = 'diemdanh';
+
 function isDiemDanhTabActive(){
   const activeTab = document.querySelector('.tab.active');
-  return !!activeTab && activeTab.dataset.tab === 'diemdanh';
+  return !!activeTab && activeTab.dataset.tab === 'diemdanh' && diemDanhSubTab === 'diemdanh';
+}
+
+function switchDiemDanhSubTab(name){
+  diemDanhSubTab = name;
+  document.querySelectorAll('#tab-diemdanh .sub-tab').forEach(t=>t.classList.toggle('active', t.dataset.subtab===name));
+  document.getElementById('ddSub-diemdanh').style.display = name==='diemdanh' ? '' : 'none';
+  document.getElementById('ddSub-thongke').style.display = name==='thongke' ? '' : 'none';
+  document.getElementById('bottomBar').style.display = isDiemDanhTabActive() && students.length ? 'flex' : 'none';
+  if(name==='thongke' && !document.getElementById('statsMonth').value){
+    document.getElementById('statsMonth').value = todayStr().slice(0,7);
+  }
 }
 
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
   document.getElementById('tab-diemdanh').style.display = name==='diemdanh' ? '' : 'none';
-  document.getElementById('tab-thongke').style.display = name==='thongke' ? '' : 'none';
   document.getElementById('tab-lienlac').style.display = name==='lienlac' ? '' : 'none';
   document.getElementById('tab-lichcongtac').style.display = name==='lichcongtac' ? '' : 'none';
   document.getElementById('tab-hanhchinh').style.display = name==='hanhchinh' ? '' : 'none';
   document.getElementById('tab-hocsinh').style.display = name==='hocsinh' ? '' : 'none';
   document.getElementById('tab-phieubaitap').style.display = name==='phieubaitap' ? '' : 'none';
-  document.getElementById('bottomBar').style.display = name==='diemdanh' && students.length ? 'flex' : 'none';
-  if(name==='thongke' && !document.getElementById('statsMonth').value){
-    document.getElementById('statsMonth').value = todayStr().slice(0,7);
-  }
+  document.getElementById('bottomBar').style.display = isDiemDanhTabActive() && students.length ? 'flex' : 'none';
   if(name==='lienlac'){
     if(!document.getElementById('vangHocDate').value){
       document.getElementById('vangHocDate').value = todayStr();
