@@ -667,6 +667,7 @@ function switchTab(name){
   document.getElementById('tab-diemdanh').style.display = name==='diemdanh' ? '' : 'none';
   document.getElementById('tab-thongke').style.display = name==='thongke' ? '' : 'none';
   document.getElementById('tab-lienlac').style.display = name==='lienlac' ? '' : 'none';
+  document.getElementById('tab-lichcongtac').style.display = name==='lichcongtac' ? '' : 'none';
   document.getElementById('bottomBar').style.display = name==='diemdanh' && students.length ? 'flex' : 'none';
   if(name==='thongke' && !document.getElementById('statsMonth').value){
     document.getElementById('statsMonth').value = todayStr().slice(0,7);
