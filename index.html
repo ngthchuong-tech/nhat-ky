@@ -877,6 +877,10 @@
           <button class="btn-primary" style="margin-top:10px;width:100%;" onclick="loadTongHopKy()">Tổng hợp</button>
         </div>
         <div id="thArea"></div>
+        <div class="modal-actions" style="justify-content:flex-start;margin-top:14px;">
+          <button class="btn-export" onclick="exportClassTemplateWord()" id="thClassWordBtn">⬇ Xuất Word cả lớp (theo mẫu chuẩn)</button>
+          <span id="thClassWordStatus" class="hint" style="align-self:center;"></span>
+        </div>
       </div>
   </div>
 
@@ -1268,8 +1272,11 @@
           <label>Khó khăn (đặc điểm tình hình lớp)</label>
           <textarea id="scnKhoKhan" rows="2" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;"></textarea>
         </div>
-        <button class="btn-primary" style="width:100%;" onclick="saveThongTinLop()">Lưu thông tin chung</button>
-        <span id="scnSaveStatus" class="hint"></span>
+        <div class="modal-actions" style="justify-content:flex-start;">
+          <button class="btn-primary" onclick="saveThongTinLop()">Lưu thông tin chung</button>
+          <button class="btn-export" onclick="exportThongTinLopWord()">⬇ Tải Word (trang bìa &amp; thông tin chung)</button>
+          <span id="scnSaveStatus" class="hint" style="align-self:center;"></span>
+        </div>
       </div>
 
       <div class="dg-section-title">Giáo viên bộ môn dạy lớp</div>
@@ -2299,6 +2306,7 @@ async function loadDanhGiaForm(){
     <div class="modal-actions" style="justify-content:flex-start;">
       <button class="btn-primary" onclick="saveDanhGiaForm()">Lưu phiếu đánh giá</button>
       <button class="copy-btn" onclick="printDanhGia()">🖨 In phiếu</button>
+      <button class="copy-btn" onclick="exportDanhGiaWord()">⬇ Tải Word</button>
       <span id="dgSaveStatus" class="hint" style="align-self:center;"></span>
     </div>`;
   area.innerHTML = html;
@@ -2370,7 +2378,7 @@ async function saveDanhGiaForm(){
   }
 }
 
-function printDanhGia(){
+function buildDanhGiaBodyHtml(){
   const maHS = document.getElementById('dgHocSinh').value;
   const ky = document.getElementById('dgKy').value;
   const student = students.find(s=>s.maHS===maHS);
@@ -2378,13 +2386,29 @@ function printDanhGia(){
   const className = localStorage.getItem('sdd_className') || '';
   const records = collectDanhGiaRecords();
   const byLoai = (loai) => records.filter(r=>r.loai===loai && (r.muc || r.nhanXet));
-  const sectionHtml = (title, items) => `<h3>${title}</h3><table border="1" cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse;margin-bottom:16px;">
-    <tr style="background:#eee;"><th>Nội dung</th><th style="width:60px;">Mức</th><th>Nhận xét</th></tr>
-    ${items.map(r=>`<tr><td>${r.tenTieuChi}</td><td style="text-align:center;">${r.muc}</td><td>${r.nhanXet||''}</td></tr>`).join('')}
+  const sectionHtml = (title, items) => `<h3>${title}</h3><table>
+    <tr><th>Nội dung</th><th style="width:60px;">Mức</th><th>Nhận xét</th></tr>
+    ${items.map(r=>`<tr><td>${r.tenTieuChi}</td><td class="center">${r.muc}</td><td>${r.nhanXet||''}</td></tr>`).join('')}
     </table>`;
   const tongHop = records.find(r=>r.loai==='TongHop' && r.tenTieuChi==='Muc');
   const khenThuong = records.find(r=>r.loai==='TongHop' && r.tenTieuChi==='KhenThuong');
+  return {
+    hoTen,
+    html: `<h1>Phiếu tổng hợp đánh giá học sinh</h1>
+    <h2>Theo Thông tư 27/2020/TT-BGDĐT</h2>
+    <div class="meta">Học sinh: <b>${hoTen}</b>${className?' — Lớp '+className:''} — ${ky}</div>
+    <p style="text-align:center;font-size:10pt;color:#a33;font-style:italic;">Tài liệu hỗ trợ ghi chép nội bộ — không thay thế Học bạ chính thức</p>
+    ${sectionHtml('I. Môn học và hoạt động giáo dục', byLoai('MonHoc'))}
+    ${sectionHtml('II. Phẩm chất', byLoai('PhamChat'))}
+    ${sectionHtml('III. Năng lực', byLoai('NangLuc'))}
+    <h3>IV. Tổng hợp cuối kỳ</h3>
+    <p><b>Mức đạt được:</b> ${tongHop ? tongHop.muc : ''}</p>
+    <p><b>Khen thưởng:</b> ${khenThuong ? khenThuong.nhanXet : ''}</p>`
+  };
+}
 
+function printDanhGia(){
+  const { hoTen, html } = buildDanhGiaBodyHtml();
   const w = window.open('', '_blank');
   w.document.write(`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8">
     <title>Phiếu đánh giá - ${hoTen}</title>
@@ -2394,22 +2418,18 @@ function printDanhGia(){
       h2{ font-size:15px; text-align:center; font-weight:normal; margin-bottom:4px; }
       h3{ font-size:15px; margin-bottom:6px; }
       .meta{ text-align:center; color:#444; font-size:13px; margin-bottom:8px; }
-      .warning{ text-align:center; font-size:12px; color:#a33; font-style:italic; margin-bottom:24px; }
-      table{ font-size:13px; }
-    </style></head><body>
-    <h1>Phiếu tổng hợp đánh giá học sinh</h1>
-    <h2>Theo Thông tư 27/2020/TT-BGDĐT</h2>
-    <div class="meta">Học sinh: <b>${hoTen}</b>${className?' — Lớp '+className:''} — ${ky}</div>
-    <div class="warning">Tài liệu hỗ trợ ghi chép nội bộ — không thay thế Học bạ chính thức</div>
-    ${sectionHtml('I. Môn học và hoạt động giáo dục', byLoai('MonHoc'))}
-    ${sectionHtml('II. Phẩm chất', byLoai('PhamChat'))}
-    ${sectionHtml('III. Năng lực', byLoai('NangLuc'))}
-    <h3>IV. Tổng hợp cuối kỳ</h3>
-    <p><b>Mức đạt được:</b> ${tongHop ? tongHop.muc : ''}</p>
-    <p><b>Khen thưởng:</b> ${khenThuong ? khenThuong.nhanXet : ''}</p>
-    </body></html>`);
+      table{ font-size:13px; width:100%; border-collapse:collapse; margin-bottom:16px; }
+      th, td{ border:1px solid #999; padding:6px; }
+      th{ background:#eee; }
+      .center{ text-align:center; }
+    </style></head><body>${html}</body></html>`);
   w.document.close();
   setTimeout(()=>w.print(), 300);
+}
+
+function exportDanhGiaWord(){
+  const { hoTen, html } = buildDanhGiaBodyHtml();
+  downloadWordDoc('PhieuDanhGia_' + hoTen, html);
 }
 
 /* ---------- Danh sách học sinh (thông tin đầy đủ) ---------- */
@@ -2577,6 +2597,7 @@ function renderGaList(){
       <div class="hc-actions">
         <button class="copy-btn" onclick="openGaEditor('${r.id}')">✎ Sửa</button>
         <button class="copy-btn" onclick="printGaRecord('${r.id}')">🖨 In / Lưu PDF</button>
+        <button class="copy-btn" onclick="exportGaWord('${r.id}')">⬇ Tải Word</button>
         <button class="task-del" onclick="deleteGaRecord('${r.id}')">✕ Xóa</button>
       </div>
     </div>`;
@@ -2651,6 +2672,37 @@ VI. ĐIỀU CHỈNH, RÚT KINH NGHIỆM
 (để trống, giáo viên tự ghi sau khi dạy xong)
 
 Nội dung phải phù hợp thực tế với học sinh lớp ${lop}, không dùng kiến thức vượt cấp, ví dụ minh họa cụ thể và thực tế lớp học. Chỉ trả về nội dung kế hoạch bài dạy bằng văn bản thuần (không dùng markdown, không dùng dấu *, không có lời dẫn hay giải thích thêm ngoài nội dung), dùng số thứ tự và xuống dòng rõ ràng để dễ đọc.`;
+}
+
+/**
+ * Hàm dùng chung để tải file Word (.doc) — dùng cho mọi nút "Tải Word" trong app.
+ * bodyHtml: nội dung HTML bên trong <body> (bảng, đoạn văn...).
+ * fileName: tên file, tự thêm .doc nếu chưa có.
+ */
+function downloadWordDoc(fileName, bodyHtml){
+  const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head><meta charset='utf-8'><title>${fileName}</title>
+    <style>
+      body{ font-family:'Times New Roman', serif; font-size:13pt; line-height:1.5; color:#111; }
+      h1{ text-align:center; font-size:16pt; font-weight:bold; text-transform:uppercase; margin-bottom:4px; }
+      h2{ text-align:center; font-size:13pt; font-weight:normal; margin-bottom:14px; }
+      h3{ font-size:13pt; margin:14px 0 6px; }
+      table{ border-collapse:collapse; width:100%; margin-bottom:14px; }
+      th, td{ border:1px solid #000; padding:5px 8px; font-size:11pt; }
+      th{ background:#eee; font-weight:bold; text-align:center; }
+      .center{ text-align:center; }
+      .meta{ text-align:center; color:#444; font-size:11pt; margin-bottom:14px; }
+    </style>
+    </head><body>${bodyHtml}</body></html>`;
+  const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (fileName.endsWith('.doc') ? fileName : fileName + '.doc').replace(/[\\/:*?"<>|]/g, '');
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 async function callGeminiText(apiKey, prompt){
@@ -2755,6 +2807,15 @@ function printGaRecord(id){
     </body></html>`);
   w.document.close();
   setTimeout(()=>w.print(), 300);
+}
+
+function exportGaWord(id){
+  const r = gaRecords.find(x=>x.id===id);
+  if(!r) return;
+  const body = `<h1>Kế hoạch bài dạy</h1>
+    <div class="meta">Bài: ${r.tenBai} — Môn: ${r.monHoc} — Lớp: ${r.lop} — Ngày dạy: ${r.ngayDay}</div>
+    <div style="white-space:pre-wrap;">${(r.noiDung||'').replace(/</g,'&lt;')}</div>`;
+  downloadWordDoc('GiaoAn_' + r.tenBai, body);
 }
 
 /* ---------- Lịch báo giảng / Phân phối chương trình ---------- */
@@ -2967,6 +3028,7 @@ function renderRdList(){
       <div class="hc-actions">
         <button class="copy-btn" onclick="openRdEditor('${r.id}')">✎ Sửa</button>
         <button class="copy-btn" onclick="printRdRecord('${r.id}')">🖨 In / Lưu PDF</button>
+        <button class="copy-btn" onclick="exportRdWord('${r.id}')">⬇ Tải Word</button>
         <button class="task-del" onclick="deleteRdRecord('${r.id}')">✕ Xóa</button>
       </div>
     </div>`).join('');
@@ -3087,6 +3149,15 @@ function printRdRecord(id){
     </body></html>`);
   w.document.close();
   setTimeout(()=>w.print(), 300);
+}
+
+function exportRdWord(id){
+  const r = rdRecords.find(x=>x.id===id);
+  if(!r) return;
+  const body = `<h1>Đề kiểm tra</h1>
+    <div class="meta">${r.chuDe} — Môn: ${r.monHoc} — Lớp: ${r.lop} — Ngày tạo: ${r.ngayTao}</div>
+    <div style="white-space:pre-wrap;">${(r.noiDung||'').replace(/</g,'&lt;')}</div>`;
+  downloadWordDoc('DeKiemTra_' + r.chuDe, body);
 }
 
 /* ---------- Tổng hợp bài đã chấm (đọc điểm từ ảnh/PDF) ---------- */
@@ -3957,6 +4028,7 @@ async function loadTongHopKy(){
 
         <div class="modal-actions" style="justify-content:flex-start;margin-top:10px;">
           <button class="copy-btn" onclick="printTongHopKy()">🖨 In phiếu tổng hợp</button>
+          <button class="copy-btn" onclick="exportTongHopWord()">⬇ Tải Word</button>
         </div>
       </div>`;
   }catch(err){
@@ -3964,11 +4036,35 @@ async function loadTongHopKy(){
   }
 }
 
+function buildTongHopBodyHtml(){
+  const d = thLastData;
+  const className = localStorage.getItem('sdd_className') || '';
+  const rowsHtml = (items) => items.map(r=>`<tr><td>${r.tenTieuChi}</td><td class="center">${r.muc}</td><td>${r.nhanXet||''}</td></tr>`).join('');
+  return `<h1>Bảng tổng hợp kết quả đánh giá giáo dục</h1>
+    <h2>${d.hoTen} (${d.maHS})${className?' — Lớp '+className:''} — ${d.ky}</h2>
+
+    <h3>Chuyên cần</h3>
+    <p>Có mặt: ${d.chuyenCan.coMat} buổi (đi trễ: ${d.chuyenCan.tre}) — Vắng phép: ${d.chuyenCan.vangPhep} — Vắng không phép: ${d.chuyenCan.vangKP}</p>
+
+    <h3>Môn học và hoạt động giáo dục</h3>
+    <table><tr><th>Môn học</th><th>Mức</th><th>Điểm</th><th>Nhận xét</th></tr>
+    ${d.monHocKetHop.map(m=>`<tr><td>${m.ten}</td><td class="center">${m.muc}</td><td class="center">${m.diem}</td><td>${m.nhanXet||''}</td></tr>`).join('')}</table>
+
+    <h3>Phẩm chất</h3>
+    <table><tr><th>Tiêu chí</th><th>Mức</th><th>Nhận xét</th></tr>${rowsHtml(d.phamChat)}</table>
+
+    <h3>Năng lực</h3>
+    <table><tr><th>Tiêu chí</th><th>Mức</th><th>Nhận xét</th></tr>${rowsHtml(d.nangLuc)}</table>
+
+    <h3>Tổng hợp</h3>
+    <p><b>Mức đạt được:</b> ${d.tongHopMuc ? d.tongHopMuc.muc : ''}</p>
+    <p><b>Khen thưởng:</b> ${d.khenThuong ? d.khenThuong.nhanXet : ''}</p>`;
+}
+
 function printTongHopKy(){
   if(!thLastData) return;
   const d = thLastData;
-  const className = localStorage.getItem('sdd_className') || '';
-  const rowsHtml = (items) => items.map(r=>`<tr><td>${r.tenTieuChi}</td><td style="text-align:center;">${r.muc}</td><td>${r.nhanXet||''}</td></tr>`).join('');
+  const html = buildTongHopBodyHtml();
   const w = window.open('', '_blank');
   w.document.write(`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8">
     <title>Tổng hợp - ${d.hoTen}</title>
@@ -3980,29 +4076,103 @@ function printTongHopKy(){
       table{ width:100%; border-collapse:collapse; font-size:13px; margin-bottom:10px; }
       th, td{ border:1px solid #999; padding:6px; text-align:left; }
       th{ background:#eee; }
-    </style></head><body>
-    <h1>Bảng tổng hợp kết quả đánh giá giáo dục</h1>
-    <h2>${d.hoTen} (${d.maHS})${className?' — Lớp '+className:''} — ${d.ky}</h2>
-
-    <h3>Chuyên cần</h3>
-    <p>Có mặt: ${d.chuyenCan.coMat} buổi (đi trễ: ${d.chuyenCan.tre}) — Vắng phép: ${d.chuyenCan.vangPhep} — Vắng không phép: ${d.chuyenCan.vangKP}</p>
-
-    <h3>Môn học và hoạt động giáo dục</h3>
-    <table><thead><tr><th>Môn học</th><th>Mức</th><th>Điểm</th><th>Nhận xét</th></tr></thead>
-    <tbody>${d.monHocKetHop.map(m=>`<tr><td>${m.ten}</td><td style="text-align:center;">${m.muc}</td><td style="text-align:center;">${m.diem}</td><td>${m.nhanXet||''}</td></tr>`).join('')}</tbody></table>
-
-    <h3>Phẩm chất</h3>
-    <table><thead><tr><th>Tiêu chí</th><th>Mức</th><th>Nhận xét</th></tr></thead><tbody>${rowsHtml(d.phamChat)}</tbody></table>
-
-    <h3>Năng lực</h3>
-    <table><thead><tr><th>Tiêu chí</th><th>Mức</th><th>Nhận xét</th></tr></thead><tbody>${rowsHtml(d.nangLuc)}</tbody></table>
-
-    <h3>Tổng hợp</h3>
-    <p><b>Mức đạt được:</b> ${d.tongHopMuc ? d.tongHopMuc.muc : ''}</p>
-    <p><b>Khen thưởng:</b> ${d.khenThuong ? d.khenThuong.nhanXet : ''}</p>
-    </body></html>`);
+      .center{ text-align:center; }
+    </style></head><body>${html}</body></html>`);
   w.document.close();
   setTimeout(()=>w.print(), 300);
+}
+
+function exportTongHopWord(){
+  if(!thLastData) return;
+  const html = buildTongHopBodyHtml();
+  downloadWordDoc('TongHop_' + thLastData.hoTen + '_' + thLastData.ky, html);
+}
+
+/**
+ * Xuất "Bảng tổng hợp kết quả đánh giá giáo dục" cho CẢ LỚP theo đúng mẫu
+ * chuẩn (Phần 1: môn học — mỗi ô ghi Mức/Điểm; Phần 2: phẩm chất-năng lực;
+ * chữ ký GVCN/Hiệu trưởng). Dùng dữ liệu từ Bảng điểm + Đánh giá theo kỳ.
+ */
+async function exportClassTemplateWord(){
+  const status = document.getElementById('thClassWordStatus');
+  const ky = document.getElementById('thKy').value;
+  status.textContent = 'Đang tổng hợp cả lớp…';
+  document.getElementById('thClassWordBtn').disabled = true;
+  try{
+    const [allStudentsFull, allBangDiem, allDanhGia, settings] = await Promise.all([
+      apiGet('getStudentsFull'),
+      apiGet('getBangDiem'),
+      apiGet('getDanhGia'),
+      apiGet('getCaiDat').catch(()=>({}))
+    ]);
+    const activeStudents = allStudentsFull.filter(s=>(s.trangThai||'DangHoc')==='DangHoc');
+    const className = localStorage.getItem('sdd_className') || settings.TenLop || '';
+    const namHoc = localStorage.getItem('sdd_namHoc') || settings.NamHocHienTai || '';
+    const tenTruong = settings.TenTruong || '';
+    const tenGVCN = settings.TenGVCN || '';
+
+    const mapXepLoai = (muc) => {
+      if(!muc) return '';
+      if(muc.indexOf('xuất sắc')>=0 || muc.indexOf('tốt')>=0) return 'Tốt';
+      if(muc === 'Hoàn thành') return 'Đạt';
+      if(muc.indexOf('Chưa')>=0) return 'Cần cố gắng';
+      return muc;
+    };
+
+    let phan1Rows = '', phan2Rows = '';
+    activeStudents.forEach((s, idx) => {
+      const diem = allBangDiem.filter(r=>r.maHS===s.maHS && r.ky===ky);
+      const danhGia = allDanhGia.filter(r=>r.maHS===s.maHS && r.ky===ky);
+      const monHocDG = danhGia.filter(r=>r.loai==='MonHoc');
+      const cell = (mon) => {
+        const dg = monHocDG.find(m=>m.tenTieuChi===mon);
+        const d = diem.find(x=>x.monHoc===mon);
+        return [dg?dg.muc:'', d?d.diem:''].filter(Boolean).join(' / ');
+      };
+      phan1Rows += `<tr><td class="center">${idx+1}</td><td>${s.hoTen}</td>${MON_HOC.map(m=>`<td class="center">${cell(m)}</td>`).join('')}<td>${s.doiTuong||''}</td></tr>`;
+
+      const nl = (ten) => { const x = danhGia.find(r=>r.loai==='NangLuc' && r.tenTieuChi===ten); return x?x.muc:''; };
+      const tongHop = danhGia.find(r=>r.loai==='TongHop' && r.tenTieuChi==='Muc');
+      phan2Rows += `<tr><td class="center">${idx+1}</td><td>${s.hoTen}</td>
+        <td class="center">${nl('Tự chủ và tự học')}</td>
+        <td class="center">${nl('Giải quyết vấn đề và sáng tạo')}</td>
+        <td class="center">${nl('Giao tiếp và hợp tác')}</td>
+        <td class="center">${nl('Thẩm mỹ')}</td>
+        <td class="center">${nl('Thể chất')}</td>
+        <td class="center">${mapXepLoai(tongHop?tongHop.muc:'')}</td></tr>`;
+    });
+
+    const body = `
+      <p style="text-align:center;font-weight:bold;">${tenTruong || 'TRƯỜNG TIỂU HỌC ………'}</p>
+      <h1>Bảng tổng hợp kết quả đánh giá giáo dục</h1>
+      <h2>(${ky} — Năm học ${namHoc || '………'})</h2>
+      <p><b>Lớp:</b> ${className || '………'} &nbsp;&nbsp;&nbsp; <b>Năm học:</b> ${namHoc || '………'}</p>
+
+      <h3>Phần 1: Đánh giá các môn học và hoạt động giáo dục</h3>
+      <table>
+        <tr><th>STT</th><th>Họ và tên học sinh</th>${MON_HOC.map(m=>`<th>${m}</th>`).join('')}<th>Ghi chú</th></tr>
+        ${phan1Rows}
+      </table>
+      <p style="font-size:10pt;"><i>Mỗi ô ghi theo dạng Mức / Điểm (T = Hoàn thành tốt, H = Hoàn thành, C = Chưa hoàn thành; một số môn không có điểm số).</i></p>
+
+      <h3>Phần 2: Đánh giá phẩm chất, năng lực</h3>
+      <table>
+        <tr><th>STT</th><th>Họ và tên</th><th>Tự phục vụ - tự quản</th><th>Tự học - GQVĐ</th><th>Giao tiếp - hợp tác</th><th>Thẩm mỹ</th><th>Thể chất</th><th>Xếp loại chung</th></tr>
+        ${phan2Rows}
+      </table>
+
+      <div style="display:flex; justify-content:space-between; margin-top:50px; page-break-inside:avoid;">
+        <div style="text-align:center; width:45%;">Giáo viên chủ nhiệm<br>(Kí và ghi rõ họ tên)<br><br><br><br>${tenGVCN || ''}</div>
+        <div style="text-align:center; width:45%;">Hiệu trưởng<br>(Kí, đóng dấu, ghi rõ họ tên)</div>
+      </div>`;
+
+    downloadWordDoc('BangTongHop_' + (className||'Lop') + '_' + ky, body);
+    status.textContent = '✓ Đã tải file Word';
+    setTimeout(()=>{ status.textContent=''; }, 2500);
+  }catch(err){
+    status.textContent = 'Lỗi: ' + err.message;
+  }
+  document.getElementById('thClassWordBtn').disabled = false;
 }
 
 /* ---------- Sổ chủ nhiệm: Thông tin chung ---------- */
@@ -4043,6 +4213,51 @@ async function saveThongTinLop(){
   }catch(err){
     status.textContent = 'Lỗi: ' + err.message;
   }
+}
+
+async function exportThongTinLopWord(){
+  const tenTruong = document.getElementById('scnTenTruong').value.trim();
+  const diaChiTruong = document.getElementById('scnDiaChiTruong').value.trim();
+  const sdtTruong = document.getElementById('scnSdtTruong').value.trim();
+  const tenGVCN = document.getElementById('scnTenGVCN').value.trim();
+  const sdtGVCN = document.getElementById('scnSdtGVCN').value.trim();
+  const thuanLoi = document.getElementById('scnThuanLoi').value.trim();
+  const khoKhan = document.getElementById('scnKhoKhan').value.trim();
+  const className = localStorage.getItem('sdd_className') || '';
+  const namHoc = localStorage.getItem('sdd_namHoc') || '';
+  let soLuong = '';
+  try{
+    const full = await apiGet('getStudentsFull');
+    const active = full.filter(s=>(s.trangThai||'DangHoc')==='DangHoc');
+    const nam = active.filter(s=>s.gioiTinh==='Nam').length;
+    const nu = active.filter(s=>s.gioiTinh==='Nữ').length;
+    soLuong = `${active.length} (Nam: ${nam}; Nữ: ${nu})`;
+  }catch(e){ soLuong = ''; }
+  let gvbmRows = '';
+  try{
+    const gvbm = gvbmLoaded ? gvbmRecords : await apiGet('getGiaoVienBoMon');
+    gvbmRows = gvbm.map(g=>`<tr><td>${g.monHoc}</td><td>${g.hoTen}</td><td>${g.sdt||''}</td></tr>`).join('');
+  }catch(e){}
+
+  const body = `
+    <p style="text-align:center;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+    <p style="text-align:center;font-weight:bold;">Độc lập - Tự do - Hạnh phúc</p>
+    <h1 style="margin-top:40px;">Sổ chủ nhiệm lớp ${className || '…'}</h1>
+    <h2>Năm học: ${namHoc || '………'}</h2>
+    <p style="margin-top:40px;">Trường: ${tenTruong || '………'}</p>
+    <p>Địa chỉ: ${diaChiTruong || '………'}</p>
+    <p>Số điện thoại: ${sdtTruong || '………'}</p>
+    <p>Lớp: ${className || '………'} &nbsp;&nbsp; Tổng số học sinh: ${soLuong || '………'}</p>
+    <p>Giáo viên chủ nhiệm: ${tenGVCN || '………'} &nbsp;&nbsp; Điện thoại: ${sdtGVCN || '………'}</p>
+
+    <h3>Giáo viên bộ môn dạy lớp</h3>
+    <table><tr><th>Môn học</th><th>Họ và tên giáo viên</th><th>Điện thoại</th></tr>${gvbmRows}</table>
+
+    <h3>Đặc điểm tình hình lớp</h3>
+    <p><b>Thuận lợi:</b> ${thuanLoi || '………'}</p>
+    <p><b>Khó khăn:</b> ${khoKhan || '………'}</p>`;
+
+  downloadWordDoc('SoChuNhiem_ThongTinChung_' + (className||'Lop'), body);
 }
 
 /* ---------- Sổ chủ nhiệm: Giáo viên bộ môn ---------- */
