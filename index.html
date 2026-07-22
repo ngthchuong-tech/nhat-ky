@@ -613,7 +613,19 @@
     margin-bottom:8px;
     box-shadow:0 1px 4px rgba(0,0,0,0.04);
   }
-  .rate-label{ font-weight:600; font-size:0.85rem; margin-bottom:6px; }
+  .rate-row-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .rate-label{ font-weight:600; font-size:0.85rem; margin-bottom:0; }
+  .rate-remove{
+    background:none;
+    border:none;
+    color:var(--absent);
+    font-size:0.85rem;
+    cursor:pointer;
+    padding:2px 6px;
+    line-height:1;
+    opacity:0.6;
+  }
+  .rate-remove:hover{ opacity:1; }
   .rate-btns{ display:flex; gap:6px; margin-bottom:6px; justify-content:flex-start; }
   .rate-btn{
     flex:0 0 auto;
@@ -2327,10 +2339,25 @@ function ratingRowHtml(loai, ten, mucOptions){
   const key = loai + '|' + ten;
   const btns = mucOptions.map(m=>`<div class="rate-btn" onclick="selectRating(this,'${m}')">${m}</div>`).join('');
   return `<div class="rate-row" data-key="${key}">
-    <div class="rate-label">${ten}</div>
+    <div class="rate-row-head">
+      <div class="rate-label">${ten}</div>
+      <button type="button" class="rate-remove" onclick="this.closest('.rate-row').remove()" title="Không đánh giá mục này">✕</button>
+    </div>
     <div class="rate-btns">${btns}</div>
     <input type="text" class="rate-note" placeholder="Nhận xét (không bắt buộc)">
   </div>`;
+}
+
+function addMonHocRow(){
+  const ten = prompt('Tên môn học / hoạt động cần thêm:');
+  if(!ten || !ten.trim()) return;
+  const container = document.getElementById('dgMonHocRows');
+  const key = 'MonHoc|' + ten.trim();
+  if(container.querySelector(`.rate-row[data-key="${CSS.escape(key)}"]`)){
+    alert('Môn này đã có trong danh sách rồi.');
+    return;
+  }
+  container.insertAdjacentHTML('beforeend', ratingRowHtml('MonHoc', ten.trim(), ['T','H','C']));
 }
 
 function selectRating(btn, muc){
@@ -2360,8 +2387,18 @@ async function loadDanhGiaForm(){
     refPanel.innerHTML = '';
     return;
   }
-  let html = '<div class="dg-section-title">Môn học và hoạt động giáo dục</div>';
-  MON_HOC.forEach(m => html += ratingRowHtml('MonHoc', m, ['T','H','C']));
+  const existingForKy = dgAllRecords.filter(r => r.maHS===maHS && r.ky===ky);
+  const savedMonHocNames = existingForKy.filter(r=>r.loai==='MonHoc').map(r=>r.tenTieuChi);
+  const monHocList = [...MON_HOC];
+  savedMonHocNames.forEach(n => { if(!monHocList.includes(n)) monHocList.push(n); });
+
+  let html = `<div class="dg-section-title" style="display:flex;justify-content:space-between;align-items:center;">
+    <span>Môn học và hoạt động giáo dục</span>
+    <button class="copy-btn" style="font-size:0.72rem;padding:4px 10px;" onclick="addMonHocRow()">+ Thêm môn</button>
+  </div>
+  <div id="dgMonHocRows">`;
+  monHocList.forEach(m => html += ratingRowHtml('MonHoc', m, ['T','H','C']));
+  html += '</div>';
   html += '<div class="dg-section-title">Phẩm chất</div>';
   PHAM_CHAT.forEach(p => html += ratingRowHtml('PhamChat', p, ['T','Đ','C']));
   html += '<div class="dg-section-title">Năng lực</div>';
