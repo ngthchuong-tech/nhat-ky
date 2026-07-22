@@ -979,6 +979,7 @@
       <div class="sub-tab active" data-subtab="rade" onclick="switchRdSubTab('rade')">Ra đề</div>
       <div class="sub-tab" data-subtab="chambaiai" onclick="switchRdSubTab('chambaiai')">Chấm bài AI</div>
       <div class="sub-tab" data-subtab="bangdiem" onclick="switchRdSubTab('bangdiem')">Bảng điểm</div>
+      <div class="sub-tab" data-subtab="khobai" onclick="switchRdSubTab('khobai')">Kho bài kiểm tra</div>
     </div>
 
     <div id="rdSub-rade">
@@ -1064,6 +1065,15 @@
         <button class="btn-primary" style="width:100%;margin-top:10px;" onclick="loadBangDiemTable()">Tải bảng điểm</button>
       </div>
       <div id="bdArea"></div>
+    </div>
+
+    <div id="rdSub-khobai" style="display:none;">
+      <div class="lienlac-type">
+        <select id="khoHocSinhFilter" onchange="renderKhoBaiList()">
+          <option value="">Tất cả học sinh</option>
+        </select>
+      </div>
+      <div id="khoBaiList"><div class="empty">Đang tải…</div></div>
     </div>
   </div>
 </main>
@@ -1201,6 +1211,8 @@ function switchRdSubTab(name){
   document.getElementById('rdSub-rade').style.display = name==='rade' ? '' : 'none';
   document.getElementById('rdSub-chambaiai').style.display = name==='chambaiai' ? '' : 'none';
   document.getElementById('rdSub-bangdiem').style.display = name==='bangdiem' ? '' : 'none';
+  document.getElementById('rdSub-khobai').style.display = name==='khobai' ? '' : 'none';
+  if(name==='khobai' && !khoBaiLoaded) loadKhoBaiList();
 }
 
 function switchHcSubTab(name){
@@ -2767,6 +2779,7 @@ Hãy đọc kỹ bài làm trong ảnh, rồi trả về DUY NHẤT một đối
       const json = await callGeminiVisionJSON(apiKey, promptText, file);
       cbResultItems.push({
         fileName: file.name,
+        file: file,
         hoTenGoiY: json.hoTenHocSinh || '',
         maHS: guessStudentId(json.hoTenHocSinh),
         nhanXet: json.nhanXet || '',
@@ -2804,7 +2817,7 @@ function renderCbResults(){
         <label>Nhận xét</label>
         <textarea class="cb-nhanxet" data-idx="${idx}" rows="2" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;">${item.nhanXet}</textarea>
       </div>
-      <button class="btn-primary" onclick="saveCbResult(${idx})" ${item.saved?'disabled':''}>${item.saved ? '✓ Đã lưu' : 'Lưu vào bảng điểm'}</button>
+      <button class="btn-primary" onclick="saveCbResult(${idx}, this)" ${item.saved?'disabled':''}>${item.saved ? '✓ Đã lưu' : 'Lưu vào bảng điểm'}</button>
     </div>`;
   }).join('');
   resultEl.querySelectorAll('.cb-mahs').forEach(sel=>{
@@ -2820,17 +2833,17 @@ function renderCbResults(){
   });
 }
 
-async function saveCbResult(idx){
+async function saveCbResult(idx, btn){
   const item = cbResultItems[idx];
   const monHoc = document.getElementById('cbMonHoc').value.trim();
   const ky = document.getElementById('cbKy').value;
   if(!item.maHS){ alert('Chọn học sinh cho bài này trước.'); return; }
   if(!monHoc){ alert('Nhập Môn học ở trên trước.'); return; }
+  if(btn) btn.textContent = 'Đang lưu…';
   try{
     // Lưu điểm: cập nhật bảng điểm môn+kỳ hiện tại, giữ nguyên điểm các em khác
     let current = [];
     try{ current = await apiGet('getBangDiem'); }catch(e){}
-    const others = current.filter(r => !(r.monHoc===monHoc && r.ky===ky && r.maHS===item.maHS));
     const sameGroup = current.filter(r => r.monHoc===monHoc && r.ky===ky && r.maHS!==item.maHS)
       .map(r=>({ maHS:r.maHS, diem:r.diem }));
     sameGroup.push({ maHS:item.maHS, diem:item.diem });
@@ -2840,6 +2853,27 @@ async function saveCbResult(idx){
     if(item.nhanXet){
       await apiPost({ action:'saveSoLienLac', record:{ id:String(Date.now())+idx, maHS:item.maHS, ngay: todayStr(), noiDung: `[${monHoc}] ${item.nhanXet}` } });
     }
+
+    // Lưu file bài kiểm tra thật lên Google Drive
+    if(item.file){
+      const student = students.find(s=>s.maHS===item.maHS);
+      const base64Data = await fileToBase64(item.file);
+      const uploadRes = await apiPost({
+        action: 'uploadBaiKiemTra',
+        payload: {
+          maHS: item.maHS,
+          tenHocSinh: student ? student.hoTen : '',
+          monHoc, ky,
+          ngay: todayStr(),
+          tenFile: item.file.name,
+          mimeType: item.file.type || 'application/octet-stream',
+          base64Data
+        }
+      });
+      if(uploadRes && uploadRes.url) item.driveUrl = uploadRes.url;
+      khoBaiLoaded = false; // để tab Kho bài kiểm tra tải lại danh sách mới
+    }
+
     cbResultItems[idx].saved = true;
     renderCbResults();
   }catch(err){
@@ -2929,6 +2963,69 @@ function exportBangDiemExcel(){
   XLSX.utils.book_append_sheet(wb, ws, 'BangDiem');
   const safeClass = className.replace(/[^a-zA-Z0-9À-ỹ\s-]/g,'').replace(/\s+/g,'_');
   XLSX.writeFile(wb, 'BangDiem_' + monHoc + '_' + (safeClass||'Lop') + '.xlsx');
+}
+
+/* ---------- Kho bài kiểm tra ---------- */
+
+let khoBaiRecords = [];
+let khoBaiLoaded = false;
+
+async function loadKhoBaiList(){
+  const el = document.getElementById('khoBaiList');
+  el.innerHTML = '<div class="empty">Đang tải…</div>';
+  if(!students.length){
+    try{ students = await apiGet('getStudents'); }catch(e){}
+  }
+  if(!parentsLoaded) await loadParents();
+  const filterSel = document.getElementById('khoHocSinhFilter');
+  if(filterSel.options.length <= 1){
+    filterSel.innerHTML = '<option value="">Tất cả học sinh</option>' +
+      students.map(s=>`<option value="${s.maHS}">${s.hoTen}</option>`).join('');
+  }
+  try{
+    khoBaiRecords = await apiGet('getTepBaiKiemTra');
+    khoBaiLoaded = true;
+    renderKhoBaiList();
+  }catch(err){
+    el.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
+  }
+}
+
+function renderKhoBaiList(){
+  const el = document.getElementById('khoBaiList');
+  const filter = document.getElementById('khoHocSinhFilter').value;
+  const filtered = filter ? khoBaiRecords.filter(r=>r.maHS===filter) : khoBaiRecords;
+  if(!filtered.length){
+    el.innerHTML = '<div class="empty">Chưa có bài kiểm tra nào được lưu. Lưu từ tab "Chấm bài AI" để bắt đầu tích lũy kho.</div>';
+    return;
+  }
+  const sorted = [...filtered].sort((a,b)=> (b.ngay||'').localeCompare(a.ngay||''));
+  el.innerHTML = sorted.map(r=>{
+    const student = students.find(s=>s.maHS===r.maHS);
+    const hoTen = student ? student.hoTen : r.maHS;
+    const link = student ? toZaloLink((parentsMap[r.maHS]||{}).sdtBo || (parentsMap[r.maHS]||{}).sdtMe) : null;
+    return `<div class="hc-card">
+      <div class="hc-head">
+        <div>
+          <div class="hc-title">${hoTen} — ${r.monHoc}</div>
+          <div class="hc-meta">${r.ky} — Ngày ${r.ngay} — ${r.tenFile}</div>
+        </div>
+      </div>
+      <div class="hc-actions">
+        <a class="copy-btn" href="${r.driveUrl}" target="_blank" rel="noopener" style="text-decoration:none;">📄 Xem file</a>
+        <button class="copy-btn" onclick="copyKhoBaiLink('${r.driveUrl}', this)">📋 Sao chép link</button>
+        ${link ? `<a class="zalo-btn" href="${link}" target="_blank" rel="noopener">💬 Gửi Zalo</a>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function copyKhoBaiLink(url, btn){
+  navigator.clipboard.writeText(url).then(()=>{
+    const original = btn.textContent;
+    btn.textContent = '✓ Đã sao chép';
+    setTimeout(()=>{ btn.textContent = original; }, 1800);
+  });
 }
 
 loadStudents();
