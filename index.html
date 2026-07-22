@@ -678,6 +678,7 @@
   <div class="tab" data-tab="hanhchinh" onclick="switchTab('hanhchinh')">Hành chính</div>
   <div class="tab" data-tab="hocsinh" onclick="switchTab('hocsinh')">Học sinh</div>
   <div class="tab" data-tab="phieubaitap" onclick="switchTab('phieubaitap')">Phiếu bài tập Toán</div>
+  <div class="tab" data-tab="giaoan" onclick="switchTab('giaoan')">Soạn giáo án</div>
 </div>
 
 <main>
@@ -863,6 +864,43 @@
   <div id="tab-phieubaitap" style="display:none;">
     <iframe src="PhieuBaiTapToan.html" style="width:100%;height:85vh;border:none;border-radius:12px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.06);"></iframe>
   </div>
+
+  <div id="tab-giaoan" style="display:none;">
+    <div id="gaListView">
+      <button class="btn-primary" style="margin-bottom:14px;" onclick="openGaEditor(null)">+ Soạn giáo án mới</button>
+      <div id="gaList"><div class="empty">Đang tải…</div></div>
+    </div>
+
+    <div id="gaEditorView" style="display:none;">
+      <div class="task-form">
+        <div class="hs-grid">
+          <div class="hs-field"><label>Môn học</label><input type="text" id="gaMonHoc" placeholder="vd: Tiếng Việt"></div>
+          <div class="hs-field"><label>Lớp</label><input type="text" id="gaLop" placeholder="vd: 2"></div>
+        </div>
+        <div class="hs-grid">
+          <div class="hs-field"><label>Tên bài học / Chủ đề</label><input type="text" id="gaTenBai"></div>
+          <div class="hs-field"><label>Ngày dạy</label><input type="date" id="gaNgayDay"></div>
+        </div>
+        <div class="hs-field" style="margin-bottom:10px;">
+          <label>Yêu cầu thêm (không bắt buộc)</label>
+          <input type="text" id="gaYeuCau" placeholder="vd: nhấn mạnh kỹ năng đọc hiểu, có trò chơi khởi động">
+        </div>
+        <div class="hs-field" style="margin-bottom:10px;">
+          <label>Gemini API key (lưu trên máy này, để soạn giáo án bằng AI)</label>
+          <input type="password" id="gaApiKey" placeholder="Dán API key từ Google AI Studio">
+        </div>
+        <div class="modal-actions" style="justify-content:flex-start; margin-bottom:14px;">
+          <button class="btn-export" onclick="generateGiaoAn()" id="gaGenBtn">✨ Soạn giáo án bằng AI</button>
+          <span id="gaGenStatus" class="hint" style="align-self:center;"></span>
+        </div>
+        <textarea id="gaNoiDung" rows="16" placeholder="Nội dung giáo án sẽ hiện ở đây, có thể sửa trực tiếp..." style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.88rem;line-height:1.5;"></textarea>
+      </div>
+      <div class="modal-actions" style="justify-content:flex-start;">
+        <button class="btn-secondary" onclick="closeGaEditor()">Hủy</button>
+        <button class="btn-primary" onclick="saveGaRecord()">Lưu</button>
+      </div>
+    </div>
+  </div>
 </main>
 
 <div class="bottom-bar" id="bottomBar" style="display:none;">
@@ -958,6 +996,7 @@ function switchTab(name){
   document.getElementById('tab-hanhchinh').style.display = name==='hanhchinh' ? '' : 'none';
   document.getElementById('tab-hocsinh').style.display = name==='hocsinh' ? '' : 'none';
   document.getElementById('tab-phieubaitap').style.display = name==='phieubaitap' ? '' : 'none';
+  document.getElementById('tab-giaoan').style.display = name==='giaoan' ? '' : 'none';
   document.getElementById('bottomBar').style.display = isDiemDanhTabActive() && students.length ? 'flex' : 'none';
   if(name==='lienlac'){
     if(!document.getElementById('vangHocDate').value){
@@ -975,6 +1014,9 @@ function switchTab(name){
   }
   if(name==='hocsinh'){
     if(!hocSinhLoaded) loadHocSinhFull();
+  }
+  if(name==='giaoan'){
+    if(!gaLoaded) loadGiaoAnList();
   }
 }
 
@@ -1914,6 +1956,215 @@ async function saveHsEditor(){
   }catch(err){
     alert('Lỗi lưu: ' + err.message);
   }
+}
+
+/* ---------- Soạn giáo án (AI hỗ trợ) ---------- */
+
+let gaRecords = [];
+let gaLoaded = false;
+let gaEditingId = null;
+
+async function loadGiaoAnList(){
+  const el = document.getElementById('gaList');
+  el.innerHTML = '<div class="empty">Đang tải…</div>';
+  try{
+    gaRecords = await apiGet('getGiaoAn');
+    gaLoaded = true;
+    renderGaList();
+  }catch(err){
+    el.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
+  }
+}
+
+function renderGaList(){
+  const el = document.getElementById('gaList');
+  if(!gaRecords.length){
+    el.innerHTML = '<div class="empty">Chưa có giáo án nào. Bấm "+ Soạn giáo án mới".</div>';
+    return;
+  }
+  const sorted = [...gaRecords].sort((a,b)=> (b.ngayDay||'').localeCompare(a.ngayDay||''));
+  el.innerHTML = sorted.map(r=>{
+    const idx = gaRecords.indexOf(r);
+    return `<div class="hc-card">
+      <div class="hc-head">
+        <div>
+          <div class="hc-title">${r.tenBai || '(Chưa đặt tên bài)'}</div>
+          <div class="hc-meta">${r.monHoc} — Lớp ${r.lop} — Ngày dạy ${r.ngayDay||''}</div>
+        </div>
+      </div>
+      <div class="hc-actions">
+        <button class="copy-btn" onclick="openGaEditor('${r.id}')">✎ Sửa</button>
+        <button class="copy-btn" onclick="printGaRecord('${r.id}')">🖨 In / Lưu PDF</button>
+        <button class="task-del" onclick="deleteGaRecord('${r.id}')">✕ Xóa</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openGaEditor(id){
+  gaEditingId = id;
+  document.getElementById('gaListView').style.display = 'none';
+  document.getElementById('gaEditorView').style.display = '';
+  document.getElementById('gaApiKey').value = localStorage.getItem('sdd_geminiApiKey') || '';
+  if(id){
+    const r = gaRecords.find(x=>x.id===id);
+    document.getElementById('gaMonHoc').value = r.monHoc;
+    document.getElementById('gaLop').value = r.lop;
+    document.getElementById('gaTenBai').value = r.tenBai;
+    document.getElementById('gaNgayDay').value = r.ngayDay;
+    document.getElementById('gaYeuCau').value = '';
+    document.getElementById('gaNoiDung').value = r.noiDung;
+  }else{
+    document.getElementById('gaMonHoc').value = '';
+    document.getElementById('gaLop').value = (localStorage.getItem('sdd_className')||'').replace(/^Lớp\s*/i,'');
+    document.getElementById('gaTenBai').value = '';
+    document.getElementById('gaNgayDay').value = todayStr();
+    document.getElementById('gaYeuCau').value = '';
+    document.getElementById('gaNoiDung').value = '';
+  }
+}
+
+function closeGaEditor(){
+  document.getElementById('gaEditorView').style.display = 'none';
+  document.getElementById('gaListView').style.display = '';
+}
+
+function buildGiaoAnPrompt({monHoc, lop, tenBai, yeuCauThem}){
+  return `Bạn là một giáo viên tiểu học Việt Nam giàu kinh nghiệm, soạn giáo án theo chương trình GDPT 2018, bộ sách "Kết nối tri thức với cuộc sống", trình bày theo cấu trúc quen thuộc dạng Công văn 5512.
+
+Thông tin bài dạy:
+- Môn học: ${monHoc}
+- Lớp: ${lop}
+- Tên bài học / Chủ đề: ${tenBai}
+${yeuCauThem ? '- Yêu cầu thêm từ giáo viên: ' + yeuCauThem : ''}
+
+Hãy soạn giáo án đầy đủ theo cấu trúc sau:
+
+I. YÊU CẦU CẦN ĐẠT
+1. Năng lực đặc thù (của môn học)
+2. Năng lực chung (Tự chủ và tự học, Giao tiếp và hợp tác, Giải quyết vấn đề và sáng tạo)
+3. Phẩm chất (Chăm chỉ, Trung thực, Trách nhiệm...)
+
+II. ĐỒ DÙNG DẠY HỌC
+- Giáo viên
+- Học sinh
+
+III. CÁC HOẠT ĐỘNG DẠY HỌC CHỦ YẾU
+1. Hoạt động Mở đầu (Khởi động)
+2. Hoạt động Hình thành kiến thức mới (Khám phá)
+3. Hoạt động Luyện tập, thực hành
+4. Hoạt động Vận dụng, trải nghiệm
+
+Với mỗi hoạt động ở mục III, trình bày rõ: mục tiêu ngắn gọn, cách tiến hành (hoạt động của giáo viên - hoạt động của học sinh), và sản phẩm/kết quả mong đợi. Nội dung phải phù hợp thực tế với học sinh lớp ${lop}, không dùng kiến thức vượt cấp.
+
+IV. ĐIỀU CHỈNH SAU BÀI DẠY
+(để trống, giáo viên sẽ tự ghi sau khi dạy xong)
+
+Chỉ trả về nội dung giáo án bằng văn bản thuần (không dùng markdown, không dùng dấu *, không có lời dẫn hay giải thích thêm ngoài giáo án), dùng số thứ tự và xuống dòng rõ ràng để dễ đọc.`;
+}
+
+async function callGeminiText(apiKey, prompt){
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const body = {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.7 }
+  };
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  if(!res.ok){
+    const t = await res.text();
+    throw new Error('Gemini API lỗi (' + res.status + '): ' + t.slice(0,300));
+  }
+  const data = await res.json();
+  const text = (((data.candidates||[])[0]||{}).content||{}).parts?.map(p=>p.text||'').join('') || '';
+  if(!text) throw new Error('Gemini không trả về nội dung.');
+  return text.trim();
+}
+
+async function generateGiaoAn(){
+  const status = document.getElementById('gaGenStatus');
+  const apiKey = document.getElementById('gaApiKey').value.trim();
+  const monHoc = document.getElementById('gaMonHoc').value.trim();
+  const lop = document.getElementById('gaLop').value.trim();
+  const tenBai = document.getElementById('gaTenBai').value.trim();
+  const yeuCauThem = document.getElementById('gaYeuCau').value.trim();
+  if(!apiKey){ alert('Cần dán Gemini API key trước.'); return; }
+  if(!monHoc || !lop || !tenBai){ alert('Cần nhập Môn học, Lớp và Tên bài học trước.'); return; }
+  localStorage.setItem('sdd_geminiApiKey', apiKey);
+  status.textContent = 'Đang soạn bằng AI…';
+  document.getElementById('gaGenBtn').disabled = true;
+  try{
+    const prompt = buildGiaoAnPrompt({ monHoc, lop, tenBai, yeuCauThem });
+    const text = await callGeminiText(apiKey, prompt);
+    document.getElementById('gaNoiDung').value = text;
+    status.textContent = '✓ Đã soạn xong — kiểm tra lại và chỉnh sửa nếu cần';
+  }catch(err){
+    status.textContent = 'Lỗi: ' + err.message;
+  }
+  document.getElementById('gaGenBtn').disabled = false;
+}
+
+async function saveGaRecord(){
+  const record = {
+    id: gaEditingId || String(Date.now()),
+    monHoc: document.getElementById('gaMonHoc').value.trim(),
+    lop: document.getElementById('gaLop').value.trim(),
+    tenBai: document.getElementById('gaTenBai').value.trim(),
+    ngayDay: document.getElementById('gaNgayDay').value,
+    noiDung: document.getElementById('gaNoiDung').value
+  };
+  if(!record.tenBai || !record.ngayDay){
+    alert('Nhập tên bài học và chọn ngày dạy trước nhé.');
+    return;
+  }
+  try{
+    if(gaEditingId){
+      await apiPost({ action:'updateGiaoAn', record });
+      const idx = gaRecords.findIndex(r=>r.id===gaEditingId);
+      if(idx>=0) gaRecords[idx] = record;
+    }else{
+      await apiPost({ action:'saveGiaoAn', record });
+      gaRecords.push(record);
+    }
+    closeGaEditor();
+    renderGaList();
+  }catch(err){
+    alert('Lỗi lưu: ' + err.message);
+  }
+}
+
+async function deleteGaRecord(id){
+  if(!confirm('Xóa giáo án này?')) return;
+  gaRecords = gaRecords.filter(r=>r.id!==id);
+  renderGaList();
+  try{
+    await apiPost({ action:'deleteGiaoAn', id });
+  }catch(err){
+    alert('Lỗi xóa: ' + err.message);
+  }
+}
+
+function printGaRecord(id){
+  const r = gaRecords.find(x=>x.id===id);
+  if(!r) return;
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8">
+    <title>${r.tenBai}</title>
+    <style>
+      body{ font-family:'Times New Roman', serif; padding:50px; line-height:1.7; color:#111; }
+      h1{ font-size:19px; text-align:center; text-transform:uppercase; margin-bottom:4px; }
+      .meta{ text-align:center; color:#444; font-size:14px; margin-bottom:28px; }
+      pre{ white-space:pre-wrap; font-family:inherit; font-size:15px; }
+    </style></head><body>
+    <h1>Giáo án: ${r.tenBai}</h1>
+    <div class="meta">Môn: ${r.monHoc} — Lớp: ${r.lop} — Ngày dạy: ${r.ngayDay}</div>
+    <pre>${(r.noiDung||'').replace(/</g,'&lt;')}</pre>
+    </body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(), 300);
 }
 
 loadStudents();
