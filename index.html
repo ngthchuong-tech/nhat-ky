@@ -866,38 +866,77 @@
   </div>
 
   <div id="tab-giaoan" style="display:none;">
-    <div id="gaListView">
-      <button class="btn-primary" style="margin-bottom:14px;" onclick="openGaEditor(null)">+ Soạn giáo án mới</button>
-      <div id="gaList"><div class="empty">Đang tải…</div></div>
+    <div class="sub-tabs">
+      <div class="sub-tab active" data-subtab="giaoan" onclick="switchGaSubTab('giaoan')">Giáo án</div>
+      <div class="sub-tab" data-subtab="phanphoi" onclick="switchGaSubTab('phanphoi')">Phân phối chương trình</div>
     </div>
 
-    <div id="gaEditorView" style="display:none;">
-      <div class="task-form">
-        <div class="hs-grid">
-          <div class="hs-field"><label>Môn học</label><input type="text" id="gaMonHoc" placeholder="vd: Tiếng Việt"></div>
-          <div class="hs-field"><label>Lớp</label><input type="text" id="gaLop" placeholder="vd: 2"></div>
-        </div>
-        <div class="hs-grid">
-          <div class="hs-field"><label>Tên bài học / Chủ đề</label><input type="text" id="gaTenBai"></div>
-          <div class="hs-field"><label>Ngày dạy</label><input type="date" id="gaNgayDay"></div>
-        </div>
-        <div class="hs-field" style="margin-bottom:10px;">
-          <label>Yêu cầu thêm (không bắt buộc)</label>
-          <input type="text" id="gaYeuCau" placeholder="vd: nhấn mạnh kỹ năng đọc hiểu, có trò chơi khởi động">
-        </div>
-        <div class="hs-field" style="margin-bottom:10px;">
-          <label>Gemini API key (lưu trên máy này, để soạn giáo án bằng AI)</label>
-          <input type="password" id="gaApiKey" placeholder="Dán API key từ Google AI Studio">
-        </div>
-        <div class="modal-actions" style="justify-content:flex-start; margin-bottom:14px;">
-          <button class="btn-export" onclick="generateGiaoAn()" id="gaGenBtn">✨ Soạn giáo án bằng AI</button>
-          <span id="gaGenStatus" class="hint" style="align-self:center;"></span>
-        </div>
-        <textarea id="gaNoiDung" rows="16" placeholder="Nội dung giáo án sẽ hiện ở đây, có thể sửa trực tiếp..." style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.88rem;line-height:1.5;"></textarea>
+    <div id="gaSub-giaoan">
+      <div id="gaListView">
+        <button class="btn-primary" style="margin-bottom:14px;" onclick="openGaEditor(null)">+ Soạn giáo án mới</button>
+        <div id="gaList"><div class="empty">Đang tải…</div></div>
       </div>
-      <div class="modal-actions" style="justify-content:flex-start;">
-        <button class="btn-secondary" onclick="closeGaEditor()">Hủy</button>
-        <button class="btn-primary" onclick="saveGaRecord()">Lưu</button>
+
+      <div id="gaEditorView" style="display:none;">
+        <div class="task-form">
+          <div class="hs-grid">
+            <div class="hs-field"><label>Môn học</label><input type="text" id="gaMonHoc" placeholder="vd: Tiếng Việt"></div>
+            <div class="hs-field"><label>Lớp</label><input type="text" id="gaLop" placeholder="vd: 2"></div>
+          </div>
+          <div class="hs-grid">
+            <div class="hs-field"><label>Tên bài học / Chủ đề</label><input type="text" id="gaTenBai"></div>
+            <div class="hs-field"><label>Ngày dạy</label><input type="date" id="gaNgayDay"></div>
+          </div>
+          <div class="hs-field" style="margin-bottom:10px;">
+            <label>Yêu cầu thêm (không bắt buộc)</label>
+            <input type="text" id="gaYeuCau" placeholder="vd: nhấn mạnh kỹ năng đọc hiểu, có trò chơi khởi động">
+          </div>
+          <div class="hs-field" style="margin-bottom:10px;">
+            <label>Gemini API key (lưu trên máy này, để soạn giáo án bằng AI)</label>
+            <input type="password" id="gaApiKey" placeholder="Dán API key từ Google AI Studio">
+          </div>
+          <div class="modal-actions" style="justify-content:flex-start; margin-bottom:14px;">
+            <button class="btn-export" onclick="generateGiaoAn()" id="gaGenBtn">✨ Soạn giáo án bằng AI</button>
+            <span id="gaGenStatus" class="hint" style="align-self:center;"></span>
+          </div>
+          <textarea id="gaNoiDung" rows="16" placeholder="Nội dung giáo án sẽ hiện ở đây, có thể sửa trực tiếp..." style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.88rem;line-height:1.5;"></textarea>
+        </div>
+        <div class="modal-actions" style="justify-content:flex-start;">
+          <button class="btn-secondary" onclick="closeGaEditor()">Hủy</button>
+          <button class="btn-primary" onclick="saveGaRecord()">Lưu</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="gaSub-phanphoi" style="display:none;">
+      <div id="ppListView">
+        <button class="btn-primary" style="margin-bottom:14px;" onclick="openPpEditor(null)">+ Thêm tuần / bài học</button>
+        <div class="table-scroll">
+          <table class="hs-table" id="ppTable">
+            <thead><tr><th>Tuần</th><th>Môn học</th><th>Tên bài</th><th>Số tiết</th><th>Ghi chú</th><th></th></tr></thead>
+            <tbody id="ppTableBody"><tr><td colspan="6" class="empty">Đang tải…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="ppEditorView" style="display:none;">
+        <div class="task-form">
+          <div class="hs-grid">
+            <div class="hs-field"><label>Tuần</label><input type="text" id="ppTuan" placeholder="vd: 1"></div>
+            <div class="hs-field"><label>Môn học</label><input type="text" id="ppMonHoc" placeholder="vd: Toán"></div>
+          </div>
+          <div class="hs-grid">
+            <div class="hs-field"><label>Tên bài học</label><input type="text" id="ppTenBai"></div>
+            <div class="hs-field"><label>Số tiết</label><input type="text" id="ppSoTiet" placeholder="vd: 2"></div>
+          </div>
+          <div class="hs-grid full">
+            <div class="hs-field"><label>Ghi chú</label><input type="text" id="ppGhiChu"></div>
+          </div>
+        </div>
+        <div class="modal-actions" style="justify-content:flex-start;">
+          <button class="btn-secondary" onclick="closePpEditor()">Hủy</button>
+          <button class="btn-primary" onclick="savePpRecord()">Lưu</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1017,7 +1056,14 @@ function switchTab(name){
   }
   if(name==='giaoan'){
     if(!gaLoaded) loadGiaoAnList();
+    if(!ppLoaded) loadPhanPhoiList();
   }
+}
+
+function switchGaSubTab(name){
+  document.querySelectorAll('#tab-giaoan .sub-tab').forEach(t=>t.classList.toggle('active', t.dataset.subtab===name));
+  document.getElementById('gaSub-giaoan').style.display = name==='giaoan' ? '' : 'none';
+  document.getElementById('gaSub-phanphoi').style.display = name==='phanphoi' ? '' : 'none';
 }
 
 function switchHcSubTab(name){
@@ -2165,6 +2211,101 @@ function printGaRecord(id){
     </body></html>`);
   w.document.close();
   setTimeout(()=>w.print(), 300);
+}
+
+/* ---------- Lịch báo giảng / Phân phối chương trình ---------- */
+
+let ppRecords = [];
+let ppLoaded = false;
+let ppEditingId = null;
+
+async function loadPhanPhoiList(){
+  const tbody = document.getElementById('ppTableBody');
+  tbody.innerHTML = '<tr><td colspan="6" class="empty">Đang tải…</td></tr>';
+  try{
+    ppRecords = await apiGet('getPhanPhoi');
+    ppLoaded = true;
+    renderPpTable();
+  }catch(err){
+    tbody.innerHTML = `<tr><td colspan="6" class="empty">Lỗi tải dữ liệu: ${err.message}</td></tr>`;
+  }
+}
+
+function renderPpTable(){
+  const tbody = document.getElementById('ppTableBody');
+  if(!ppRecords.length){
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">Chưa có dữ liệu. Bấm "+ Thêm tuần / bài học".</td></tr>';
+    return;
+  }
+  const sorted = [...ppRecords].sort((a,b)=> (parseInt(a.tuan)||0) - (parseInt(b.tuan)||0));
+  tbody.innerHTML = sorted.map(r=>{
+    const idx = ppRecords.indexOf(r);
+    return `<tr>
+      <td>${r.tuan}</td>
+      <td>${r.monHoc}</td>
+      <td class="name">${r.tenBai}</td>
+      <td>${r.soTiet}</td>
+      <td>${r.ghiChu||''}</td>
+      <td style="white-space:nowrap;">
+        <button class="edit-link" onclick="openPpEditor(${idx})">Sửa</button>
+        <button class="edit-link" style="background:var(--chalk-yellow);color:var(--chalk-green-dark);" onclick="quickGiaoAnFromPp(${idx})">Soạn giáo án</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openPpEditor(idx){
+  ppEditingId = (idx !== null) ? ppRecords[idx].id : null;
+  document.getElementById('ppListView').style.display = 'none';
+  document.getElementById('ppEditorView').style.display = '';
+  const r = (idx !== null) ? ppRecords[idx] : { tuan:'', monHoc:'', tenBai:'', soTiet:'', ghiChu:'' };
+  document.getElementById('ppTuan').value = r.tuan;
+  document.getElementById('ppMonHoc').value = r.monHoc;
+  document.getElementById('ppTenBai').value = r.tenBai;
+  document.getElementById('ppSoTiet').value = r.soTiet;
+  document.getElementById('ppGhiChu').value = r.ghiChu;
+}
+
+function closePpEditor(){
+  document.getElementById('ppEditorView').style.display = 'none';
+  document.getElementById('ppListView').style.display = '';
+}
+
+async function savePpRecord(){
+  const record = {
+    id: ppEditingId || String(Date.now()),
+    tuan: document.getElementById('ppTuan').value.trim(),
+    monHoc: document.getElementById('ppMonHoc').value.trim(),
+    tenBai: document.getElementById('ppTenBai').value.trim(),
+    soTiet: document.getElementById('ppSoTiet').value.trim(),
+    ghiChu: document.getElementById('ppGhiChu').value.trim()
+  };
+  if(!record.tuan || !record.monHoc || !record.tenBai){
+    alert('Cần nhập Tuần, Môn học và Tên bài học.');
+    return;
+  }
+  try{
+    if(ppEditingId){
+      await apiPost({ action:'updatePhanPhoi', record });
+      const idx = ppRecords.findIndex(r=>r.id===ppEditingId);
+      if(idx>=0) ppRecords[idx] = record;
+    }else{
+      await apiPost({ action:'savePhanPhoi', record });
+      ppRecords.push(record);
+    }
+    closePpEditor();
+    renderPpTable();
+  }catch(err){
+    alert('Lỗi lưu: ' + err.message);
+  }
+}
+
+function quickGiaoAnFromPp(idx){
+  const r = ppRecords[idx];
+  switchGaSubTab('giaoan');
+  openGaEditor(null);
+  document.getElementById('gaMonHoc').value = r.monHoc;
+  document.getElementById('gaTenBai').value = r.tenBai;
 }
 
 loadStudents();
