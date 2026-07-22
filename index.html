@@ -626,6 +626,16 @@
     opacity:0.6;
   }
   .rate-remove:hover{ opacity:1; }
+  .rate-row-suggested{ border:1.5px dashed var(--chalk-yellow); }
+  .suggest-tag{
+    font-size:0.65rem;
+    font-weight:600;
+    color:var(--chalk-green-dark);
+    background:#FFF7E2;
+    border-radius:5px;
+    padding:1px 6px;
+    margin-left:4px;
+  }
   .rate-btns{ display:flex; gap:6px; margin-bottom:6px; justify-content:flex-start; }
   .rate-btn{
     flex:0 0 auto;
@@ -1416,6 +1426,19 @@
         <button class="btn-primary" style="width:100%;margin-top:10px;" onclick="addKhenThuongKyLuat()">+ Thêm ghi nhận</button>
       </div>
       <div id="ktklList"><div class="empty">Đang tải…</div></div>
+
+      <div class="dg-section-title">Đề xuất khen thưởng cuối kỳ</div>
+      <p class="hint" style="margin-bottom:10px;">Quét tự động học sinh có Mức tổng hợp cao và chuyên cần tốt trong kỳ đã chọn ở tab "Đánh giá học sinh &gt; Tổng hợp cuối kỳ" — chỉ là gợi ý tham khảo, bạn chọn và chỉnh nội dung trước khi thêm vào sổ.</p>
+      <div class="task-form">
+        <select id="ktklGoiYKy" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);margin-bottom:10px;">
+          <option>Giữa học kỳ 1</option>
+          <option>Cuối học kỳ 1</option>
+          <option>Giữa học kỳ 2</option>
+          <option>Cuối học kỳ 2 (Cuối năm)</option>
+        </select>
+        <button class="btn-primary" style="width:100%;" onclick="scanKhenThuongGoiY()">✨ Quét đề xuất</button>
+      </div>
+      <div id="ktklGoiYList"></div>
     </div>
   </div>
 </main>
@@ -2334,6 +2357,8 @@ const PHAM_CHAT = ['Yêu nước','Nhân ái','Chăm chỉ','Trung thực','Trá
 const NANG_LUC = ['Tự chủ và tự học','Giao tiếp và hợp tác','Giải quyết vấn đề và sáng tạo','Ngôn ngữ','Tính toán','Khoa học','Công nghệ','Tin học','Thẩm mỹ','Thể chất'];
 const TONG_HOP_OPTIONS = ['Hoàn thành xuất sắc','Hoàn thành tốt','Hoàn thành','Chưa hoàn thành'];
 let dgStudentsFilled = false;
+let dgNhanXetTXCache = [];
+let dgBangDiemCache = [];
 let dgAllRecords = [];
 
 function fillDgStudentSelect(){
@@ -2386,6 +2411,65 @@ function addMonHocRow(){
   container.insertAdjacentHTML('beforeend', ratingRowHtml('MonHoc', ten.trim(), ['T','H','C']));
 }
 
+async function synthesizeDanhGiaFromLog(){
+  const status = document.getElementById('dgSynthStatus');
+  const apiKey = document.getElementById('dgApiKey').value.trim();
+  if(!apiKey){ alert('Cần dán Gemini API key trước.'); return; }
+  if(!dgNhanXetTXCache.length){ alert('Chưa có ghi nhận nào trong Sổ theo dõi nhận xét cho học sinh này.'); return; }
+  localStorage.setItem('sdd_geminiApiKey', apiKey);
+
+  // Gom các ghi nhận theo môn học
+  const byMon = {};
+  dgNhanXetTXCache.forEach(e=>{
+    const mon = e.monHoc || '(Chung)';
+    if(!byMon[mon]) byMon[mon] = [];
+    byMon[mon].push(e);
+  });
+  const monCoDuLieu = Object.keys(byMon);
+  if(!monCoDuLieu.length){ alert('Không có dữ liệu để tổng hợp.'); return; }
+
+  let logText = '';
+  monCoDuLieu.forEach(mon=>{
+    logText += `\n[Môn: ${mon}]\n`;
+    byMon[mon].forEach(e=>{
+      logText += `- ${e.ngay}${e.noiDung ? ' — '+e.noiDung : ''}${e.muc ? ' — Mức '+e.muc : ''}${e.diem ? ' — Điểm '+e.diem : ''}${e.nhanXet ? ' — '+e.nhanXet : ''}\n`;
+    });
+  });
+
+  const prompt = `Đây là các ghi nhận đánh giá thường xuyên (rời rạc) một giáo viên tiểu học Việt Nam đã tự ghi trong sổ theo dõi cho một học sinh, theo từng môn học/hoạt động:
+${logText}
+Với MỖI môn có dữ liệu ở trên, hãy tổng hợp lại thành: mức đánh giá cuối kỳ (chỉ chọn T = Hoàn thành tốt, H = Hoàn thành, hoặc C = Chưa hoàn thành, dựa trên xu hướng chung của các ghi nhận) và MỘT câu nhận xét ngắn gọn, khái quát xu hướng chung — không liệt kê lại từng lần ghi nhận riêng lẻ.
+
+Trả về DUY NHẤT một đối tượng JSON, không thêm chữ nào khác, đúng định dạng:
+{"Tên môn 1": {"muc":"T", "nhanXet":"..."}, "Tên môn 2": {"muc":"H", "nhanXet":"..."}}
+Chỉ gồm đúng các môn có dữ liệu ở trên.`;
+
+  status.textContent = 'Đang tổng hợp bằng AI…';
+  document.getElementById('dgSynthBtn').disabled = true;
+  try{
+    const text = await callGeminiText(apiKey, prompt);
+    const clean = text.trim().replace(/^```json\s*/,'').replace(/```$/,'').trim();
+    const result = JSON.parse(clean);
+    let soDaDien = 0;
+    Object.keys(result).forEach(mon=>{
+      const key = 'MonHoc|' + mon;
+      const row = document.querySelector(`#dgMonHocRows .rate-row[data-key="${CSS.escape(key)}"]`);
+      if(!row) return; // môn AI trả về không khớp môn nào đang có trong phiếu — bỏ qua, không tự thêm dòng mới
+      const noteInput = row.querySelector('.rate-note');
+      if(noteInput.value.trim()) return; // đã có nhận xét sẵn — không ghi đè
+      const muc = result[mon].muc;
+      const btn = [...row.querySelectorAll('.rate-btn')].find(b=>b.textContent===muc);
+      if(btn) selectRating(btn, muc);
+      noteInput.value = result[mon].nhanXet || '';
+      soDaDien++;
+    });
+    status.textContent = `✓ Đã điền gợi ý cho ${soDaDien} môn — kiểm tra lại trước khi lưu`;
+  }catch(err){
+    status.textContent = 'Lỗi: ' + err.message;
+  }
+  document.getElementById('dgSynthBtn').disabled = false;
+}
+
 function selectRating(btn, muc){
   const group = btn.parentElement;
   group.querySelectorAll('.rate-btn').forEach(b=>b.classList.remove('on'));
@@ -2418,7 +2502,21 @@ async function loadDanhGiaForm(){
   const monHocList = [...MON_HOC];
   savedMonHocNames.forEach(n => { if(!monHocList.includes(n)) monHocList.push(n); });
 
-  let html = `<div class="dg-section-title" style="display:flex;justify-content:space-between;align-items:center;">
+  // Lưu lại dữ liệu để nút AI tổng hợp dùng (Sổ theo dõi nhận xét của học sinh này)
+  dgNhanXetTXCache = nhanXetTX.filter(r=>r.maHS===maHS);
+  dgBangDiemCache = bangDiem.filter(r=>r.maHS===maHS && r.ky===ky);
+
+  let html = `<div class="task-form" style="margin-bottom:14px;">
+    <div class="hs-field" style="margin-bottom:10px;">
+      <label>Gemini API key (dùng chung cho các tính năng AI trong app)</label>
+      <input type="password" id="dgApiKey" value="${localStorage.getItem('sdd_geminiApiKey')||''}" placeholder="Dán API key từ Google AI Studio">
+    </div>
+    <button class="btn-export" onclick="synthesizeDanhGiaFromLog()" id="dgSynthBtn">✨ AI tổng hợp Mức &amp; Nhận xét từ Sổ theo dõi</button>
+    <span id="dgSynthStatus" class="hint" style="margin-left:8px;"></span>
+    <p class="hint" style="margin-top:6px;">AI chỉ tổng hợp lại các ghi chú bạn đã tự viết trong "Sổ theo dõi nhận xét" — không tự phán xét học sinh. Chỉ điền vào môn nào bạn chưa gõ nhận xét, không ghi đè chỗ đã có.</p>
+    <p class="hint" style="margin-top:4px;">Viền vàng đứt nét + nhãn "gợi ý theo điểm" là Mức tự động gợi ý theo ngưỡng điểm (≥9 → T, 5-8.9 → H, dưới 5 → C) cho môn chưa từng đánh giá — bạn đổi lại nếu không phù hợp.</p>
+  </div>
+  <div class="dg-section-title" style="display:flex;justify-content:space-between;align-items:center;">
     <span>Môn học và hoạt động giáo dục</span>
     <button class="copy-btn" style="font-size:0.72rem;padding:4px 10px;" onclick="addMonHocRow()">+ Thêm môn</button>
   </div>
@@ -2471,6 +2569,7 @@ async function loadDanhGiaForm(){
 
   // Điền dữ liệu đã lưu trước đó (nếu có)
   const existing = dgAllRecords.filter(r => r.maHS===maHS && r.ky===ky);
+  const monHocDaLuu = new Set();
   existing.forEach(r=>{
     if(r.loai === 'TongHop'){
       if(r.tenTieuChi === 'Muc') document.getElementById('dgTongHopMuc').value = r.muc;
@@ -2483,7 +2582,33 @@ async function loadDanhGiaForm(){
     const btn = [...row.querySelectorAll('.rate-btn')].find(b=>b.textContent===r.muc);
     if(btn) selectRating(btn, r.muc);
     row.querySelector('.rate-note').value = r.nhanXet || '';
+    if(r.loai==='MonHoc') monHocDaLuu.add(r.tenTieuChi);
   });
+
+  // Gợi ý Mức theo ngưỡng điểm cho môn CHƯA từng được đánh giá (chỉ gợi ý, giáo viên có thể đổi)
+  dgBangDiemCache.forEach(d=>{
+    if(monHocDaLuu.has(d.monHoc)) return; // đã có đánh giá trước đó — không ghi đè
+    const row = area.querySelector(`.rate-row[data-key="${CSS.escape('MonHoc|'+d.monHoc)}"]`);
+    if(!row) return;
+    const diemSo = parseFloat(d.diem);
+    if(isNaN(diemSo)) return;
+    const mucGoiY = suggestMucFromDiem(diemSo);
+    const btn = [...row.querySelectorAll('.rate-btn')].find(b=>b.textContent===mucGoiY);
+    if(btn){
+      selectRating(btn, mucGoiY);
+      row.classList.add('rate-row-suggested');
+      const label = row.querySelector('.rate-label');
+      if(label && !label.querySelector('.suggest-tag')){
+        label.insertAdjacentHTML('beforeend', ` <span class="suggest-tag">gợi ý theo điểm ${d.diem}</span>`);
+      }
+    }
+  });
+}
+
+function suggestMucFromDiem(diem){
+  if(diem >= 9) return 'T';
+  if(diem >= 5) return 'H';
+  return 'C';
 }
 
 function collectDanhGiaRecords(){
@@ -4353,7 +4478,23 @@ async function loadTongHopKy(){
           <button class="copy-btn" onclick="printTongHopKy()">🖨 In phiếu tổng hợp</button>
           <button class="copy-btn" onclick="exportTongHopWord()">⬇ Tải Word</button>
         </div>
+
+        <div class="dg-section-title">Soạn thư gửi phụ huynh (AI)</div>
+        <div class="hs-field" style="margin-bottom:10px;">
+          <input type="password" id="thApiKey" value="${localStorage.getItem('sdd_geminiApiKey')||''}" placeholder="Gemini API key">
+        </div>
+        <div class="modal-actions" style="justify-content:flex-start;margin-bottom:10px;">
+          <button class="btn-export" onclick="draftTongHopLetter()" id="thLetterBtn">✨ AI soạn thư dựa trên tổng hợp trên</button>
+          <span id="thLetterStatus" class="hint" style="align-self:center;"></span>
+        </div>
+        <textarea id="thLetterText" rows="8" placeholder="Thư soạn sẵn sẽ hiện ở đây, có thể sửa trước khi gửi..." style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.88rem;line-height:1.5;display:none;"></textarea>
+        <div class="modal-actions" style="justify-content:flex-start;margin-top:8px;">
+          <button class="copy-btn" onclick="copyTongHopLetter(this)">📋 Sao chép thư</button>
+        </div>
+        <div id="thZaloArea" style="margin-top:8px;"></div>
       </div>`;
+    if(!parentsLoaded) await loadParents();
+    document.getElementById('thZaloArea').innerHTML = renderContactRows(maHS);
   }catch(err){
     area.innerHTML = '<div class="empty">Lỗi: '+err.message+'</div>';
   }
@@ -4409,6 +4550,56 @@ function exportTongHopWord(){
   if(!thLastData) return;
   const html = buildTongHopBodyHtml();
   downloadWordDoc('TongHop_' + thLastData.hoTen + '_' + thLastData.ky, html);
+}
+
+async function draftTongHopLetter(){
+  if(!thLastData) return;
+  const status = document.getElementById('thLetterStatus');
+  const apiKey = document.getElementById('thApiKey').value.trim();
+  if(!apiKey){ alert('Cần dán Gemini API key trước.'); return; }
+  localStorage.setItem('sdd_geminiApiKey', apiKey);
+  const d = thLastData;
+  const className = localStorage.getItem('sdd_className') || '';
+
+  const monHocText = d.monHocKetHop.map(m=>`${m.ten}: ${m.muc}${m.diem?' ('+m.diem+' điểm)':''}`).join('; ');
+  const phamChatText = d.phamChat.map(p=>`${p.tenTieuChi}: ${p.muc}`).join('; ');
+  const nangLucText = d.nangLuc.map(n=>`${n.tenTieuChi}: ${n.muc}`).join('; ');
+
+  const prompt = `Bạn là giáo viên chủ nhiệm tiểu học Việt Nam, soạn một đoạn thư ngắn gửi phụ huynh qua Zalo, thông báo kết quả học tập ${d.ky} của con em họ. Văn phong ấm áp, chân thành, tôn trọng, không quá trang trọng như văn bản hành chính (vì gửi qua tin nhắn).
+
+Thông tin để viết:
+- Học sinh: ${d.hoTen}${className?' — Lớp '+className:''}
+- Chuyên cần: Có mặt ${d.chuyenCan.coMat} buổi (đi trễ ${d.chuyenCan.tre}), vắng phép ${d.chuyenCan.vangPhep}, vắng không phép ${d.chuyenCan.vangKP}
+- Môn học: ${monHocText || '(chưa có dữ liệu)'}
+- Phẩm chất: ${phamChatText || '(chưa có dữ liệu)'}
+- Năng lực: ${nangLucText || '(chưa có dữ liệu)'}
+- Mức đạt chung: ${d.tongHopMuc ? d.tongHopMuc.muc : ''}
+- Khen thưởng: ${d.khenThuong ? d.khenThuong.nhanXet : ''}
+
+Hãy viết đoạn thư nêu bật điểm tốt trước, nhẹ nhàng góp ý điểm cần cố gắng (nếu có), và một lời nhắn khích lệ/đề nghị phối hợp cuối thư. Không liệt kê máy móc từng dòng số liệu — hãy viết tự nhiên như lời một giáo viên. Chỉ trả về nội dung thư, không thêm lời dẫn.`;
+
+  status.textContent = 'Đang soạn thư…';
+  document.getElementById('thLetterBtn').disabled = true;
+  try{
+    const text = await callGeminiText(apiKey, prompt);
+    const textarea = document.getElementById('thLetterText');
+    textarea.value = text;
+    textarea.style.display = '';
+    status.textContent = '✓ Đã soạn xong — đọc lại trước khi gửi';
+  }catch(err){
+    status.textContent = 'Lỗi: ' + err.message;
+  }
+  document.getElementById('thLetterBtn').disabled = false;
+}
+
+function copyTongHopLetter(btn){
+  const text = document.getElementById('thLetterText').value;
+  if(!text.trim()){ alert('Chưa có thư để sao chép — soạn thư trước.'); return; }
+  navigator.clipboard.writeText(text).then(()=>{
+    const original = btn.textContent;
+    btn.textContent = '✓ Đã sao chép';
+    setTimeout(()=>{ btn.textContent = original; }, 1800);
+  });
 }
 
 /**
@@ -4846,6 +5037,74 @@ async function deleteKtklEntry(id){
   }catch(err){
     alert('Lỗi xóa: ' + err.message);
   }
+}
+
+async function scanKhenThuongGoiY(){
+  const ky = document.getElementById('ktklGoiYKy').value;
+  const listEl = document.getElementById('ktklGoiYList');
+  listEl.innerHTML = '<div class="empty">Đang quét…</div>';
+  try{
+    const [full, allDanhGia, allAttendance] = await Promise.all([
+      apiGet('getStudentsFull'),
+      apiGet('getDanhGia'),
+      apiGet('getAllAttendance')
+    ]);
+    const active = full.filter(s=>(s.trangThai||'DangHoc')==='DangHoc');
+    const candidates = [];
+    active.forEach(s=>{
+      const tongHop = allDanhGia.find(r=>r.maHS===s.maHS && r.ky===ky && r.loai==='TongHop' && r.tenTieuChi==='Muc');
+      if(!tongHop) return;
+      const mucTot = tongHop.muc === 'Hoàn thành xuất sắc' || tongHop.muc === 'Hoàn thành tốt';
+      if(!mucTot) return;
+      const vangKP = allAttendance.filter(r=>r.maHS===s.maHS && r.trangThai==='VangKP').length;
+      if(vangKP > 1) return; // chuyên cần chưa đủ tốt — không đề xuất
+      candidates.push({
+        maHS: s.maHS,
+        hoTen: s.hoTen,
+        goiY: `Học sinh ${tongHop.muc.toLowerCase()} — ${ky}`
+      });
+    });
+    if(!candidates.length){
+      listEl.innerHTML = '<div class="empty">Không tìm thấy học sinh phù hợp tiêu chí (Mức tổng hợp cao + vắng không phép ≤ 1) trong kỳ này.</div>';
+      return;
+    }
+    listEl.innerHTML = candidates.map((c,idx)=>`<div class="hc-card">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+        <input type="checkbox" checked data-idx="${idx}" class="ktkl-goiy-check" style="margin-top:4px;">
+        <div style="flex:1;">
+          <div class="hc-title">${c.hoTen}</div>
+          <input type="text" class="ktkl-goiy-noidung" data-idx="${idx}" value="${c.goiY}" style="width:100%;margin-top:6px;padding:6px 8px;border-radius:6px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.85rem;">
+        </div>
+      </label>
+    </div>`).join('') +
+    `<button class="btn-primary" style="width:100%;margin-top:6px;" onclick='addSelectedKhenThuong(${JSON.stringify(candidates.map(c=>c.maHS))})'>+ Thêm các mục đã chọn vào sổ</button>`;
+  }catch(err){
+    listEl.innerHTML = '<div class="empty">Lỗi: '+err.message+'</div>';
+  }
+}
+
+async function addSelectedKhenThuong(maHSList){
+  const checks = [...document.querySelectorAll('.ktkl-goiy-check')];
+  const noiDungInputs = [...document.querySelectorAll('.ktkl-goiy-noidung')];
+  const ngay = todayStr();
+  let count = 0;
+  for(const chk of checks){
+    if(!chk.checked) continue;
+    const idx = chk.dataset.idx;
+    const maHS = maHSList[idx];
+    const noiDung = noiDungInputs.find(i=>i.dataset.idx===idx).value.trim();
+    if(!noiDung) continue;
+    const record = { id: String(Date.now()) + idx, maHS, ngay, loai:'Khen thưởng', noiDung };
+    try{
+      await apiPost({ action:'saveKhenThuongKyLuat', record });
+      ktklRecords.push(record);
+      count++;
+    }catch(err){
+      alert('Lỗi lưu cho 1 học sinh: ' + err.message);
+    }
+  }
+  renderKtklList();
+  document.getElementById('ktklGoiYList').innerHTML = `<div class="empty">✓ Đã thêm ${count} mục vào sổ Khen thưởng - Kỷ luật.</div>`;
 }
 
 syncCaiDatFromServer();
