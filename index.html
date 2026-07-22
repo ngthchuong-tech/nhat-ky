@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <style>
   :root{
     --paper: #FAF6EC;
@@ -698,6 +699,7 @@
   <div class="tab" data-tab="phieubaitap" onclick="switchTab('phieubaitap')">Phiếu bài tập Toán</div>
   <div class="tab" data-tab="giaoan" onclick="switchTab('giaoan')">Soạn giáo án</div>
   <div class="tab" data-tab="radekt" onclick="switchTab('radekt')">Ra đề &amp; Chấm điểm</div>
+  <div class="tab" data-tab="skkn" onclick="switchTab('skkn')">Sáng kiến kinh nghiệm</div>
 </div>
 
 <main>
@@ -1072,6 +1074,94 @@
       <div id="khoBaiList"><div class="empty">Đang tải…</div></div>
     </div>
   </div>
+
+  <div id="tab-skkn" style="display:none;">
+    <div class="sub-tabs">
+      <div class="sub-tab active" data-subtab="soan" onclick="switchSkknSubTab('soan')">Soạn SKKN</div>
+      <div class="sub-tab" data-subtab="luutru" onclick="switchSkknSubTab('luutru')">Lưu trữ</div>
+    </div>
+
+    <div id="skknSub-soan">
+      <div id="skknListView">
+        <button class="btn-primary" style="margin-bottom:14px;" onclick="openSkknEditor(null)">+ Soạn SKKN mới</button>
+        <div id="skknList"><div class="empty">Đang tải…</div></div>
+      </div>
+
+      <div id="skknEditorView" style="display:none;">
+        <div class="task-form">
+          <div class="hs-grid">
+            <div class="hs-field"><label>Tên đề tài</label><input type="text" id="skknTenDeTai" placeholder="vd: Một số biện pháp rèn kỹ năng đọc hiểu cho học sinh lớp 2"></div>
+            <div class="hs-field"><label>Lĩnh vực / Môn học</label><input type="text" id="skknLinhVuc" placeholder="vd: Tiếng Việt"></div>
+          </div>
+          <div class="hs-field" style="margin-bottom:10px;"><label>Năm học</label><input type="text" id="skknNamHoc" placeholder="vd: 2026-2027"></div>
+
+          <div class="hs-field" style="margin-bottom:10px;">
+            <label>Tài liệu tham khảo (ảnh, PDF, .docx, .txt, .md — có thể chọn nhiều file, AI sẽ đọc làm ngữ cảnh)</label>
+            <input type="file" id="skknRefFiles" accept="image/*,.pdf,.docx,.txt,.md" multiple onchange="updateSkknRefList()" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--paper-line);background:#fff;">
+            <div id="skknRefList" class="hint" style="margin-top:6px;"></div>
+          </div>
+
+          <div class="hs-field" style="margin-bottom:10px;">
+            <label>Yêu cầu / trọng tâm (không bắt buộc)</label>
+            <textarea id="skknYeuCau" rows="2" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.88rem;"></textarea>
+          </div>
+
+          <div class="hs-field" style="margin-bottom:10px;">
+            <label>Gemini API key</label>
+            <input type="password" id="skknApiKey" placeholder="Dán API key từ Google AI Studio">
+          </div>
+
+          <div class="modal-actions" style="justify-content:flex-start; margin-bottom:10px;">
+            <button class="btn-export" onclick="generateSkknDanY()" id="skknDanYBtn">✨ Soạn dàn ý bằng AI</button>
+            <span id="skknDanYStatus" class="hint" style="align-self:center;"></span>
+          </div>
+          <div class="hs-field" style="margin-bottom:14px;">
+            <label>Dàn ý</label>
+            <textarea id="skknDanY" rows="8" placeholder="Dàn ý sẽ hiện ở đây, có thể sửa trực tiếp..." style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.85rem;line-height:1.5;"></textarea>
+          </div>
+
+          <div class="modal-actions" style="justify-content:flex-start; margin-bottom:10px;">
+            <button class="btn-export" onclick="generateSkknNoiDung()" id="skknNoiDungBtn">✨ Soạn nội dung đầy đủ bằng AI</button>
+            <span id="skknNoiDungStatus" class="hint" style="align-self:center;"></span>
+          </div>
+          <div class="hs-field" style="margin-bottom:10px;">
+            <label>Nội dung SKKN</label>
+            <textarea id="skknNoiDung" rows="18" placeholder="Nội dung đầy đủ sẽ hiện ở đây, có thể sửa trực tiếp..." style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.88rem;line-height:1.6;"></textarea>
+          </div>
+
+          <div class="hs-field" style="margin-bottom:10px;">
+            <label>Yêu cầu chỉnh sửa (mô tả điều muốn AI sửa trong nội dung ở trên)</label>
+            <input type="text" id="skknChinhSua" placeholder="vd: viết ngắn gọn lại phần II.2, thêm số liệu minh họa">
+          </div>
+          <div class="modal-actions" style="justify-content:flex-start;">
+            <button class="btn-export" onclick="chinhSuaSkkn()" id="skknEditBtn">✨ Chỉnh sửa bằng AI</button>
+            <span id="skknEditStatus" class="hint" style="align-self:center;"></span>
+          </div>
+        </div>
+        <div class="modal-actions" style="justify-content:flex-start;">
+          <button class="btn-secondary" onclick="closeSkknEditor()">Hủy</button>
+          <button class="btn-primary" onclick="saveSkknRecord()">Lưu bản nháp</button>
+          <button class="btn-export" onclick="exportSkknWord()">⬇ Tải Word</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="skknSub-luutru" style="display:none;">
+      <div class="task-form">
+        <div class="hs-field" style="margin-bottom:10px;">
+          <label>Chọn file để lưu trữ (bất kỳ loại nào)</label>
+          <input type="file" id="ktlFile" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--paper-line);background:#fff;">
+        </div>
+        <div class="hs-field" style="margin-bottom:10px;">
+          <label>Mô tả (không bắt buộc)</label>
+          <input type="text" id="ktlMoTa" placeholder="vd: SKKN năm 2025-2026 bản in nộp trường">
+        </div>
+        <button class="btn-primary" style="width:100%;" onclick="uploadKhoTaiLieu()" id="ktlUploadBtn">⬆ Tải lên lưu trữ</button>
+        <span id="ktlUploadStatus" class="hint"></span>
+      </div>
+      <div id="ktlList"><div class="empty">Đang tải…</div></div>
+    </div>
+  </div>
 </main>
 
 <div class="bottom-bar" id="bottomBar" style="display:none;">
@@ -1169,6 +1259,7 @@ function switchTab(name){
   document.getElementById('tab-phieubaitap').style.display = name==='phieubaitap' ? '' : 'none';
   document.getElementById('tab-giaoan').style.display = name==='giaoan' ? '' : 'none';
   document.getElementById('tab-radekt').style.display = name==='radekt' ? '' : 'none';
+  document.getElementById('tab-skkn').style.display = name==='skkn' ? '' : 'none';
   document.getElementById('bottomBar').style.display = isDiemDanhTabActive() && students.length ? 'flex' : 'none';
   if(name==='lienlac'){
     if(!document.getElementById('vangHocDate').value){
@@ -1194,6 +1285,10 @@ function switchTab(name){
   if(name==='radekt'){
     if(!rdLoaded) loadDeKiemTraList();
   }
+  if(name==='skkn'){
+    if(!skknLoaded) loadSkknList();
+    if(!ktlLoaded) loadKhoTaiLieuList();
+  }
 }
 
 function switchGaSubTab(name){
@@ -1209,6 +1304,12 @@ function switchRdSubTab(name){
   document.getElementById('rdSub-bangdiem').style.display = name==='bangdiem' ? '' : 'none';
   document.getElementById('rdSub-khobai').style.display = name==='khobai' ? '' : 'none';
   if(name==='khobai' && !khoBaiLoaded) loadKhoBaiList();
+}
+
+function switchSkknSubTab(name){
+  document.querySelectorAll('#tab-skkn .sub-tab').forEach(t=>t.classList.toggle('active', t.dataset.subtab===name));
+  document.getElementById('skknSub-soan').style.display = name==='soan' ? '' : 'none';
+  document.getElementById('skknSub-luutru').style.display = name==='luutru' ? '' : 'none';
 }
 
 function switchHcSubTab(name){
@@ -3021,6 +3122,376 @@ function copyKhoBaiLink(url, btn){
     btn.textContent = '✓ Đã sao chép';
     setTimeout(()=>{ btn.textContent = original; }, 1800);
   });
+}
+
+/* ---------- Sáng kiến kinh nghiệm ---------- */
+
+let skknRecords = [];
+let skknLoaded = false;
+let skknEditingId = null;
+
+function updateSkknRefList(){
+  const files = [...document.getElementById('skknRefFiles').files];
+  const el = document.getElementById('skknRefList');
+  el.textContent = files.length ? ('Đã chọn: ' + files.map(f=>f.name).join(', ')) : '';
+}
+
+async function callGeminiMultimodalText(apiKey, promptText, inlineParts){
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const parts = [{ text: promptText }];
+  (inlineParts||[]).forEach(p => parts.push({ inline_data: { mime_type: p.mimeType, data: p.base64 } }));
+  const body = {
+    contents: [{ parts }],
+    generationConfig: { temperature: 0.7 }
+  };
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  if(!res.ok){
+    const t = await res.text();
+    throw new Error('Gemini API lỗi (' + res.status + '): ' + t.slice(0,300));
+  }
+  const data = await res.json();
+  const text = (((data.candidates||[])[0]||{}).content||{}).parts?.map(p=>p.text||'').join('') || '';
+  if(!text) throw new Error('Gemini không trả về nội dung.');
+  return text.trim();
+}
+
+async function buildSkknContext(){
+  const files = [...document.getElementById('skknRefFiles').files];
+  let textContext = '';
+  const inlineParts = [];
+  for(const file of files){
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    try{
+      if(ext === 'txt' || ext === 'md'){
+        const text = await file.text();
+        textContext += `\n--- Tài liệu tham khảo: ${file.name} ---\n${text}\n`;
+      }else if(ext === 'docx'){
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        textContext += `\n--- Tài liệu tham khảo: ${file.name} ---\n${result.value}\n`;
+      }else{
+        const base64 = await fileToBase64(file);
+        inlineParts.push({ mimeType: file.type || 'application/pdf', base64 });
+      }
+    }catch(err){
+      textContext += `\n--- Tài liệu tham khảo: ${file.name} (lỗi đọc file: ${err.message}) ---\n`;
+    }
+  }
+  return { textContext, inlineParts };
+}
+
+async function loadSkknList(){
+  const el = document.getElementById('skknList');
+  el.innerHTML = '<div class="empty">Đang tải…</div>';
+  try{
+    skknRecords = await apiGet('getSKKN');
+    skknLoaded = true;
+    renderSkknList();
+  }catch(err){
+    el.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
+  }
+}
+
+function renderSkknList(){
+  const el = document.getElementById('skknList');
+  if(!skknRecords.length){
+    el.innerHTML = '<div class="empty">Chưa có SKKN nào. Bấm "+ Soạn SKKN mới".</div>';
+    return;
+  }
+  const sorted = [...skknRecords].sort((a,b)=> (b.ngayCapNhat||'').localeCompare(a.ngayCapNhat||''));
+  el.innerHTML = sorted.map(r=>`<div class="hc-card">
+      <div class="hc-head">
+        <div>
+          <div class="hc-title">${r.tenDeTai || '(Chưa đặt tên đề tài)'}</div>
+          <div class="hc-meta">${r.linhVuc} — Năm học ${r.namHoc} — Cập nhật ${r.ngayCapNhat||''}</div>
+        </div>
+      </div>
+      <div class="hc-actions">
+        <button class="copy-btn" onclick="openSkknEditor('${r.id}')">✎ Mở / Sửa</button>
+        <button class="task-del" onclick="deleteSkknRecord('${r.id}')">✕ Xóa</button>
+      </div>
+    </div>`).join('');
+}
+
+function openSkknEditor(id){
+  skknEditingId = id;
+  document.getElementById('skknListView').style.display = 'none';
+  document.getElementById('skknEditorView').style.display = '';
+  document.getElementById('skknApiKey').value = localStorage.getItem('sdd_geminiApiKey') || '';
+  document.getElementById('skknRefFiles').value = '';
+  document.getElementById('skknRefList').textContent = '';
+  document.getElementById('skknChinhSua').value = '';
+  if(id){
+    const r = skknRecords.find(x=>x.id===id);
+    document.getElementById('skknTenDeTai').value = r.tenDeTai;
+    document.getElementById('skknLinhVuc').value = r.linhVuc;
+    document.getElementById('skknNamHoc').value = r.namHoc;
+    document.getElementById('skknYeuCau').value = '';
+    document.getElementById('skknDanY').value = r.danY;
+    document.getElementById('skknNoiDung').value = r.noiDung;
+  }else{
+    document.getElementById('skknTenDeTai').value = '';
+    document.getElementById('skknLinhVuc').value = '';
+    document.getElementById('skknNamHoc').value = '';
+    document.getElementById('skknYeuCau').value = '';
+    document.getElementById('skknDanY').value = '';
+    document.getElementById('skknNoiDung').value = '';
+  }
+}
+
+function closeSkknEditor(){
+  document.getElementById('skknEditorView').style.display = 'none';
+  document.getElementById('skknListView').style.display = '';
+}
+
+async function generateSkknDanY(){
+  const status = document.getElementById('skknDanYStatus');
+  const apiKey = document.getElementById('skknApiKey').value.trim();
+  const tenDeTai = document.getElementById('skknTenDeTai').value.trim();
+  const linhVuc = document.getElementById('skknLinhVuc').value.trim();
+  const yeuCau = document.getElementById('skknYeuCau').value.trim();
+  if(!apiKey){ alert('Cần dán Gemini API key trước.'); return; }
+  if(!tenDeTai){ alert('Nhập Tên đề tài trước.'); return; }
+  localStorage.setItem('sdd_geminiApiKey', apiKey);
+  status.textContent = 'Đang đọc tài liệu & soạn dàn ý…';
+  document.getElementById('skknDanYBtn').disabled = true;
+  try{
+    const { textContext, inlineParts } = await buildSkknContext();
+    const prompt = `Bạn là giáo viên tiểu học Việt Nam, soạn dàn ý cho một Sáng kiến kinh nghiệm (SKKN) theo cấu trúc thường dùng để nộp đánh giá:
+I. Đặt vấn đề (lý do chọn đề tài)
+II. Giải quyết vấn đề
+  1. Cơ sở lý luận
+  2. Thực trạng vấn đề
+  3. Các biện pháp/giải pháp đã thực hiện
+  4. Kết quả đạt được
+III. Kết luận, kiến nghị
+
+Tên đề tài: ${tenDeTai}
+Lĩnh vực/Môn học: ${linhVuc}
+${yeuCau ? 'Yêu cầu/trọng tâm thêm: ' + yeuCau + '\n' : ''}${textContext ? '\nNội dung tài liệu tham khảo giáo viên cung cấp:\n' + textContext : ''}
+
+Hãy soạn dàn ý chi tiết theo cấu trúc trên, có gạch đầu dòng các ý chính cho từng phần. Chỉ trả về dàn ý dạng văn bản thuần (không markdown, không dùng dấu *).`;
+    const text = inlineParts.length
+      ? await callGeminiMultimodalText(apiKey, prompt, inlineParts)
+      : await callGeminiText(apiKey, prompt);
+    document.getElementById('skknDanY').value = text;
+    status.textContent = '✓ Đã soạn xong dàn ý';
+  }catch(err){
+    status.textContent = 'Lỗi: ' + err.message;
+  }
+  document.getElementById('skknDanYBtn').disabled = false;
+}
+
+async function generateSkknNoiDung(){
+  const status = document.getElementById('skknNoiDungStatus');
+  const apiKey = document.getElementById('skknApiKey').value.trim();
+  const tenDeTai = document.getElementById('skknTenDeTai').value.trim();
+  const linhVuc = document.getElementById('skknLinhVuc').value.trim();
+  const danY = document.getElementById('skknDanY').value.trim();
+  const yeuCau = document.getElementById('skknYeuCau').value.trim();
+  if(!apiKey){ alert('Cần dán Gemini API key trước.'); return; }
+  if(!tenDeTai){ alert('Nhập Tên đề tài trước.'); return; }
+  localStorage.setItem('sdd_geminiApiKey', apiKey);
+  status.textContent = 'Đang soạn nội dung đầy đủ…';
+  document.getElementById('skknNoiDungBtn').disabled = true;
+  try{
+    const { textContext, inlineParts } = await buildSkknContext();
+    const prompt = `Bạn là giáo viên tiểu học Việt Nam, viết nội dung đầy đủ cho một Sáng kiến kinh nghiệm (SKKN) để nộp đánh giá.
+
+Tên đề tài: ${tenDeTai}
+Lĩnh vực/Môn học: ${linhVuc}
+${yeuCau ? 'Yêu cầu/trọng tâm thêm: ' + yeuCau + '\n' : ''}${danY ? '\nDàn ý cần triển khai theo:\n' + danY + '\n' : ''}${textContext ? '\nNội dung tài liệu tham khảo giáo viên cung cấp:\n' + textContext : ''}
+
+Hãy viết nội dung đầy đủ, chi tiết, văn phong sư phạm, theo đúng dàn ý ở trên (nếu có). Bám sát thực tế dạy học tiểu học, có ví dụ minh họa cụ thể ở phần biện pháp. Chỉ trả về nội dung văn bản thuần (không markdown, không dùng dấu *), có đánh số mục rõ ràng.`;
+    const text = inlineParts.length
+      ? await callGeminiMultimodalText(apiKey, prompt, inlineParts)
+      : await callGeminiText(apiKey, prompt);
+    document.getElementById('skknNoiDung').value = text;
+    status.textContent = '✓ Đã soạn xong — đọc lại và chỉnh sửa nếu cần';
+  }catch(err){
+    status.textContent = 'Lỗi: ' + err.message;
+  }
+  document.getElementById('skknNoiDungBtn').disabled = false;
+}
+
+async function chinhSuaSkkn(){
+  const status = document.getElementById('skknEditStatus');
+  const apiKey = document.getElementById('skknApiKey').value.trim();
+  const noiDungHienTai = document.getElementById('skknNoiDung').value;
+  const yeuCauSua = document.getElementById('skknChinhSua').value.trim();
+  if(!apiKey){ alert('Cần dán Gemini API key trước.'); return; }
+  if(!noiDungHienTai.trim()){ alert('Chưa có nội dung để chỉnh sửa — soạn nội dung trước.'); return; }
+  if(!yeuCauSua){ alert('Nhập yêu cầu chỉnh sửa trước.'); return; }
+  localStorage.setItem('sdd_geminiApiKey', apiKey);
+  status.textContent = 'Đang chỉnh sửa…';
+  document.getElementById('skknEditBtn').disabled = true;
+  try{
+    const prompt = `Đây là nội dung một Sáng kiến kinh nghiệm hiện tại:
+"""${noiDungHienTai}"""
+
+Yêu cầu chỉnh sửa: ${yeuCauSua}
+
+Hãy chỉnh sửa theo đúng yêu cầu trên, giữ nguyên các phần không liên quan. Chỉ trả về TOÀN BỘ nội dung sau khi đã chỉnh sửa, dạng văn bản thuần (không markdown, không dùng dấu *), không thêm lời dẫn hay giải thích.`;
+    const text = await callGeminiText(apiKey, prompt);
+    document.getElementById('skknNoiDung').value = text;
+    document.getElementById('skknChinhSua').value = '';
+    status.textContent = '✓ Đã chỉnh sửa xong';
+  }catch(err){
+    status.textContent = 'Lỗi: ' + err.message;
+  }
+  document.getElementById('skknEditBtn').disabled = false;
+}
+
+async function saveSkknRecord(){
+  const record = {
+    id: skknEditingId || String(Date.now()),
+    tenDeTai: document.getElementById('skknTenDeTai').value.trim(),
+    linhVuc: document.getElementById('skknLinhVuc').value.trim(),
+    namHoc: document.getElementById('skknNamHoc').value.trim(),
+    danY: document.getElementById('skknDanY').value,
+    noiDung: document.getElementById('skknNoiDung').value,
+    ngayCapNhat: todayStr()
+  };
+  if(!record.tenDeTai){
+    alert('Nhập tên đề tài trước nhé.');
+    return;
+  }
+  try{
+    if(skknEditingId){
+      await apiPost({ action:'updateSKKN', record });
+      const idx = skknRecords.findIndex(r=>r.id===skknEditingId);
+      if(idx>=0) skknRecords[idx] = record;
+    }else{
+      await apiPost({ action:'saveSKKN', record });
+      skknRecords.push(record);
+      skknEditingId = record.id;
+    }
+    closeSkknEditor();
+    renderSkknList();
+  }catch(err){
+    alert('Lỗi lưu: ' + err.message);
+  }
+}
+
+async function deleteSkknRecord(id){
+  if(!confirm('Xóa SKKN này?')) return;
+  skknRecords = skknRecords.filter(r=>r.id!==id);
+  renderSkknList();
+  try{
+    await apiPost({ action:'deleteSKKN', id });
+  }catch(err){
+    alert('Lỗi xóa: ' + err.message);
+  }
+}
+
+function exportSkknWord(){
+  const tenDeTai = document.getElementById('skknTenDeTai').value.trim() || 'Sáng kiến kinh nghiệm';
+  const linhVuc = document.getElementById('skknLinhVuc').value.trim();
+  const namHoc = document.getElementById('skknNamHoc').value.trim();
+  const noiDung = document.getElementById('skknNoiDung').value || document.getElementById('skknDanY').value;
+  if(!noiDung.trim()){ alert('Chưa có nội dung để xuất — soạn nội dung trước.'); return; }
+  const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head><meta charset='utf-8'><title>${tenDeTai}</title></head>
+    <body style="font-family:'Times New Roman', serif; font-size:14pt; line-height:1.5;">
+      <h1 style="text-align:center; font-size:16pt;">${tenDeTai}</h1>
+      <p style="text-align:center; color:#555;">${linhVuc}${namHoc ? ' — Năm học ' + namHoc : ''}</p>
+      <div style="white-space:pre-wrap; margin-top:20px;">${noiDung.replace(/</g,'&lt;')}</div>
+    </body></html>`;
+  const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = tenDeTai.replace(/[^a-zA-Z0-9À-ỹ\s-]/g,'').replace(/\s+/g,'_') + '.doc';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ---------- Lưu trữ (Kho tài liệu chung) ---------- */
+
+let ktlRecords = [];
+let ktlLoaded = false;
+
+async function loadKhoTaiLieuList(){
+  const el = document.getElementById('ktlList');
+  el.innerHTML = '<div class="empty">Đang tải…</div>';
+  try{
+    ktlRecords = await apiGet('getKhoTaiLieu');
+    ktlLoaded = true;
+    renderKtlList();
+  }catch(err){
+    el.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
+  }
+}
+
+function renderKtlList(){
+  const el = document.getElementById('ktlList');
+  if(!ktlRecords.length){
+    el.innerHTML = '<div class="empty">Chưa có tài liệu nào được lưu trữ.</div>';
+    return;
+  }
+  const sorted = [...ktlRecords].sort((a,b)=> (b.ngayTai||'').localeCompare(a.ngayTai||''));
+  el.innerHTML = sorted.map(r=>`<div class="hc-card">
+      <div class="hc-head">
+        <div>
+          <div class="hc-title">${r.tenFile}</div>
+          <div class="hc-meta">${r.moTa ? r.moTa + ' — ' : ''}Tải lên ngày ${r.ngayTai}</div>
+        </div>
+      </div>
+      <div class="hc-actions">
+        <a class="copy-btn" href="${r.driveUrl}" target="_blank" rel="noopener" style="text-decoration:none;">📄 Xem / Tải</a>
+        <button class="copy-btn" onclick="copyKhoBaiLink('${r.driveUrl}', this)">📋 Sao chép link</button>
+        <button class="task-del" onclick="deleteKtlRecord('${r.id}')">✕ Xóa</button>
+      </div>
+    </div>`).join('');
+}
+
+async function uploadKhoTaiLieu(){
+  const status = document.getElementById('ktlUploadStatus');
+  const fileInput = document.getElementById('ktlFile');
+  const moTa = document.getElementById('ktlMoTa').value.trim();
+  const file = fileInput.files[0];
+  if(!file){ alert('Chọn 1 file trước.'); return; }
+  status.textContent = 'Đang tải lên…';
+  document.getElementById('ktlUploadBtn').disabled = true;
+  try{
+    const base64Data = await fileToBase64(file);
+    const res = await apiPost({
+      action: 'uploadTaiLieu',
+      payload: {
+        tenFile: file.name,
+        moTa,
+        ngayTai: todayStr(),
+        mimeType: file.type || 'application/octet-stream',
+        base64Data
+      }
+    });
+    ktlRecords.push({ id: res.id, tenFile: file.name, moTa, ngayTai: todayStr(), driveUrl: res.url });
+    renderKtlList();
+    fileInput.value = '';
+    document.getElementById('ktlMoTa').value = '';
+    status.textContent = '✓ Đã lưu trữ';
+    setTimeout(()=>{ status.textContent=''; }, 2000);
+  }catch(err){
+    status.textContent = 'Lỗi: ' + err.message;
+  }
+  document.getElementById('ktlUploadBtn').disabled = false;
+}
+
+async function deleteKtlRecord(id){
+  if(!confirm('Xóa tài liệu này khỏi kho lưu trữ?')) return;
+  ktlRecords = ktlRecords.filter(r=>r.id!==id);
+  renderKtlList();
+  try{
+    await apiPost({ action:'deleteKhoTaiLieu', id });
+  }catch(err){
+    alert('Lỗi xóa: ' + err.message);
+  }
 }
 
 loadStudents();
