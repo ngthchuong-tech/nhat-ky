@@ -1854,6 +1854,34 @@ function renderContactRows(maHS){
   }).join('');
 }
 
+/**
+ * Zalo không hỗ trợ tự động đính kèm file qua link web — cách khả thi nhất:
+ * tự động tải file Word về máy, đồng thời mở khung chat Zalo với phụ huynh,
+ * giáo viên chỉ cần bấm đính kèm file vừa tải trong khung chat vừa mở ra.
+ */
+function renderContactRowsWithFile(maHS, exportFnName){
+  const p = parentsMap[maHS];
+  if(!p) return '<p class="hint">Chưa có thông tin phụ huynh cho học sinh này.</p>';
+  const rows = [
+    { role:'Bố', ten:p.tenBo, sdt:p.sdtBo },
+    { role:'Mẹ', ten:p.tenMe, sdt:p.sdtMe }
+  ];
+  return `<p class="hint" style="margin-bottom:8px;">Zalo không cho web tự đính kèm file — bấm nút dưới đây sẽ tự tải file Word về máy VÀ mở khung chat cùng lúc, bạn chỉ cần bấm đính kèm file vừa tải trong Zalo.</p>` +
+    rows.map(r=>{
+      const link = toZaloLink(r.sdt);
+      const label = r.ten || (r.role === 'Bố' ? 'Bố' : 'Mẹ');
+      return `<div class="contact-row">
+        <div class="contact-info">
+          <span class="role">${r.role}</span>
+          ${label}${r.sdt ? ' — <span class="phone">'+r.sdt+'</span>' : ''}
+        </div>
+        ${link
+          ? `<button class="zalo-btn" style="border:none;" onclick="${exportFnName}(); window.open('${link}','_blank');">📎 Tải file &amp; Mở Zalo</button>`
+          : `<span class="zalo-btn disabled">Chưa có SĐT</span>`}
+      </div>`;
+    }).join('');
+}
+
 async function renderDanhBa(){
   const el = document.getElementById('danhBaResult');
   el.innerHTML = '<div class="empty">Đang tải danh bạ…</div>';
@@ -2356,7 +2384,7 @@ async function loadDanhGiaForm(){
     <div id="dgZaloArea"><p class="hint">Đang tải thông tin phụ huynh…</p></div>`;
   area.innerHTML = html;
   if(!parentsLoaded) await loadParents();
-  document.getElementById('dgZaloArea').innerHTML = renderContactRows(maHS);
+  document.getElementById('dgZaloArea').innerHTML = renderContactRowsWithFile(maHS, 'exportDanhGiaWord');
 
   // Bảng điểm chi tiết + nhận xét — tham khảo bên phải khi đánh giá
   const diemHocSinh = bangDiem.filter(r=>r.maHS===maHS && r.ky===ky);
@@ -3457,6 +3485,7 @@ async function loadBangDiemTable(){
     <div class="modal-actions" style="justify-content:flex-start;margin-top:12px;">
       <button class="btn-primary" onclick="saveBangDiemTable()">Lưu bảng điểm</button>
       <button class="btn-export" onclick="exportBangDiemExcel()">⬇ Tải Excel</button>
+      <button class="btn-export" onclick="exportBangDiemWord()">⬇ Tải Word</button>
       <button class="copy-btn" onclick="copyBangDiemSummary(this)">📋 Sao chép tóm tắt</button>
       <span id="bdAvg" class="hint" style="align-self:center;"></span>
     </div>
@@ -3465,7 +3494,7 @@ async function loadBangDiemTable(){
     </div>`;
   area.innerHTML = html;
   if(!parentsLoaded) await loadParents();
-  document.getElementById('bdZaloArea').innerHTML = renderContactRows(maHS);
+  document.getElementById('bdZaloArea').innerHTML = renderContactRowsWithFile(maHS, 'exportBangDiemWord');
   updateBdAverage();
   area.querySelectorAll('input[data-mon]').forEach(inp=>{
     inp.addEventListener('input', updateBdAverage);
@@ -3531,6 +3560,24 @@ function exportBangDiemExcel(){
   XLSX.utils.book_append_sheet(wb, ws, 'BangDiem');
   const safeName = (student?student.hoTen:maHS).replace(/[^a-zA-Z0-9À-ỹ\s-]/g,'').replace(/\s+/g,'_');
   XLSX.writeFile(wb, 'BangDiem_' + safeName + '.xlsx');
+}
+
+function exportBangDiemWord(){
+  const maHS = document.getElementById('bdHocSinh').value;
+  const ky = document.getElementById('bdKy').value;
+  const student = students.find(s=>s.maHS===maHS);
+  const hoTen = student ? student.hoTen : maHS;
+  const className = localStorage.getItem('sdd_className') || '';
+  let rowsHtml = '';
+  document.querySelectorAll('#bdArea tbody tr').forEach(tr=>{
+    const name = tr.children[0].textContent;
+    const val = tr.querySelector('input').value;
+    rowsHtml += `<tr><td>${name}</td><td class="center">${val}</td></tr>`;
+  });
+  const body = `<h1>Bảng điểm</h1>
+    <div class="meta">${hoTen}${className?' — Lớp '+className:''} — ${ky}</div>
+    <table><tr><th>Môn học</th><th>Điểm</th></tr>${rowsHtml}</table>`;
+  downloadWordDoc('BangDiem_' + hoTen, body);
 }
 
 /* ---------- Kho bài kiểm tra ---------- */
