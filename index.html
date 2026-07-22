@@ -2305,15 +2305,13 @@ async function loadDanhGiaForm(){
 
   // Bảng điểm chi tiết + nhận xét — tham khảo bên phải khi đánh giá
   const diemHocSinh = bangDiem.filter(r=>r.maHS===maHS && r.ky===ky);
+  const diemTheoMon = {};
+  diemHocSinh.forEach(d=>{ diemTheoMon[d.monHoc] = d.diem; });
   const ghiChuHocSinh = nhanXetTX.filter(r=>r.maHS===maHS).sort((a,b)=> b.ngay.localeCompare(a.ngay));
   let refHtml = '<div class="dg-section-title">Bảng điểm (tham khảo)</div>';
-  if(diemHocSinh.length){
-    refHtml += '<table class="stats"><thead><tr><th>Môn học</th><th>Điểm</th></tr></thead><tbody>' +
-      diemHocSinh.map(d=>`<tr><td class="name">${d.monHoc}</td><td style="text-align:center;">${d.diem}</td></tr>`).join('') +
-      '</tbody></table>';
-  }else{
-    refHtml += '<p class="empty">Chưa có điểm nào trong kỳ này (nhập ở tab Bảng điểm).</p>';
-  }
+  refHtml += '<table class="stats"><thead><tr><th>Môn học</th><th>Điểm</th></tr></thead><tbody>' +
+    MON_HOC.map(m=>`<tr><td class="name">${m}</td><td style="text-align:center;">${diemTheoMon[m] !== undefined ? diemTheoMon[m] : '—'}</td></tr>`).join('') +
+    '</tbody></table>';
   refHtml += '<div class="dg-section-title">Sổ theo dõi nhận xét (tham khảo)</div>';
   if(ghiChuHocSinh.length){
     refHtml += ghiChuHocSinh.map(e=>`<div class="sll-entry">
