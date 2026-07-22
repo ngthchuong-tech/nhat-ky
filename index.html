@@ -835,34 +835,97 @@
 
     <div id="hcSub-danhgia" style="display:none;">
       <p class="hint" style="margin-bottom:12px;">Công cụ hỗ trợ tổng hợp nhanh theo Thông tư 27/2020/TT-BGDĐT — dùng để ghi nháp trước khi nhập vào Học bạ chính thức, không thay thế Học bạ.</p>
-      <div class="task-form">
-        <div class="task-form-row">
-          <select id="dgHocSinh" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);"></select>
-          <select id="dgKy" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
-            <option>Giữa học kỳ 1</option>
-            <option>Cuối học kỳ 1</option>
-            <option>Giữa học kỳ 2</option>
-            <option>Cuối học kỳ 2 (Cuối năm)</option>
-          </select>
-        </div>
-        <button class="btn-primary" style="margin-top:10px;width:100%;" onclick="loadDanhGiaForm()">Tải phiếu đánh giá</button>
+      <div class="lienlac-type">
+        <select id="dgViewType" onchange="onDgViewTypeChange()">
+          <option value="theoky">Đánh giá theo kỳ</option>
+          <option value="theodoi">Sổ theo dõi nhận xét</option>
+          <option value="tonghop">Tổng hợp cuối kỳ/năm</option>
+        </select>
       </div>
-      <div id="dgFormArea"></div>
+
+      <div id="dgView-theoky">
+        <div class="task-form">
+          <div class="task-form-row">
+            <select id="dgHocSinh" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);"></select>
+            <select id="dgKy" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
+              <option>Giữa học kỳ 1</option>
+              <option>Cuối học kỳ 1</option>
+              <option>Giữa học kỳ 2</option>
+              <option>Cuối học kỳ 2 (Cuối năm)</option>
+            </select>
+          </div>
+          <button class="btn-primary" style="margin-top:10px;width:100%;" onclick="loadDanhGiaForm()">Tải phiếu đánh giá</button>
+        </div>
+        <div id="dgFormArea"></div>
+      </div>
+
+      <div id="dgView-theodoi" style="display:none;">
+        <div class="task-form">
+          <div class="task-form-row">
+            <select id="txHocSinh" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);" onchange="loadTxEntries()"></select>
+            <input type="date" id="txNgay" style="flex:1;">
+          </div>
+          <div class="hs-grid" style="margin-top:10px;">
+            <div class="hs-field"><label>Môn học / Hoạt động</label><input type="text" id="txMonHoc" placeholder="vd: Tiếng Việt"></div>
+            <div class="hs-field"><label>Nội dung</label><input type="text" id="txNoiDung" placeholder="vd: KT đọc giữa kỳ I"></div>
+          </div>
+          <div class="hs-grid">
+            <div class="hs-field"><label>Mức (không bắt buộc)</label>
+              <select id="txMuc" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
+                <option value="">-- Không --</option>
+                <option value="T">T</option><option value="H">H</option><option value="C">C</option>
+              </select>
+            </div>
+            <div class="hs-field"><label>Điểm (không bắt buộc)</label><input type="number" id="txDiem" min="0" max="10" step="0.5"></div>
+          </div>
+          <div class="hs-field" style="margin:10px 0;">
+            <label>Nhận xét</label>
+            <textarea id="txNhanXet" rows="2" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;"></textarea>
+          </div>
+          <button class="btn-primary" style="width:100%;" onclick="addNhanXetTX()">+ Thêm ghi nhận</button>
+        </div>
+        <div id="txList"><div class="empty">Chọn học sinh để xem sổ theo dõi</div></div>
+      </div>
+
+      <div id="dgView-tonghop" style="display:none;">
+        <div class="task-form">
+          <div class="task-form-row">
+            <select id="thHocSinh" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);"></select>
+            <select id="thKy" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
+              <option>Giữa học kỳ 1</option>
+              <option>Cuối học kỳ 1</option>
+              <option>Giữa học kỳ 2</option>
+              <option>Cuối học kỳ 2 (Cuối năm)</option>
+            </select>
+          </div>
+          <div class="task-form-row" style="margin-top:10px;">
+            <input type="date" id="thTuNgay" title="Từ ngày (tính chuyên cần)">
+            <input type="date" id="thDenNgay" title="Đến ngày (tính chuyên cần)">
+          </div>
+          <button class="btn-primary" style="margin-top:10px;width:100%;" onclick="loadTongHopKy()">Tổng hợp</button>
+        </div>
+        <div id="thArea"></div>
+      </div>
     </div>
   </div>
 
   <div id="tab-hocsinh" style="display:none;">
     <div id="hsListView">
-      <button class="btn-primary" style="margin-bottom:14px;" onclick="openHsEditor(null)">+ Thêm học sinh mới</button>
+      <div class="modal-actions" style="justify-content:flex-start; margin-bottom:14px;">
+        <button class="btn-primary" onclick="openHsEditor(null)">+ Thêm học sinh mới</button>
+        <label class="hint" style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="hsShowArchived" onchange="renderHocSinhTable()"> Hiện cả học sinh đã chuyển lớp
+        </label>
+      </div>
       <div class="table-scroll">
         <table class="hs-table" id="hsTable">
           <thead>
             <tr>
-              <th>Mã HS</th><th>Họ tên</th><th>Ngày sinh</th><th>Nơi sinh</th><th>Địa chỉ</th>
-              <th>Tên bố</th><th>SĐT bố</th><th>Tên mẹ</th><th>SĐT mẹ</th><th></th>
+              <th>Mã HS</th><th>Họ tên</th><th>Giới tính</th><th>Ngày sinh</th><th>Nơi sinh</th><th>Địa chỉ</th>
+              <th>Tên bố</th><th>SĐT bố</th><th>Tên mẹ</th><th>SĐT mẹ</th><th>Đối tượng</th><th>Trạng thái</th><th></th>
             </tr>
           </thead>
-          <tbody id="hsTableBody"><tr><td colspan="10" class="empty">Đang tải…</td></tr></tbody>
+          <tbody id="hsTableBody"><tr><td colspan="13" class="empty">Đang tải…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -875,7 +938,25 @@
         </div>
         <div class="hs-grid">
           <div class="hs-field"><label>Ngày sinh</label><input type="text" id="hsNgaySinh" placeholder="vd: 15/03/2018"></div>
+          <div class="hs-field"><label>Giới tính</label>
+            <select id="hsGioiTinh" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
+              <option value="">-- Chọn --</option>
+              <option value="Nam">Nam</option>
+              <option value="Nữ">Nữ</option>
+            </select>
+          </div>
+        </div>
+        <div class="hs-grid">
           <div class="hs-field"><label>Nơi sinh</label><input type="text" id="hsNoiSinh"></div>
+          <div class="hs-field"><label>Đối tượng (nếu có)</label>
+            <select id="hsDoiTuong" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
+              <option value="">-- Không --</option>
+              <option value="HSKT">HSKT (khuyết tật)</option>
+              <option value="HT đặc biệt">Hoàn cảnh đặc biệt</option>
+              <option value="HS dân tộc thiểu số">HS dân tộc thiểu số</option>
+              <option value="HS khó khăn">HS khó khăn</option>
+            </select>
+          </div>
         </div>
         <div class="hs-grid full">
           <div class="hs-field"><label>Địa chỉ</label><input type="text" id="hsDiaChi"></div>
@@ -887,6 +968,15 @@
         <div class="hs-grid">
           <div class="hs-field"><label>Tên mẹ</label><input type="text" id="hsTenMe"></div>
           <div class="hs-field"><label>SĐT mẹ</label><input type="text" id="hsSdtMe"></div>
+        </div>
+        <div class="hs-grid">
+          <div class="hs-field"><label>Năm học</label><input type="text" id="hsNamHoc" placeholder="vd: 2026-2027"></div>
+          <div class="hs-field"><label>Trạng thái</label>
+            <select id="hsTrangThai" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
+              <option value="DangHoc">Đang học</option>
+              <option value="DaChuyenLop">Đã chuyển lớp / nghỉ</option>
+            </select>
+          </div>
         </div>
       </div>
       <div class="modal-actions" style="justify-content:flex-start;">
@@ -1175,6 +1265,8 @@
     <p class="hint">Dán URL Web App (Apps Script) đã deploy — xem hướng dẫn trong file Code.gs.</p>
     <input type="url" id="webAppUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
     <input type="text" id="classNameInput" placeholder="Tên lớp (vd: 3A - Trường TH ABC)">
+    <input type="text" id="namHocInput" placeholder="Năm học hiện tại (vd: 2026-2027)">
+    <p class="hint">Tên lớp và Năm học được đồng bộ qua mọi thiết bị (lưu trên Sheet), không cần nhập lại mỗi máy.</p>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeSettings()">Đóng</button>
       <button class="btn-primary" onclick="saveSettings()">Lưu</button>
@@ -1218,17 +1310,44 @@ document.getElementById('className').textContent = localStorage.getItem('sdd_cla
 function openSettings(){
   document.getElementById('webAppUrlInput').value = webAppUrl;
   document.getElementById('classNameInput').value = localStorage.getItem('sdd_className') || '';
+  document.getElementById('namHocInput').value = localStorage.getItem('sdd_namHoc') || '';
   document.getElementById('settingsOverlay').style.display = 'flex';
 }
 function closeSettings(){ document.getElementById('settingsOverlay').style.display = 'none'; }
-function saveSettings(){
+async function saveSettings(){
   webAppUrl = document.getElementById('webAppUrlInput').value.trim();
   const cName = document.getElementById('classNameInput').value.trim();
+  const namHoc = document.getElementById('namHocInput').value.trim();
   localStorage.setItem('sdd_webAppUrl', webAppUrl);
   localStorage.setItem('sdd_className', cName);
+  localStorage.setItem('sdd_namHoc', namHoc);
   document.getElementById('className').textContent = cName || 'Chưa đặt tên lớp';
   closeSettings();
   loadStudents();
+  try{
+    await apiPost({ action:'saveCaiDat', settings:{ TenLop: cName, NamHocHienTai: namHoc } });
+  }catch(err){
+    // Không chặn người dùng nếu đồng bộ lỗi — dữ liệu vẫn dùng được cục bộ trên máy này
+  }
+}
+
+/**
+ * Đồng bộ Tên lớp/Năm học từ server khi mở app trên thiết bị mới (localStorage
+ * trống). Nếu server cũng chưa có gì, giữ nguyên như cũ, không báo lỗi.
+ */
+async function syncCaiDatFromServer(){
+  try{
+    const settings = await apiGet('getCaiDat');
+    if(settings && settings.TenLop && !localStorage.getItem('sdd_className')){
+      localStorage.setItem('sdd_className', settings.TenLop);
+      document.getElementById('className').textContent = settings.TenLop;
+    }
+    if(settings && settings.NamHocHienTai && !localStorage.getItem('sdd_namHoc')){
+      localStorage.setItem('sdd_namHoc', settings.NamHocHienTai);
+    }
+  }catch(err){
+    // bỏ qua nếu chưa cài Web App URL hoặc lỗi mạng — không chặn app
+  }
 }
 
 let diemDanhSubTab = 'diemdanh';
@@ -2012,10 +2131,25 @@ function fillDgStudentSelect(){
   const sel = document.getElementById('dgHocSinh');
   if(!students.length){
     sel.innerHTML = '<option value="">(chưa có danh sách học sinh)</option>';
+    document.getElementById('txHocSinh').innerHTML = sel.innerHTML;
+    document.getElementById('thHocSinh').innerHTML = sel.innerHTML;
     return;
   }
-  sel.innerHTML = students.map(s=>`<option value="${s.maHS}">${s.hoTen}</option>`).join('');
+  const optionsHtml = students.map(s=>`<option value="${s.maHS}">${s.hoTen}</option>`).join('');
+  sel.innerHTML = optionsHtml;
+  document.getElementById('txHocSinh').innerHTML = optionsHtml;
+  document.getElementById('thHocSinh').innerHTML = optionsHtml;
   dgStudentsFilled = true;
+}
+
+function onDgViewTypeChange(){
+  const type = document.getElementById('dgViewType').value;
+  document.getElementById('dgView-theoky').style.display = type==='theoky' ? '' : 'none';
+  document.getElementById('dgView-theodoi').style.display = type==='theodoi' ? '' : 'none';
+  document.getElementById('dgView-tonghop').style.display = type==='tonghop' ? '' : 'none';
+  if(type==='theodoi' && !document.getElementById('txNgay').value){
+    document.getElementById('txNgay').value = todayStr();
+  }
 }
 
 function ratingRowHtml(loai, ten, mucOptions){
@@ -2169,28 +2303,33 @@ function tenSapXep(hoTen){
 
 async function loadHocSinhFull(){
   const tbody = document.getElementById('hsTableBody');
-  tbody.innerHTML = '<tr><td colspan="10" class="empty">Đang tải…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="13" class="empty">Đang tải…</td></tr>';
   try{
     hocSinhFull = await apiGet('getStudentsFull');
     hocSinhLoaded = true;
     renderHocSinhTable();
   }catch(err){
-    tbody.innerHTML = `<tr><td colspan="10" class="empty">Lỗi tải dữ liệu: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="13" class="empty">Lỗi tải dữ liệu: ${err.message}</td></tr>`;
   }
 }
 
 function renderHocSinhTable(){
   const tbody = document.getElementById('hsTableBody');
-  if(!hocSinhFull.length){
-    tbody.innerHTML = '<tr><td colspan="10" class="empty">Chưa có học sinh nào.</td></tr>';
+  const showArchived = document.getElementById('hsShowArchived').checked;
+  const visible = showArchived ? hocSinhFull : hocSinhFull.filter(s => (s.trangThai||'DangHoc') === 'DangHoc');
+  if(!visible.length){
+    tbody.innerHTML = '<tr><td colspan="13" class="empty">Chưa có học sinh nào.</td></tr>';
     return;
   }
-  const sorted = hocSinhFull
-    .map((s, idx) => ({ s, idx }))
+  const sorted = visible
+    .map(s => ({ s, idx: hocSinhFull.indexOf(s) }))
     .sort((a, b) => tenSapXep(a.s.hoTen).localeCompare(tenSapXep(b.s.hoTen), 'vi'));
-  tbody.innerHTML = sorted.map(({s, idx})=>`<tr>
+  tbody.innerHTML = sorted.map(({s, idx})=>{
+    const daChuyen = (s.trangThai||'DangHoc') !== 'DangHoc';
+    return `<tr style="${daChuyen ? 'opacity:0.55;' : ''}">
       <td>${s.maHS}</td>
       <td class="name">${s.hoTen}</td>
+      <td>${s.gioiTinh||''}</td>
       <td>${s.ngaySinh||''}</td>
       <td>${s.noiSinh||''}</td>
       <td>${s.diaChi||''}</td>
@@ -2198,15 +2337,19 @@ function renderHocSinhTable(){
       <td>${s.sdtBo||''}</td>
       <td>${s.tenMe||''}</td>
       <td>${s.sdtMe||''}</td>
+      <td>${s.doiTuong||''}</td>
+      <td>${daChuyen ? 'Đã chuyển lớp' : 'Đang học'}</td>
       <td><button class="edit-link" onclick="openHsEditor(${idx})">Sửa</button></td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
 
 function openHsEditor(idx){
   hsEditingIdx = idx;
   document.getElementById('hsListView').style.display = 'none';
   document.getElementById('hsEditorView').style.display = '';
-  const s = (idx !== null) ? hocSinhFull[idx] : { maHS:'', hoTen:'', ngaySinh:'', noiSinh:'', diaChi:'', tenBo:'', sdtBo:'', tenMe:'', sdtMe:'' };
+  const namHocMacDinh = localStorage.getItem('sdd_namHoc') || '';
+  const s = (idx !== null) ? hocSinhFull[idx] : { maHS:'', hoTen:'', ngaySinh:'', noiSinh:'', diaChi:'', tenBo:'', sdtBo:'', tenMe:'', sdtMe:'', namHoc:namHocMacDinh, trangThai:'DangHoc', gioiTinh:'', doiTuong:'' };
   document.getElementById('hsMaHS').value = s.maHS;
   document.getElementById('hsHoTen').value = s.hoTen;
   document.getElementById('hsNgaySinh').value = s.ngaySinh;
@@ -2216,6 +2359,10 @@ function openHsEditor(idx){
   document.getElementById('hsSdtBo').value = s.sdtBo;
   document.getElementById('hsTenMe').value = s.tenMe;
   document.getElementById('hsSdtMe').value = s.sdtMe;
+  document.getElementById('hsNamHoc').value = s.namHoc || namHocMacDinh;
+  document.getElementById('hsTrangThai').value = s.trangThai || 'DangHoc';
+  document.getElementById('hsGioiTinh').value = s.gioiTinh || '';
+  document.getElementById('hsDoiTuong').value = s.doiTuong || '';
 }
 
 function closeHsEditor(){
@@ -2233,11 +2380,22 @@ async function saveHsEditor(){
     tenBo: document.getElementById('hsTenBo').value.trim(),
     sdtBo: document.getElementById('hsSdtBo').value.trim(),
     tenMe: document.getElementById('hsTenMe').value.trim(),
-    sdtMe: document.getElementById('hsSdtMe').value.trim()
+    sdtMe: document.getElementById('hsSdtMe').value.trim(),
+    namHoc: document.getElementById('hsNamHoc').value.trim(),
+    trangThai: document.getElementById('hsTrangThai').value,
+    gioiTinh: document.getElementById('hsGioiTinh').value,
+    doiTuong: document.getElementById('hsDoiTuong').value
   };
   if(!record.maHS || !record.hoTen){
     alert('Cần nhập Mã HS và Họ tên.');
     return;
+  }
+  if(hsEditingIdx === null){
+    // Học sinh mới: kiểm tra Mã HS không trùng với học sinh đã có (kể cả học sinh cũ đã chuyển lớp)
+    const trung = hocSinhFull.some(s => s.maHS === record.maHS);
+    if(trung && !confirm('Mã HS "' + record.maHS + '" đã tồn tại (có thể là học sinh năm học trước). Vẫn dùng mã này và có thể làm lẫn dữ liệu cũ?\n\nBấm Hủy để đổi mã khác, hoặc OK để tiếp tục.')){
+      return;
+    }
   }
   try{
     await apiPost({ action:'saveStudentFull', record });
@@ -3494,6 +3652,212 @@ async function deleteKtlRecord(id){
   }
 }
 
+/* ---------- Sổ theo dõi nhận xét (đánh giá thường xuyên) ---------- */
+
+let txRecords = [];
+let txLoaded = false;
+
+async function loadTxEntries(){
+  const maHS = document.getElementById('txHocSinh').value;
+  const listEl = document.getElementById('txList');
+  if(!maHS){ listEl.innerHTML = ''; return; }
+  listEl.innerHTML = '<div class="empty">Đang tải…</div>';
+  try{
+    txRecords = await apiGet('getNhanXetTX');
+    txLoaded = true;
+    renderTxList();
+  }catch(err){
+    listEl.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
+  }
+}
+
+function renderTxList(){
+  const maHS = document.getElementById('txHocSinh').value;
+  const listEl = document.getElementById('txList');
+  const entries = txRecords.filter(e=>e.maHS===maHS).sort((a,b)=> b.ngay.localeCompare(a.ngay));
+  if(!entries.length){
+    listEl.innerHTML = '<div class="empty">Chưa có ghi nhận nào cho học sinh này.</div>';
+    return;
+  }
+  listEl.innerHTML = entries.map(e=>`<div class="sll-entry">
+    <div>
+      <div class="sll-date">${e.ngay}${e.monHoc ? ' — '+e.monHoc : ''}${e.muc ? ' — Mức '+e.muc : ''}${e.diem ? ' — Điểm '+e.diem : ''}</div>
+      <div class="sll-text">${e.noiDung ? '<b>'+e.noiDung+':</b> ' : ''}${e.nhanXet||''}</div>
+    </div>
+    <button class="task-del" onclick="deleteTxEntry('${e.id}')">✕</button>
+  </div>`).join('');
+}
+
+async function addNhanXetTX(){
+  const maHS = document.getElementById('txHocSinh').value;
+  const ngay = document.getElementById('txNgay').value || todayStr();
+  const monHoc = document.getElementById('txMonHoc').value.trim();
+  const noiDung = document.getElementById('txNoiDung').value.trim();
+  const muc = document.getElementById('txMuc').value;
+  const diem = document.getElementById('txDiem').value;
+  const nhanXet = document.getElementById('txNhanXet').value.trim();
+  if(!maHS){ alert('Chọn học sinh trước.'); return; }
+  if(!noiDung && !nhanXet){ alert('Nhập ít nhất Nội dung hoặc Nhận xét.'); return; }
+  const entry = { id: String(Date.now()), maHS, ngay, monHoc, noiDung, muc, diem, nhanXet };
+  txRecords.push(entry);
+  renderTxList();
+  document.getElementById('txMonHoc').value = '';
+  document.getElementById('txNoiDung').value = '';
+  document.getElementById('txMuc').value = '';
+  document.getElementById('txDiem').value = '';
+  document.getElementById('txNhanXet').value = '';
+  try{
+    await apiPost({ action:'saveNhanXetTX', record: entry });
+  }catch(err){
+    alert('Lỗi lưu: ' + err.message);
+  }
+}
+
+async function deleteTxEntry(id){
+  if(!confirm('Xóa ghi nhận này?')) return;
+  txRecords = txRecords.filter(e=>e.id!==id);
+  renderTxList();
+  try{
+    await apiPost({ action:'deleteNhanXetTX', id });
+  }catch(err){
+    alert('Lỗi xóa: ' + err.message);
+  }
+}
+
+/* ---------- Tổng hợp cuối kỳ/năm (liên kết Điểm danh + Bảng điểm + Đánh giá TT27) ---------- */
+
+let thLastData = null;
+
+async function loadTongHopKy(){
+  const maHS = document.getElementById('thHocSinh').value;
+  const ky = document.getElementById('thKy').value;
+  const tuNgay = document.getElementById('thTuNgay').value;
+  const denNgay = document.getElementById('thDenNgay').value;
+  const area = document.getElementById('thArea');
+  if(!maHS){ alert('Chọn học sinh trước.'); return; }
+  area.innerHTML = '<div class="empty">Đang tổng hợp…</div>';
+  try{
+    const [allAttendance, allBangDiem, allDanhGia] = await Promise.all([
+      apiGet('getAllAttendance'),
+      apiGet('getBangDiem'),
+      apiGet('getDanhGia')
+    ]);
+    const student = students.find(s=>s.maHS===maHS);
+    const hoTen = student ? student.hoTen : maHS;
+
+    // Chuyên cần trong khoảng ngày đã chọn (nếu có chọn)
+    let diemDanh = allAttendance.filter(r=>r.maHS===maHS);
+    if(tuNgay) diemDanh = diemDanh.filter(r=>r.ngay >= tuNgay);
+    if(denNgay) diemDanh = diemDanh.filter(r=>r.ngay <= denNgay);
+    const chuyenCan = { coMat:0, tre:0, vangPhep:0, vangKP:0 };
+    diemDanh.forEach(r=>{
+      if(r.trangThai==='CoMat') chuyenCan.coMat++;
+      else if(r.trangThai==='Tre'){ chuyenCan.tre++; chuyenCan.coMat++; }
+      else if(r.trangThai==='VangPhep') chuyenCan.vangPhep++;
+      else if(r.trangThai==='VangKP') chuyenCan.vangKP++;
+    });
+
+    // Bảng điểm của học sinh này, theo kỳ đang chọn
+    const diemCacMon = allBangDiem.filter(r=>r.maHS===maHS && r.ky===ky);
+
+    // Đánh giá TT27 của học sinh này, theo kỳ đang chọn
+    const danhGia = allDanhGia.filter(r=>r.maHS===maHS && r.ky===ky);
+    const monHocDG = danhGia.filter(r=>r.loai==='MonHoc');
+    const phamChat = danhGia.filter(r=>r.loai==='PhamChat');
+    const nangLuc = danhGia.filter(r=>r.loai==='NangLuc');
+    const tongHopMuc = danhGia.find(r=>r.loai==='TongHop' && r.tenTieuChi==='Muc');
+    const khenThuong = danhGia.find(r=>r.loai==='TongHop' && r.tenTieuChi==='KhenThuong');
+
+    // Gộp điểm số vào từng môn học (nếu Bảng điểm có ghi điểm cho môn đó)
+    const monHocKetHop = monHocDG.map(m=>{
+      const diemRec = diemCacMon.find(d=>d.monHoc===m.tenTieuChi);
+      return { ten: m.tenTieuChi, muc: m.muc, diem: diemRec ? diemRec.diem : '', nhanXet: m.nhanXet };
+    });
+    // Thêm các môn có điểm nhưng chưa có trong Đánh giá TT27 (tránh sót dữ liệu)
+    diemCacMon.forEach(d=>{
+      if(!monHocKetHop.find(m=>m.ten===d.monHoc)){
+        monHocKetHop.push({ ten:d.monHoc, muc:'', diem:d.diem, nhanXet:'' });
+      }
+    });
+
+    thLastData = { hoTen, maHS, ky, tuNgay, denNgay, chuyenCan, monHocKetHop, phamChat, nangLuc, tongHopMuc, khenThuong };
+
+    const rowsHtml = (items) => items.map(r=>`<tr><td>${r.tenTieuChi}</td><td style="text-align:center;">${r.muc}</td><td>${r.nhanXet||''}</td></tr>`).join('');
+
+    area.innerHTML = `
+      <div class="hc-card">
+        <div class="hc-title" style="margin-bottom:10px;">${hoTen} — ${ky}</div>
+
+        <div class="dg-section-title">Chuyên cần${tuNgay||denNgay ? ' ('+(tuNgay||'…')+' → '+(denNgay||'…')+')' : ' (toàn bộ dữ liệu)'}</div>
+        <p style="font-size:0.85rem;">Có mặt: <b>${chuyenCan.coMat}</b> buổi (trong đó đi trễ: ${chuyenCan.tre}) — Vắng phép: <b>${chuyenCan.vangPhep}</b> — Vắng không phép: <b>${chuyenCan.vangKP}</b></p>
+
+        <div class="dg-section-title">Môn học và hoạt động giáo dục</div>
+        <table class="stats"><thead><tr><th>Môn học</th><th>Mức</th><th>Điểm</th><th>Nhận xét</th></tr></thead>
+        <tbody>${monHocKetHop.map(m=>`<tr><td class="name">${m.ten}</td><td style="text-align:center;">${m.muc}</td><td style="text-align:center;">${m.diem}</td><td>${m.nhanXet||''}</td></tr>`).join('') || '<tr><td colspan="4" class="empty">Chưa có dữ liệu</td></tr>'}</tbody></table>
+
+        <div class="dg-section-title">Phẩm chất</div>
+        <table class="stats"><thead><tr><th>Tiêu chí</th><th>Mức</th><th>Nhận xét</th></tr></thead>
+        <tbody>${rowsHtml(phamChat) || '<tr><td colspan="3" class="empty">Chưa có dữ liệu</td></tr>'}</tbody></table>
+
+        <div class="dg-section-title">Năng lực</div>
+        <table class="stats"><thead><tr><th>Tiêu chí</th><th>Mức</th><th>Nhận xét</th></tr></thead>
+        <tbody>${rowsHtml(nangLuc) || '<tr><td colspan="3" class="empty">Chưa có dữ liệu</td></tr>'}</tbody></table>
+
+        <div class="dg-section-title">Tổng hợp</div>
+        <p style="font-size:0.85rem;"><b>Mức đạt được:</b> ${tongHopMuc ? tongHopMuc.muc : '(chưa nhập ở Đánh giá theo kỳ)'}<br>
+        <b>Khen thưởng:</b> ${khenThuong ? khenThuong.nhanXet : '(chưa nhập)'}</p>
+
+        <div class="modal-actions" style="justify-content:flex-start;margin-top:10px;">
+          <button class="copy-btn" onclick="printTongHopKy()">🖨 In phiếu tổng hợp</button>
+        </div>
+      </div>`;
+  }catch(err){
+    area.innerHTML = '<div class="empty">Lỗi: '+err.message+'</div>';
+  }
+}
+
+function printTongHopKy(){
+  if(!thLastData) return;
+  const d = thLastData;
+  const className = localStorage.getItem('sdd_className') || '';
+  const rowsHtml = (items) => items.map(r=>`<tr><td>${r.tenTieuChi}</td><td style="text-align:center;">${r.muc}</td><td>${r.nhanXet||''}</td></tr>`).join('');
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8">
+    <title>Tổng hợp - ${d.hoTen}</title>
+    <style>
+      body{ font-family:'Times New Roman', serif; padding:40px; line-height:1.5; color:#111; }
+      h1{ font-size:18px; text-align:center; text-transform:uppercase; margin-bottom:4px; }
+      h2{ font-size:14px; text-align:center; font-weight:normal; margin-bottom:16px; }
+      h3{ font-size:14px; margin:16px 0 6px; }
+      table{ width:100%; border-collapse:collapse; font-size:13px; margin-bottom:10px; }
+      th, td{ border:1px solid #999; padding:6px; text-align:left; }
+      th{ background:#eee; }
+    </style></head><body>
+    <h1>Bảng tổng hợp kết quả đánh giá giáo dục</h1>
+    <h2>${d.hoTen} (${d.maHS})${className?' — Lớp '+className:''} — ${d.ky}</h2>
+
+    <h3>Chuyên cần</h3>
+    <p>Có mặt: ${d.chuyenCan.coMat} buổi (đi trễ: ${d.chuyenCan.tre}) — Vắng phép: ${d.chuyenCan.vangPhep} — Vắng không phép: ${d.chuyenCan.vangKP}</p>
+
+    <h3>Môn học và hoạt động giáo dục</h3>
+    <table><thead><tr><th>Môn học</th><th>Mức</th><th>Điểm</th><th>Nhận xét</th></tr></thead>
+    <tbody>${d.monHocKetHop.map(m=>`<tr><td>${m.ten}</td><td style="text-align:center;">${m.muc}</td><td style="text-align:center;">${m.diem}</td><td>${m.nhanXet||''}</td></tr>`).join('')}</tbody></table>
+
+    <h3>Phẩm chất</h3>
+    <table><thead><tr><th>Tiêu chí</th><th>Mức</th><th>Nhận xét</th></tr></thead><tbody>${rowsHtml(d.phamChat)}</tbody></table>
+
+    <h3>Năng lực</h3>
+    <table><thead><tr><th>Tiêu chí</th><th>Mức</th><th>Nhận xét</th></tr></thead><tbody>${rowsHtml(d.nangLuc)}</tbody></table>
+
+    <h3>Tổng hợp</h3>
+    <p><b>Mức đạt được:</b> ${d.tongHopMuc ? d.tongHopMuc.muc : ''}</p>
+    <p><b>Khen thưởng:</b> ${d.khenThuong ? d.khenThuong.nhanXet : ''}</p>
+    </body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(), 300);
+}
+
+syncCaiDatFromServer();
 loadStudents();
 switchTab('lichcongtac');
 </script>
