@@ -977,7 +977,7 @@
   <div id="tab-radekt" style="display:none;">
     <div class="sub-tabs">
       <div class="sub-tab active" data-subtab="rade" onclick="switchRdSubTab('rade')">Ra đề</div>
-      <div class="sub-tab" data-subtab="chambaiai" onclick="switchRdSubTab('chambaiai')">Chấm bài AI</div>
+      <div class="sub-tab" data-subtab="chambaiai" onclick="switchRdSubTab('chambaiai')">Tổng hợp bài đã chấm</div>
       <div class="sub-tab" data-subtab="bangdiem" onclick="switchRdSubTab('bangdiem')">Bảng điểm</div>
       <div class="sub-tab" data-subtab="khobai" onclick="switchRdSubTab('khobai')">Kho bài kiểm tra</div>
     </div>
@@ -1020,7 +1020,7 @@
     </div>
 
     <div id="rdSub-chambaiai" style="display:none;">
-      <p class="hint" style="margin-bottom:12px;">Tải ảnh chụp hoặc file PDF bài kiểm tra lên, AI đọc và đề xuất điểm + nhận xét — chỉ lưu vào bảng điểm sau khi bạn xem lại và bấm Lưu cho từng bài.</p>
+      <p class="hint" style="margin-bottom:12px;">Dành cho bài đã được bạn chấm điểm sẵn trên giấy. Tải ảnh/PDF lên, AI chỉ đọc lại điểm và nhận xét bạn đã ghi (không tự chấm đúng/sai) để tổng hợp vào bảng điểm — bạn xem lại và bấm Lưu cho từng bài.</p>
       <div class="task-form">
         <div class="hs-grid">
           <div class="hs-field"><label>Môn học</label><input type="text" id="cbMonHoc" placeholder="vd: Toán"></div>
@@ -1032,11 +1032,7 @@
           </select>
         </div>
         <div class="hs-field" style="margin-bottom:10px;">
-          <label>Đáp án mẫu / tiêu chí chấm (không bắt buộc, giúp AI chấm chính xác hơn)</label>
-          <textarea id="cbDapAn" rows="2" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.88rem;"></textarea>
-        </div>
-        <div class="hs-field" style="margin-bottom:10px;">
-          <label>Ảnh hoặc PDF bài kiểm tra (chọn được nhiều file cùng lúc)</label>
+          <label>Ảnh hoặc PDF bài kiểm tra đã chấm (chọn được nhiều file cùng lúc)</label>
           <input type="file" id="cbFiles" accept="image/*,.pdf" multiple style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--paper-line);background:#fff;">
         </div>
         <div class="hs-field" style="margin-bottom:10px;">
@@ -1044,7 +1040,7 @@
           <input type="password" id="cbApiKey" placeholder="Dán API key từ Google AI Studio">
         </div>
         <div class="modal-actions" style="justify-content:flex-start;">
-          <button class="btn-export" onclick="chamBaiAI()" id="cbGenBtn">✨ Đọc &amp; chấm bằng AI</button>
+          <button class="btn-export" onclick="chamBaiAI()" id="cbGenBtn">✨ Đọc điểm bằng AI</button>
           <span id="cbGenStatus" class="hint" style="align-self:center;"></span>
         </div>
       </div>
@@ -2700,7 +2696,7 @@ function printRdRecord(id){
   setTimeout(()=>w.print(), 300);
 }
 
-/* ---------- Chấm bài AI từ ảnh/PDF ---------- */
+/* ---------- Tổng hợp bài đã chấm (đọc điểm từ ảnh/PDF) ---------- */
 
 let cbResultItems = []; // { fileName, hoTenGoiY, maHS, nhanXet, diem, saved }
 
@@ -2754,7 +2750,6 @@ async function chamBaiAI(){
   const resultEl = document.getElementById('cbResult');
   const apiKey = document.getElementById('cbApiKey').value.trim();
   const monHoc = document.getElementById('cbMonHoc').value.trim();
-  const dapAn = document.getElementById('cbDapAn').value.trim();
   const files = [...document.getElementById('cbFiles').files];
   if(!apiKey){ alert('Cần dán Gemini API key trước.'); return; }
   if(!files.length){ alert('Chọn ít nhất 1 ảnh hoặc file PDF bài kiểm tra.'); return; }
@@ -2766,11 +2761,11 @@ async function chamBaiAI(){
   cbResultItems = [];
   resultEl.innerHTML = '';
 
-  const promptText = `Bạn là giáo viên tiểu học Việt Nam. Đây là ảnh/PDF chụp bài kiểm tra${monHoc ? ' môn ' + monHoc : ''} một học sinh đã làm.
-${dapAn ? 'Đáp án/tiêu chí chấm tham khảo: """' + dapAn + '"""\n' : ''}
-Hãy đọc kỹ bài làm trong ảnh, rồi trả về DUY NHẤT một đối tượng JSON đúng định dạng sau, không thêm chữ nào khác ngoài JSON:
-{"hoTenHocSinh": "tên học sinh đọc được trên bài, để chuỗi rỗng nếu không thấy", "nhanXet": "nhận xét ngắn gọn, nêu điểm tốt và điểm cần cải thiện", "diem": "điểm số đề xuất trên thang 10, chỉ ghi số"}
-Đây chỉ là gợi ý tham khảo, giáo viên sẽ xem lại và quyết định điểm cuối cùng.`;
+  const promptText = `Đây là ảnh/PDF chụp một bài kiểm tra${monHoc ? ' môn ' + monHoc : ''} ĐÃ ĐƯỢC GIÁO VIÊN CHẤM ĐIỂM SẴN bằng tay trên giấy. Nhiệm vụ của bạn KHÔNG PHẢI là tự chấm hay đánh giá đúng/sai — chỉ đọc lại đúng những gì giáo viên đã viết trên bài (điểm số đã cho, và lời nhận xét/phê nếu có).
+
+Hãy trả về DUY NHẤT một đối tượng JSON đúng định dạng sau, không thêm chữ nào khác ngoài JSON:
+{"hoTenHocSinh": "tên học sinh ghi trên bài, để chuỗi rỗng nếu không thấy", "nhanXet": "lời phê/nhận xét giáo viên đã viết trên bài, để chuỗi rỗng nếu không có", "diem": "điểm số giáo viên đã chấm, chỉ ghi số, để chuỗi rỗng nếu không đọc được"}
+Nếu không tìm thấy điểm số hoặc chữ viết tay không rõ ràng, để trống thay vì đoán bừa.`;
 
   for(let i=0; i<files.length; i++){
     const file = files[i];
@@ -2791,7 +2786,7 @@ Hãy đọc kỹ bài làm trong ảnh, rồi trả về DUY NHẤT một đối
     }
     renderCbResults();
   }
-  status.textContent = `✓ Đã xử lý ${files.length} file — kiểm tra lại từng bài trước khi lưu`;
+  status.textContent = `✓ Đã đọc ${files.length} file — kiểm tra lại từng bài trước khi lưu (chữ viết tay có thể đọc sai)`;
   document.getElementById('cbGenBtn').disabled = false;
 }
 
@@ -2996,7 +2991,7 @@ function renderKhoBaiList(){
   const filter = document.getElementById('khoHocSinhFilter').value;
   const filtered = filter ? khoBaiRecords.filter(r=>r.maHS===filter) : khoBaiRecords;
   if(!filtered.length){
-    el.innerHTML = '<div class="empty">Chưa có bài kiểm tra nào được lưu. Lưu từ tab "Chấm bài AI" để bắt đầu tích lũy kho.</div>';
+    el.innerHTML = '<div class="empty">Chưa có bài kiểm tra nào được lưu. Lưu từ tab "Tổng hợp bài đã chấm" để bắt đầu tích lũy kho.</div>';
     return;
   }
   const sorted = [...filtered].sort((a,b)=> (b.ngay||'').localeCompare(a.ngay||''));
