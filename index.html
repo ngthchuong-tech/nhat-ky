@@ -697,6 +697,7 @@
   <div class="tab" data-tab="hocsinh" onclick="switchTab('hocsinh')">Học sinh</div>
   <div class="tab" data-tab="phieubaitap" onclick="switchTab('phieubaitap')">Phiếu bài tập Toán</div>
   <div class="tab" data-tab="giaoan" onclick="switchTab('giaoan')">Soạn giáo án</div>
+  <div class="tab" data-tab="radekt" onclick="switchTab('radekt')">Ra đề &amp; Chấm điểm</div>
 </div>
 
 <main>
@@ -972,6 +973,94 @@
       </div>
     </div>
   </div>
+
+  <div id="tab-radekt" style="display:none;">
+    <div class="sub-tabs">
+      <div class="sub-tab active" data-subtab="rade" onclick="switchRdSubTab('rade')">Ra đề</div>
+      <div class="sub-tab" data-subtab="chambaiai" onclick="switchRdSubTab('chambaiai')">Chấm bài AI</div>
+      <div class="sub-tab" data-subtab="bangdiem" onclick="switchRdSubTab('bangdiem')">Bảng điểm</div>
+    </div>
+
+    <div id="rdSub-rade">
+      <div id="rdListView">
+        <button class="btn-primary" style="margin-bottom:14px;" onclick="openRdEditor(null)">+ Soạn đề mới</button>
+        <div id="rdList"><div class="empty">Đang tải…</div></div>
+      </div>
+
+      <div id="rdEditorView" style="display:none;">
+        <div class="task-form">
+          <div class="hs-grid">
+            <div class="hs-field"><label>Môn học</label><input type="text" id="rdMonHoc" placeholder="vd: Toán"></div>
+            <div class="hs-field"><label>Lớp</label><input type="text" id="rdLop" placeholder="vd: 2"></div>
+          </div>
+          <div class="hs-field" style="margin-bottom:10px;">
+            <label>Chủ đề / phạm vi ôn tập</label>
+            <input type="text" id="rdChuDe" placeholder="vd: Phép cộng trừ trong phạm vi 100, có nhớ">
+          </div>
+          <div class="hs-field" style="margin-bottom:10px;">
+            <label>Yêu cầu thêm (không bắt buộc)</label>
+            <input type="text" id="rdYeuCau" placeholder="vd: 5 câu trắc nghiệm, 3 câu tự luận, có 1 câu vận dụng cao">
+          </div>
+          <div class="hs-field" style="margin-bottom:10px;">
+            <label>Gemini API key (dùng chung cho các tính năng AI trong app)</label>
+            <input type="password" id="rdApiKey" placeholder="Dán API key từ Google AI Studio">
+          </div>
+          <div class="modal-actions" style="justify-content:flex-start; margin-bottom:14px;">
+            <button class="btn-export" onclick="generateDeKiemTra()" id="rdGenBtn">✨ Soạn đề bằng AI</button>
+            <span id="rdGenStatus" class="hint" style="align-self:center;"></span>
+          </div>
+          <textarea id="rdNoiDung" rows="16" placeholder="Nội dung đề kiểm tra sẽ hiện ở đây, có thể sửa trực tiếp..." style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.88rem;line-height:1.5;"></textarea>
+        </div>
+        <div class="modal-actions" style="justify-content:flex-start;">
+          <button class="btn-secondary" onclick="closeRdEditor()">Hủy</button>
+          <button class="btn-primary" onclick="saveRdRecord()">Lưu</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="rdSub-chambaiai" style="display:none;">
+      <p class="hint" style="margin-bottom:12px;">Công cụ chỉ đưa ra gợi ý nhận xét và điểm tham khảo — giáo viên xem lại và quyết định điểm cuối cùng.</p>
+      <div class="task-form">
+        <div class="hs-field" style="margin-bottom:10px;">
+          <label>Đề bài / câu hỏi</label>
+          <textarea id="cbDeBai" rows="2" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.88rem;"></textarea>
+        </div>
+        <div class="hs-field" style="margin-bottom:10px;">
+          <label>Đáp án mẫu / tiêu chí chấm (không bắt buộc)</label>
+          <textarea id="cbDapAn" rows="2" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.88rem;"></textarea>
+        </div>
+        <div class="hs-field" style="margin-bottom:10px;">
+          <label>Bài làm của học sinh</label>
+          <textarea id="cbBaiLam" rows="5" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.88rem;"></textarea>
+        </div>
+        <div class="hs-field" style="margin-bottom:10px;">
+          <label>Gemini API key</label>
+          <input type="password" id="cbApiKey" placeholder="Dán API key từ Google AI Studio">
+        </div>
+        <div class="modal-actions" style="justify-content:flex-start;">
+          <button class="btn-export" onclick="chamBaiAI()" id="cbGenBtn">✨ Chấm bằng AI</button>
+          <span id="cbGenStatus" class="hint" style="align-self:center;"></span>
+        </div>
+      </div>
+      <div id="cbResult"></div>
+    </div>
+
+    <div id="rdSub-bangdiem" style="display:none;">
+      <div class="task-form">
+        <div class="hs-grid">
+          <input type="text" id="bdMonHoc" placeholder="Môn học (vd: Toán)" style="padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
+          <select id="bdKy" style="padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
+            <option>Giữa học kỳ 1</option>
+            <option>Cuối học kỳ 1</option>
+            <option>Giữa học kỳ 2</option>
+            <option>Cuối học kỳ 2 (Cuối năm)</option>
+          </select>
+        </div>
+        <button class="btn-primary" style="width:100%;margin-top:10px;" onclick="loadBangDiemTable()">Tải bảng điểm</button>
+      </div>
+      <div id="bdArea"></div>
+    </div>
+  </div>
 </main>
 
 <div class="bottom-bar" id="bottomBar" style="display:none;">
@@ -1068,6 +1157,7 @@ function switchTab(name){
   document.getElementById('tab-hocsinh').style.display = name==='hocsinh' ? '' : 'none';
   document.getElementById('tab-phieubaitap').style.display = name==='phieubaitap' ? '' : 'none';
   document.getElementById('tab-giaoan').style.display = name==='giaoan' ? '' : 'none';
+  document.getElementById('tab-radekt').style.display = name==='radekt' ? '' : 'none';
   document.getElementById('bottomBar').style.display = isDiemDanhTabActive() && students.length ? 'flex' : 'none';
   if(name==='lienlac'){
     if(!document.getElementById('vangHocDate').value){
@@ -1090,12 +1180,22 @@ function switchTab(name){
     if(!gaLoaded) loadGiaoAnList();
     if(!ppLoaded) loadPhanPhoiList();
   }
+  if(name==='radekt'){
+    if(!rdLoaded) loadDeKiemTraList();
+  }
 }
 
 function switchGaSubTab(name){
   document.querySelectorAll('#tab-giaoan .sub-tab').forEach(t=>t.classList.toggle('active', t.dataset.subtab===name));
   document.getElementById('gaSub-giaoan').style.display = name==='giaoan' ? '' : 'none';
   document.getElementById('gaSub-phanphoi').style.display = name==='phanphoi' ? '' : 'none';
+}
+
+function switchRdSubTab(name){
+  document.querySelectorAll('#tab-radekt .sub-tab').forEach(t=>t.classList.toggle('active', t.dataset.subtab===name));
+  document.getElementById('rdSub-rade').style.display = name==='rade' ? '' : 'none';
+  document.getElementById('rdSub-chambaiai').style.display = name==='chambaiai' ? '' : 'none';
+  document.getElementById('rdSub-bangdiem').style.display = name==='bangdiem' ? '' : 'none';
 }
 
 function switchHcSubTab(name){
@@ -2424,6 +2524,278 @@ async function deleteSllEntry(id){
   }catch(err){
     alert('Lỗi xóa: ' + err.message);
   }
+}
+
+/* ---------- Ra đề kiểm tra ---------- */
+
+let rdRecords = [];
+let rdLoaded = false;
+let rdEditingId = null;
+
+async function loadDeKiemTraList(){
+  const el = document.getElementById('rdList');
+  el.innerHTML = '<div class="empty">Đang tải…</div>';
+  try{
+    rdRecords = await apiGet('getDeKiemTra');
+    rdLoaded = true;
+    renderRdList();
+  }catch(err){
+    el.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
+  }
+}
+
+function renderRdList(){
+  const el = document.getElementById('rdList');
+  if(!rdRecords.length){
+    el.innerHTML = '<div class="empty">Chưa có đề nào. Bấm "+ Soạn đề mới".</div>';
+    return;
+  }
+  const sorted = [...rdRecords].sort((a,b)=> (b.ngayTao||'').localeCompare(a.ngayTao||''));
+  el.innerHTML = sorted.map(r=>`<div class="hc-card">
+      <div class="hc-head">
+        <div>
+          <div class="hc-title">${r.chuDe || '(Chưa đặt chủ đề)'}</div>
+          <div class="hc-meta">${r.monHoc} — Lớp ${r.lop} — Ngày tạo ${r.ngayTao||''}</div>
+        </div>
+      </div>
+      <div class="hc-actions">
+        <button class="copy-btn" onclick="openRdEditor('${r.id}')">✎ Sửa</button>
+        <button class="copy-btn" onclick="printRdRecord('${r.id}')">🖨 In / Lưu PDF</button>
+        <button class="task-del" onclick="deleteRdRecord('${r.id}')">✕ Xóa</button>
+      </div>
+    </div>`).join('');
+}
+
+function openRdEditor(id){
+  rdEditingId = id;
+  document.getElementById('rdListView').style.display = 'none';
+  document.getElementById('rdEditorView').style.display = '';
+  document.getElementById('rdApiKey').value = localStorage.getItem('sdd_geminiApiKey') || '';
+  if(id){
+    const r = rdRecords.find(x=>x.id===id);
+    document.getElementById('rdMonHoc').value = r.monHoc;
+    document.getElementById('rdLop').value = r.lop;
+    document.getElementById('rdChuDe').value = r.chuDe;
+    document.getElementById('rdYeuCau').value = '';
+    document.getElementById('rdNoiDung').value = r.noiDung;
+  }else{
+    document.getElementById('rdMonHoc').value = '';
+    document.getElementById('rdLop').value = (localStorage.getItem('sdd_className')||'').replace(/^Lớp\s*/i,'');
+    document.getElementById('rdChuDe').value = '';
+    document.getElementById('rdYeuCau').value = '';
+    document.getElementById('rdNoiDung').value = '';
+  }
+}
+
+function closeRdEditor(){
+  document.getElementById('rdEditorView').style.display = 'none';
+  document.getElementById('rdListView').style.display = '';
+}
+
+function buildDeKiemTraPrompt({monHoc, lop, chuDe, yeuCauThem}){
+  return `Bạn là giáo viên tiểu học Việt Nam, soạn đề kiểm tra môn ${monHoc} lớp ${lop}, bộ sách "Kết nối tri thức với cuộc sống", theo chủ đề/phạm vi: "${chuDe}".
+${yeuCauThem ? 'Yêu cầu thêm từ giáo viên: ' + yeuCauThem + '\n' : ''}
+Hãy soạn đề kiểm tra gồm phần trắc nghiệm và tự luận phù hợp (nếu môn học phù hợp), kèm đáp án/hướng dẫn chấm ở cuối đề. Nội dung phải phù hợp trình độ học sinh lớp ${lop}, không dùng kiến thức vượt cấp.
+
+Chỉ trả về nội dung đề kiểm tra bằng văn bản thuần (không dùng markdown, không dùng dấu *, không có lời dẫn hay giải thích thêm ngoài đề bài), đánh số câu rõ ràng.`;
+}
+
+async function generateDeKiemTra(){
+  const status = document.getElementById('rdGenStatus');
+  const apiKey = document.getElementById('rdApiKey').value.trim();
+  const monHoc = document.getElementById('rdMonHoc').value.trim();
+  const lop = document.getElementById('rdLop').value.trim();
+  const chuDe = document.getElementById('rdChuDe').value.trim();
+  const yeuCauThem = document.getElementById('rdYeuCau').value.trim();
+  if(!apiKey){ alert('Cần dán Gemini API key trước.'); return; }
+  if(!monHoc || !lop || !chuDe){ alert('Cần nhập Môn học, Lớp và Chủ đề trước.'); return; }
+  localStorage.setItem('sdd_geminiApiKey', apiKey);
+  status.textContent = 'Đang soạn bằng AI…';
+  document.getElementById('rdGenBtn').disabled = true;
+  try{
+    const prompt = buildDeKiemTraPrompt({ monHoc, lop, chuDe, yeuCauThem });
+    const text = await callGeminiText(apiKey, prompt);
+    document.getElementById('rdNoiDung').value = text;
+    status.textContent = '✓ Đã soạn xong — kiểm tra lại trước khi dùng';
+  }catch(err){
+    status.textContent = 'Lỗi: ' + err.message;
+  }
+  document.getElementById('rdGenBtn').disabled = false;
+}
+
+async function saveRdRecord(){
+  const record = {
+    id: rdEditingId || String(Date.now()),
+    monHoc: document.getElementById('rdMonHoc').value.trim(),
+    lop: document.getElementById('rdLop').value.trim(),
+    chuDe: document.getElementById('rdChuDe').value.trim(),
+    ngayTao: rdEditingId ? (rdRecords.find(r=>r.id===rdEditingId)||{}).ngayTao || todayStr() : todayStr(),
+    noiDung: document.getElementById('rdNoiDung').value
+  };
+  if(!record.chuDe){
+    alert('Nhập chủ đề đề kiểm tra trước nhé.');
+    return;
+  }
+  try{
+    if(rdEditingId){
+      await apiPost({ action:'updateDeKiemTra', record });
+      const idx = rdRecords.findIndex(r=>r.id===rdEditingId);
+      if(idx>=0) rdRecords[idx] = record;
+    }else{
+      await apiPost({ action:'saveDeKiemTra', record });
+      rdRecords.push(record);
+    }
+    closeRdEditor();
+    renderRdList();
+  }catch(err){
+    alert('Lỗi lưu: ' + err.message);
+  }
+}
+
+async function deleteRdRecord(id){
+  if(!confirm('Xóa đề này?')) return;
+  rdRecords = rdRecords.filter(r=>r.id!==id);
+  renderRdList();
+  try{
+    await apiPost({ action:'deleteDeKiemTra', id });
+  }catch(err){
+    alert('Lỗi xóa: ' + err.message);
+  }
+}
+
+function printRdRecord(id){
+  const r = rdRecords.find(x=>x.id===id);
+  if(!r) return;
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8">
+    <title>${r.chuDe}</title>
+    <style>
+      body{ font-family:'Times New Roman', serif; padding:50px; line-height:1.7; color:#111; }
+      h1{ font-size:19px; text-align:center; text-transform:uppercase; margin-bottom:4px; }
+      .meta{ text-align:center; color:#444; font-size:14px; margin-bottom:28px; }
+      pre{ white-space:pre-wrap; font-family:inherit; font-size:15px; }
+    </style></head><body>
+    <h1>Đề kiểm tra: ${r.chuDe}</h1>
+    <div class="meta">Môn: ${r.monHoc} — Lớp: ${r.lop} — Ngày tạo: ${r.ngayTao}</div>
+    <pre>${(r.noiDung||'').replace(/</g,'&lt;')}</pre>
+    </body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(), 300);
+}
+
+/* ---------- Chấm bài AI ---------- */
+
+async function chamBaiAI(){
+  const status = document.getElementById('cbGenStatus');
+  const resultEl = document.getElementById('cbResult');
+  const apiKey = document.getElementById('cbApiKey').value.trim();
+  const deBai = document.getElementById('cbDeBai').value.trim();
+  const dapAn = document.getElementById('cbDapAn').value.trim();
+  const baiLam = document.getElementById('cbBaiLam').value.trim();
+  if(!apiKey){ alert('Cần dán Gemini API key trước.'); return; }
+  if(!deBai || !baiLam){ alert('Cần nhập Đề bài và Bài làm của học sinh trước.'); return; }
+  localStorage.setItem('sdd_geminiApiKey', apiKey);
+  status.textContent = 'Đang chấm bằng AI…';
+  document.getElementById('cbGenBtn').disabled = true;
+  resultEl.innerHTML = '';
+  try{
+    const prompt = `Bạn là giáo viên tiểu học Việt Nam, hỗ trợ chấm bài tự luận. Đây CHỈ là gợi ý tham khảo cho giáo viên, giáo viên sẽ tự quyết định điểm cuối cùng.
+
+ĐỀ BÀI: """${deBai}"""
+${dapAn ? 'ĐÁP ÁN MẪU / TIÊU CHÍ CHẤM: """' + dapAn + '"""\n' : ''}
+BÀI LÀM CỦA HỌC SINH: """${baiLam}"""
+
+Hãy nhận xét ngắn gọn về bài làm (điểm tốt, điểm cần cải thiện), rồi đề xuất một mức điểm tham khảo trên thang điểm 10. Trình bày rõ 2 phần: "Nhận xét:" và "Điểm gợi ý:". Văn bản thuần, không dùng markdown.`;
+    const text = await callGeminiText(apiKey, prompt);
+    resultEl.innerHTML = `<div class="hc-card"><pre style="white-space:pre-wrap;font-family:inherit;font-size:0.88rem;margin:0;">${text.replace(/</g,'&lt;')}</pre></div>`;
+    status.textContent = '';
+  }catch(err){
+    status.textContent = 'Lỗi: ' + err.message;
+  }
+  document.getElementById('cbGenBtn').disabled = false;
+}
+
+/* ---------- Bảng điểm ---------- */
+
+let bdRecords = [];
+
+async function loadBangDiemTable(){
+  const monHoc = document.getElementById('bdMonHoc').value.trim();
+  const ky = document.getElementById('bdKy').value;
+  const area = document.getElementById('bdArea');
+  if(!monHoc){ alert('Nhập tên môn học trước.'); return; }
+  area.innerHTML = '<div class="empty">Đang tải…</div>';
+  if(!students.length){
+    try{ students = await apiGet('getStudents'); }catch(e){}
+  }
+  try{
+    bdRecords = await apiGet('getBangDiem');
+  }catch(err){
+    area.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
+    return;
+  }
+  const existing = {};
+  bdRecords.filter(r=>r.monHoc===monHoc && r.ky===ky).forEach(r=>{ existing[r.maHS] = r.diem; });
+
+  let html = `<div class="table-scroll"><table class="hs-table"><thead><tr><th>Học sinh</th><th>Điểm (0-10)</th></tr></thead><tbody>`;
+  students.forEach(s=>{
+    const val = existing[s.maHS] || '';
+    html += `<tr><td class="name">${s.hoTen}</td><td><input type="number" min="0" max="10" step="0.5" data-mahs="${s.maHS}" value="${val}" style="width:70px;padding:5px 8px;border-radius:6px;border:1px solid var(--paper-line);"></td></tr>`;
+  });
+  html += `</tbody></table></div>
+    <div class="modal-actions" style="justify-content:flex-start;margin-top:12px;">
+      <button class="btn-primary" onclick="saveBangDiemTable()">Lưu bảng điểm</button>
+      <button class="btn-export" onclick="exportBangDiemExcel()">⬇ Tải Excel</button>
+      <span id="bdAvg" class="hint" style="align-self:center;"></span>
+    </div>`;
+  area.innerHTML = html;
+  updateBdAverage();
+  area.querySelectorAll('input[data-mahs]').forEach(inp=>{
+    inp.addEventListener('input', updateBdAverage);
+  });
+}
+
+function updateBdAverage(){
+  const inputs = [...document.querySelectorAll('#bdArea input[data-mahs]')];
+  const vals = inputs.map(i=>parseFloat(i.value)).filter(v=>!isNaN(v));
+  const avgEl = document.getElementById('bdAvg');
+  if(!avgEl) return;
+  if(!vals.length){ avgEl.textContent = 'Chưa có điểm nào'; return; }
+  const avg = vals.reduce((a,b)=>a+b,0) / vals.length;
+  avgEl.textContent = 'Điểm trung bình lớp: ' + avg.toFixed(2) + ' (' + vals.length + '/' + inputs.length + ' học sinh đã nhập)';
+}
+
+async function saveBangDiemTable(){
+  const monHoc = document.getElementById('bdMonHoc').value.trim();
+  const ky = document.getElementById('bdKy').value;
+  const records = [...document.querySelectorAll('#bdArea input[data-mahs]')]
+    .filter(inp=>inp.value !== '')
+    .map(inp=>({ maHS: inp.dataset.mahs, diem: inp.value }));
+  try{
+    await apiPost({ action:'saveBangDiem', monHoc, ky, records });
+    alert('Đã lưu bảng điểm.');
+  }catch(err){
+    alert('Lỗi lưu: ' + err.message);
+  }
+}
+
+function exportBangDiemExcel(){
+  const monHoc = document.getElementById('bdMonHoc').value.trim();
+  const ky = document.getElementById('bdKy').value;
+  const className = localStorage.getItem('sdd_className') || '';
+  const rows = [['Bảng điểm môn ' + monHoc + ' — ' + ky + (className?' — '+className:'')], [], ['Học sinh','Điểm']];
+  document.querySelectorAll('#bdArea tbody tr').forEach(tr=>{
+    const name = tr.children[0].textContent;
+    const val = tr.querySelector('input').value;
+    rows.push([name, val]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:26},{wch:10}];
+  ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:1} }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'BangDiem');
+  const safeClass = className.replace(/[^a-zA-Z0-9À-ỹ\s-]/g,'').replace(/\s+/g,'_');
+  XLSX.writeFile(wb, 'BangDiem_' + monHoc + '_' + (safeClass||'Lop') + '.xlsx');
 }
 
 loadStudents();
