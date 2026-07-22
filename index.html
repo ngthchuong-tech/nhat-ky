@@ -700,6 +700,7 @@
   <div class="tab" data-tab="giaoan" onclick="switchTab('giaoan')">Soạn giáo án</div>
   <div class="tab" data-tab="radekt" onclick="switchTab('radekt')">Ra đề &amp; Chấm điểm</div>
   <div class="tab" data-tab="skkn" onclick="switchTab('skkn')">Sáng kiến kinh nghiệm</div>
+  <div class="tab" data-tab="sochunhiem" onclick="switchTab('sochunhiem')">Sổ chủ nhiệm</div>
 </div>
 
 <main>
@@ -960,6 +961,21 @@
         </div>
         <div class="hs-grid full">
           <div class="hs-field"><label>Địa chỉ</label><input type="text" id="hsDiaChi"></div>
+        </div>
+        <div class="hs-grid">
+          <div class="hs-field"><label>Chức vụ (nếu có)</label>
+            <select id="hsChucVu" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
+              <option value="">-- Không --</option>
+              <option>Lớp trưởng</option>
+              <option>Lớp phó học tập</option>
+              <option>Lớp phó văn thể - lao động</option>
+              <option>Tổ trưởng</option>
+              <option>Tổ phó</option>
+              <option>Chi đội trưởng</option>
+              <option>Chi đội phó</option>
+            </select>
+          </div>
+          <div class="hs-field"><label>Tổ</label><input type="text" id="hsTo" placeholder="vd: 1"></div>
         </div>
         <div class="hs-grid">
           <div class="hs-field"><label>Tên bố</label><input type="text" id="hsTenBo"></div>
@@ -1252,6 +1268,104 @@
       <div id="ktlList"><div class="empty">Đang tải…</div></div>
     </div>
   </div>
+
+  <div id="tab-sochunhiem" style="display:none;">
+    <div class="sub-tabs">
+      <div class="sub-tab active" data-subtab="thongtin" onclick="switchScnSubTab('thongtin')">Thông tin chung</div>
+      <div class="sub-tab" data-subtab="canbo" onclick="switchScnSubTab('canbo')">Cán bộ lớp &amp; Tổ</div>
+      <div class="sub-tab" data-subtab="cmhs" onclick="switchScnSubTab('cmhs')">Ban CMHS</div>
+      <div class="sub-tab" data-subtab="khenthuong" onclick="switchScnSubTab('khenthuong')">Khen thưởng - Kỷ luật</div>
+    </div>
+
+    <div id="scnSub-thongtin">
+      <div class="task-form">
+        <div class="hs-grid">
+          <div class="hs-field"><label>Tên trường</label><input type="text" id="scnTenTruong"></div>
+          <div class="hs-field"><label>SĐT trường</label><input type="text" id="scnSdtTruong"></div>
+        </div>
+        <div class="hs-grid full">
+          <div class="hs-field"><label>Địa chỉ trường</label><input type="text" id="scnDiaChiTruong"></div>
+        </div>
+        <div class="hs-grid">
+          <div class="hs-field"><label>Họ tên GVCN</label><input type="text" id="scnTenGVCN"></div>
+          <div class="hs-field"><label>SĐT GVCN</label><input type="text" id="scnSdtGVCN"></div>
+        </div>
+        <div class="hs-field" style="margin-bottom:10px;">
+          <label>Thuận lợi (đặc điểm tình hình lớp)</label>
+          <textarea id="scnThuanLoi" rows="2" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;"></textarea>
+        </div>
+        <div class="hs-field" style="margin-bottom:10px;">
+          <label>Khó khăn (đặc điểm tình hình lớp)</label>
+          <textarea id="scnKhoKhan" rows="2" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;"></textarea>
+        </div>
+        <button class="btn-primary" style="width:100%;" onclick="saveThongTinLop()">Lưu thông tin chung</button>
+        <span id="scnSaveStatus" class="hint"></span>
+      </div>
+
+      <div class="dg-section-title">Giáo viên bộ môn dạy lớp</div>
+      <div class="task-form">
+        <div class="hs-grid">
+          <input type="text" id="gvbmMonHoc" placeholder="Môn học" style="padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
+          <input type="text" id="gvbmHoTen" placeholder="Họ tên giáo viên" style="padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
+        </div>
+        <div class="hs-grid">
+          <input type="text" id="gvbmSdt" placeholder="SĐT liên hệ" style="padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
+          <button class="btn-primary" onclick="addGiaoVienBoMon()">+ Thêm</button>
+        </div>
+      </div>
+      <div id="gvbmList"><div class="empty">Đang tải…</div></div>
+    </div>
+
+    <div id="scnSub-canbo" style="display:none;">
+      <p class="hint" style="margin-bottom:12px;">Gán chức vụ và tổ cho từng học sinh ở tab "Học sinh" (mục Chức vụ / Tổ trong form sửa). Danh sách dưới đây tự tổng hợp lại.</p>
+      <div id="canBoList"><div class="empty">Đang tải…</div></div>
+    </div>
+
+    <div id="scnSub-cmhs" style="display:none;">
+      <button class="btn-primary" style="margin-bottom:14px;" onclick="openCmhsEditor(null)">+ Thêm thành viên Ban CMHS</button>
+      <div id="cmhsList"><div class="empty">Đang tải…</div></div>
+
+      <div id="cmhsEditorView" style="display:none;">
+        <div class="task-form">
+          <div class="hs-grid">
+            <div class="hs-field"><label>Họ tên phụ huynh</label><input type="text" id="cmhsHoTen"></div>
+            <div class="hs-field"><label>Là phụ huynh của HS</label><select id="cmhsMaHS" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);"></select></div>
+          </div>
+          <div class="hs-grid">
+            <div class="hs-field"><label>Chức vụ</label>
+              <select id="cmhsChucVu" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
+                <option>Trưởng ban</option><option>Phó ban</option><option>Ủy viên</option><option>Thủ quỹ</option>
+              </select>
+            </div>
+            <div class="hs-field"><label>SĐT</label><input type="text" id="cmhsSdt"></div>
+          </div>
+          <div class="hs-field" style="margin-bottom:10px;"><label>Ghi chú</label><input type="text" id="cmhsGhiChu"></div>
+        </div>
+        <div class="modal-actions" style="justify-content:flex-start;">
+          <button class="btn-secondary" onclick="closeCmhsEditor()">Hủy</button>
+          <button class="btn-primary" onclick="saveCmhsRecord()">Lưu</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="scnSub-khenthuong" style="display:none;">
+      <div class="task-form">
+        <div class="task-form-row">
+          <select id="ktklHocSinh" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);"></select>
+          <input type="date" id="ktklNgay" style="flex:1;">
+        </div>
+        <div class="hs-grid" style="margin-top:10px;">
+          <select id="ktklLoai" style="padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
+            <option value="Khen thưởng">Khen thưởng</option>
+            <option value="Kỷ luật">Kỷ luật / nhắc nhở</option>
+          </select>
+          <input type="text" id="ktklNoiDung" placeholder="Nội dung (vd: Cháu ngoan Bác Hồ cấp trường)">
+        </div>
+        <button class="btn-primary" style="width:100%;margin-top:10px;" onclick="addKhenThuongKyLuat()">+ Thêm ghi nhận</button>
+      </div>
+      <div id="ktklList"><div class="empty">Đang tải…</div></div>
+    </div>
+  </div>
 </main>
 
 <div class="bottom-bar" id="bottomBar" style="display:none;">
@@ -1379,6 +1493,7 @@ function switchTab(name){
   document.getElementById('tab-giaoan').style.display = name==='giaoan' ? '' : 'none';
   document.getElementById('tab-radekt').style.display = name==='radekt' ? '' : 'none';
   document.getElementById('tab-skkn').style.display = name==='skkn' ? '' : 'none';
+  document.getElementById('tab-sochunhiem').style.display = name==='sochunhiem' ? '' : 'none';
   document.getElementById('bottomBar').style.display = isDiemDanhTabActive() && students.length ? 'flex' : 'none';
   if(name==='lienlac'){
     if(!document.getElementById('vangHocDate').value){
@@ -1408,6 +1523,21 @@ function switchTab(name){
     if(!skknLoaded) loadSkknList();
     if(!ktlLoaded) loadKhoTaiLieuList();
   }
+  if(name==='sochunhiem'){
+    if(!scnLoaded) loadThongTinLop();
+    if(!gvbmLoaded) loadGiaoVienBoMonList();
+    if(!cmhsLoaded) loadCmhsList();
+    if(!ktklLoaded) loadKhenThuongKyLuatList();
+    renderCanBoList();
+  }
+}
+
+function switchScnSubTab(name){
+  document.querySelectorAll('#tab-sochunhiem .sub-tab').forEach(t=>t.classList.toggle('active', t.dataset.subtab===name));
+  document.getElementById('scnSub-thongtin').style.display = name==='thongtin' ? '' : 'none';
+  document.getElementById('scnSub-canbo').style.display = name==='canbo' ? '' : 'none';
+  document.getElementById('scnSub-cmhs').style.display = name==='cmhs' ? '' : 'none';
+  document.getElementById('scnSub-khenthuong').style.display = name==='khenthuong' ? '' : 'none';
 }
 
 function switchGaSubTab(name){
@@ -2349,7 +2479,7 @@ function openHsEditor(idx){
   document.getElementById('hsListView').style.display = 'none';
   document.getElementById('hsEditorView').style.display = '';
   const namHocMacDinh = localStorage.getItem('sdd_namHoc') || '';
-  const s = (idx !== null) ? hocSinhFull[idx] : { maHS:'', hoTen:'', ngaySinh:'', noiSinh:'', diaChi:'', tenBo:'', sdtBo:'', tenMe:'', sdtMe:'', namHoc:namHocMacDinh, trangThai:'DangHoc', gioiTinh:'', doiTuong:'' };
+  const s = (idx !== null) ? hocSinhFull[idx] : { maHS:'', hoTen:'', ngaySinh:'', noiSinh:'', diaChi:'', tenBo:'', sdtBo:'', tenMe:'', sdtMe:'', namHoc:namHocMacDinh, trangThai:'DangHoc', gioiTinh:'', doiTuong:'', chucVu:'', to:'' };
   document.getElementById('hsMaHS').value = s.maHS;
   document.getElementById('hsHoTen').value = s.hoTen;
   document.getElementById('hsNgaySinh').value = s.ngaySinh;
@@ -2363,6 +2493,8 @@ function openHsEditor(idx){
   document.getElementById('hsTrangThai').value = s.trangThai || 'DangHoc';
   document.getElementById('hsGioiTinh').value = s.gioiTinh || '';
   document.getElementById('hsDoiTuong').value = s.doiTuong || '';
+  document.getElementById('hsChucVu').value = s.chucVu || '';
+  document.getElementById('hsTo').value = s.to || '';
 }
 
 function closeHsEditor(){
@@ -2384,7 +2516,9 @@ async function saveHsEditor(){
     namHoc: document.getElementById('hsNamHoc').value.trim(),
     trangThai: document.getElementById('hsTrangThai').value,
     gioiTinh: document.getElementById('hsGioiTinh').value,
-    doiTuong: document.getElementById('hsDoiTuong').value
+    doiTuong: document.getElementById('hsDoiTuong').value,
+    chucVu: document.getElementById('hsChucVu').value,
+    to: document.getElementById('hsTo').value.trim()
   };
   if(!record.maHS || !record.hoTen){
     alert('Cần nhập Mã HS và Họ tên.');
@@ -2486,7 +2620,7 @@ function closeGaEditor(){
 }
 
 function buildGiaoAnPrompt({monHoc, lop, tenBai, yeuCauThem}){
-  return `Bạn là một giáo viên tiểu học Việt Nam giàu kinh nghiệm, soạn giáo án theo chương trình GDPT 2018, bộ sách "Kết nối tri thức với cuộc sống", trình bày theo cấu trúc quen thuộc dạng Công văn 5512.
+  return `Bạn là một giáo viên tiểu học Việt Nam giàu kinh nghiệm, soạn Kế hoạch bài dạy theo chương trình GDPT 2018, bộ sách "Kết nối tri thức với cuộc sống", theo tinh thần Thông tư 15/2026 (giáo án gọn, tập trung vào phát triển phẩm chất - năng lực, không cần theo khuôn mẫu cứng nhắc nhưng phải đủ các thành tố mục tiêu - nội dung - phương pháp - đánh giá).
 
 Thông tin bài dạy:
 - Môn học: ${monHoc}
@@ -2494,29 +2628,37 @@ Thông tin bài dạy:
 - Tên bài học / Chủ đề: ${tenBai}
 ${yeuCauThem ? '- Yêu cầu thêm từ giáo viên: ' + yeuCauThem : ''}
 
-Hãy soạn giáo án đầy đủ theo cấu trúc sau:
+Hãy soạn kế hoạch bài dạy đầy đủ theo cấu trúc sau:
 
-I. YÊU CẦU CẦN ĐẠT
-1. Năng lực đặc thù (của môn học)
-2. Năng lực chung (Tự chủ và tự học, Giao tiếp và hợp tác, Giải quyết vấn đề và sáng tạo)
-3. Phẩm chất (Chăm chỉ, Trung thực, Trách nhiệm...)
+I. THÔNG TIN CHUNG
+(Tên bài, môn học, lớp, thời lượng dự kiến)
 
-II. ĐỒ DÙNG DẠY HỌC
-- Giáo viên
-- Học sinh
+II. MỤC TIÊU BÀI HỌC
+1. Năng lực đặc thù (môn học) — diễn đạt theo hướng "học sinh làm được gì sau bài học", gắn với yêu cầu cần đạt của chương trình
+2. Năng lực chung (Tự chủ và tự học; Giao tiếp và hợp tác; Giải quyết vấn đề và sáng tạo)
+3. Phẩm chất (Chăm chỉ, Trách nhiệm, Trung thực, Nhân ái... phù hợp với nội dung bài)
 
-III. CÁC HOẠT ĐỘNG DẠY HỌC CHỦ YẾU
-1. Hoạt động Mở đầu (Khởi động)
-2. Hoạt động Hình thành kiến thức mới (Khám phá)
-3. Hoạt động Luyện tập, thực hành
-4. Hoạt động Vận dụng, trải nghiệm
+III. CHUẨN BỊ DẠY HỌC
+1. Đối với giáo viên (tài liệu, thiết bị, đồ dùng hỗ trợ, dự kiến chia nhóm/câu hỏi)
+2. Đối với học sinh (chuẩn bị bài, đồ dùng học tập)
 
-Với mỗi hoạt động ở mục III, trình bày rõ: mục tiêu ngắn gọn, cách tiến hành (hoạt động của giáo viên - hoạt động của học sinh), và sản phẩm/kết quả mong đợi. Nội dung phải phù hợp thực tế với học sinh lớp ${lop}, không dùng kiến thức vượt cấp.
+IV. TIẾN TRÌNH DẠY HỌC
+Trình bày lần lượt 5 hoạt động, mỗi hoạt động nêu rõ: Mục tiêu — Nội dung & cách tổ chức (hoạt động của giáo viên - hoạt động của học sinh) — Sản phẩm mong đợi:
+1. Hoạt động Khởi động (5-7 phút)
+2. Hoạt động Hình thành kiến thức mới (15-20 phút)
+3. Hoạt động Luyện tập, thực hành (10-15 phút)
+4. Hoạt động Vận dụng, mở rộng (5-10 phút)
+5. Hoạt động Củng cố, dặn dò (3-5 phút)
 
-IV. ĐIỀU CHỈNH SAU BÀI DẠY
-(để trống, giáo viên sẽ tự ghi sau khi dạy xong)
+V. ĐÁNH GIÁ KẾT QUẢ HỌC TẬP
+- Hình thức đánh giá (thường xuyên qua quan sát, qua sản phẩm, qua hỏi đáp)
+- Công cụ đánh giá (câu hỏi, phiếu học tập...)
+- Tiêu chí đánh giá cụ thể, ngắn gọn, theo 3 mức Hoàn thành tốt (T) / Hoàn thành (H) / Chưa hoàn thành (C)
 
-Chỉ trả về nội dung giáo án bằng văn bản thuần (không dùng markdown, không dùng dấu *, không có lời dẫn hay giải thích thêm ngoài giáo án), dùng số thứ tự và xuống dòng rõ ràng để dễ đọc.`;
+VI. ĐIỀU CHỈNH, RÚT KINH NGHIỆM
+(để trống, giáo viên tự ghi sau khi dạy xong)
+
+Nội dung phải phù hợp thực tế với học sinh lớp ${lop}, không dùng kiến thức vượt cấp, ví dụ minh họa cụ thể và thực tế lớp học. Chỉ trả về nội dung kế hoạch bài dạy bằng văn bản thuần (không dùng markdown, không dùng dấu *, không có lời dẫn hay giải thích thêm ngoài nội dung), dùng số thứ tự và xuống dòng rõ ràng để dễ đọc.`;
 }
 
 async function callGeminiText(apiKey, prompt){
@@ -3855,6 +3997,311 @@ function printTongHopKy(){
     </body></html>`);
   w.document.close();
   setTimeout(()=>w.print(), 300);
+}
+
+/* ---------- Sổ chủ nhiệm: Thông tin chung ---------- */
+
+let scnLoaded = false;
+
+async function loadThongTinLop(){
+  try{
+    const settings = await apiGet('getCaiDat');
+    document.getElementById('scnTenTruong').value = settings.TenTruong || '';
+    document.getElementById('scnSdtTruong').value = settings.SdtTruong || '';
+    document.getElementById('scnDiaChiTruong').value = settings.DiaChiTruong || '';
+    document.getElementById('scnTenGVCN').value = settings.TenGVCN || '';
+    document.getElementById('scnSdtGVCN').value = settings.SdtGVCN || '';
+    document.getElementById('scnThuanLoi').value = settings.ThuanLoi || '';
+    document.getElementById('scnKhoKhan').value = settings.KhoKhan || '';
+    scnLoaded = true;
+  }catch(err){
+    document.getElementById('scnSaveStatus').textContent = 'Lỗi tải dữ liệu: ' + err.message;
+  }
+}
+
+async function saveThongTinLop(){
+  const status = document.getElementById('scnSaveStatus');
+  status.textContent = 'Đang lưu…';
+  try{
+    await apiPost({ action:'saveCaiDat', settings:{
+      TenTruong: document.getElementById('scnTenTruong').value.trim(),
+      SdtTruong: document.getElementById('scnSdtTruong').value.trim(),
+      DiaChiTruong: document.getElementById('scnDiaChiTruong').value.trim(),
+      TenGVCN: document.getElementById('scnTenGVCN').value.trim(),
+      SdtGVCN: document.getElementById('scnSdtGVCN').value.trim(),
+      ThuanLoi: document.getElementById('scnThuanLoi').value.trim(),
+      KhoKhan: document.getElementById('scnKhoKhan').value.trim()
+    }});
+    status.textContent = '✓ Đã lưu';
+    setTimeout(()=>{ status.textContent=''; }, 2000);
+  }catch(err){
+    status.textContent = 'Lỗi: ' + err.message;
+  }
+}
+
+/* ---------- Sổ chủ nhiệm: Giáo viên bộ môn ---------- */
+
+let gvbmRecords = [];
+let gvbmLoaded = false;
+
+async function loadGiaoVienBoMonList(){
+  const el = document.getElementById('gvbmList');
+  el.innerHTML = '<div class="empty">Đang tải…</div>';
+  try{
+    gvbmRecords = await apiGet('getGiaoVienBoMon');
+    gvbmLoaded = true;
+    renderGvbmList();
+  }catch(err){
+    el.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
+  }
+}
+
+function renderGvbmList(){
+  const el = document.getElementById('gvbmList');
+  if(!gvbmRecords.length){
+    el.innerHTML = '<div class="empty">Chưa có giáo viên bộ môn nào.</div>';
+    return;
+  }
+  el.innerHTML = gvbmRecords.map(r=>`<div class="sll-entry">
+    <div><div class="sll-date">${r.monHoc}</div><div class="sll-text">${r.hoTen}${r.sdt?' — '+r.sdt:''}</div></div>
+    <button class="task-del" onclick="deleteGiaoVienBoMon('${r.id}')">✕</button>
+  </div>`).join('');
+}
+
+async function addGiaoVienBoMon(){
+  const monHoc = document.getElementById('gvbmMonHoc').value.trim();
+  const hoTen = document.getElementById('gvbmHoTen').value.trim();
+  const sdt = document.getElementById('gvbmSdt').value.trim();
+  if(!monHoc || !hoTen){ alert('Nhập Môn học và Họ tên giáo viên.'); return; }
+  const record = { id:String(Date.now()), monHoc, hoTen, sdt };
+  gvbmRecords.push(record);
+  renderGvbmList();
+  document.getElementById('gvbmMonHoc').value = '';
+  document.getElementById('gvbmHoTen').value = '';
+  document.getElementById('gvbmSdt').value = '';
+  try{
+    await apiPost({ action:'saveGiaoVienBoMon', record });
+  }catch(err){
+    alert('Lỗi lưu: ' + err.message);
+  }
+}
+
+async function deleteGiaoVienBoMon(id){
+  if(!confirm('Xóa giáo viên này?')) return;
+  gvbmRecords = gvbmRecords.filter(r=>r.id!==id);
+  renderGvbmList();
+  try{
+    await apiPost({ action:'deleteGiaoVienBoMon', id });
+  }catch(err){
+    alert('Lỗi xóa: ' + err.message);
+  }
+}
+
+/* ---------- Sổ chủ nhiệm: Cán bộ lớp & Tổ (tổng hợp từ Học sinh) ---------- */
+
+async function renderCanBoList(){
+  const el = document.getElementById('canBoList');
+  if(!hocSinhLoaded){
+    try{ hocSinhFull = await apiGet('getStudentsFull'); hocSinhLoaded = true; }catch(err){
+      el.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
+      return;
+    }
+  }
+  const active = hocSinhFull.filter(s=>(s.trangThai||'DangHoc')==='DangHoc');
+  const canBo = active.filter(s=>s.chucVu);
+  const theoTo = {};
+  active.forEach(s=>{
+    const to = s.to || '(chưa xếp tổ)';
+    if(!theoTo[to]) theoTo[to] = [];
+    theoTo[to].push(s);
+  });
+  let html = '<div class="dg-section-title">Cán bộ lớp</div>';
+  if(!canBo.length){
+    html += '<p class="empty">Chưa gán chức vụ cho học sinh nào.</p>';
+  }else{
+    html += canBo.map(s=>`<div class="sll-entry"><div><div class="sll-date">${s.chucVu}</div><div class="sll-text">${s.hoTen}</div></div></div>`).join('');
+  }
+  html += '<div class="dg-section-title">Chia theo tổ</div>';
+  Object.keys(theoTo).sort().forEach(to=>{
+    html += `<div class="hc-card"><div class="hc-title" style="margin-bottom:8px;">Tổ ${to}</div>` +
+      theoTo[to].map(s=>`<div style="font-size:0.85rem;padding:3px 0;">${s.hoTen}${s.chucVu?' — '+s.chucVu:''}</div>`).join('') +
+      `</div>`;
+  });
+  el.innerHTML = html;
+}
+
+/* ---------- Sổ chủ nhiệm: Ban đại diện CMHS ---------- */
+
+let cmhsRecords = [];
+let cmhsLoaded = false;
+let cmhsEditingId = null;
+
+async function loadCmhsList(){
+  const el = document.getElementById('cmhsList');
+  el.innerHTML = '<div class="empty">Đang tải…</div>';
+  try{
+    cmhsRecords = await apiGet('getBanCMHS');
+    cmhsLoaded = true;
+    renderCmhsList();
+  }catch(err){
+    el.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
+  }
+}
+
+function renderCmhsList(){
+  const el = document.getElementById('cmhsList');
+  if(!cmhsRecords.length){
+    el.innerHTML = '<div class="empty">Chưa có thành viên Ban CMHS nào.</div>';
+    return;
+  }
+  el.innerHTML = cmhsRecords.map(r=>{
+    const student = students.find(s=>s.maHS===r.maHSLienQuan);
+    return `<div class="hc-card">
+      <div class="hc-head">
+        <div><div class="hc-title">${r.hoTen}</div><div class="hc-meta">${r.chucVu}${student?' — PH của '+student.hoTen:''}${r.sdt?' — '+r.sdt:''}</div></div>
+      </div>
+      <div class="hc-actions">
+        <button class="copy-btn" onclick="openCmhsEditor('${r.id}')">✎ Sửa</button>
+        <button class="task-del" onclick="deleteCmhsRecord('${r.id}')">✕ Xóa</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openCmhsEditor(id){
+  cmhsEditingId = id;
+  document.getElementById('cmhsEditorView').style.display = '';
+  const sel = document.getElementById('cmhsMaHS');
+  sel.innerHTML = '<option value="">-- Không chọn --</option>' + students.map(s=>`<option value="${s.maHS}">${s.hoTen}</option>`).join('');
+  if(id){
+    const r = cmhsRecords.find(x=>x.id===id);
+    document.getElementById('cmhsHoTen').value = r.hoTen;
+    sel.value = r.maHSLienQuan;
+    document.getElementById('cmhsChucVu').value = r.chucVu;
+    document.getElementById('cmhsSdt').value = r.sdt;
+    document.getElementById('cmhsGhiChu').value = r.ghiChu;
+  }else{
+    document.getElementById('cmhsHoTen').value = '';
+    sel.value = '';
+    document.getElementById('cmhsChucVu').value = 'Trưởng ban';
+    document.getElementById('cmhsSdt').value = '';
+    document.getElementById('cmhsGhiChu').value = '';
+  }
+}
+
+function closeCmhsEditor(){
+  document.getElementById('cmhsEditorView').style.display = 'none';
+}
+
+async function saveCmhsRecord(){
+  const record = {
+    id: cmhsEditingId || String(Date.now()),
+    hoTen: document.getElementById('cmhsHoTen').value.trim(),
+    maHSLienQuan: document.getElementById('cmhsMaHS').value,
+    chucVu: document.getElementById('cmhsChucVu').value,
+    sdt: document.getElementById('cmhsSdt').value.trim(),
+    ghiChu: document.getElementById('cmhsGhiChu').value.trim()
+  };
+  if(!record.hoTen){ alert('Nhập họ tên phụ huynh.'); return; }
+  try{
+    if(cmhsEditingId){
+      await apiPost({ action:'updateBanCMHS', record });
+      const idx = cmhsRecords.findIndex(r=>r.id===cmhsEditingId);
+      if(idx>=0) cmhsRecords[idx] = record;
+    }else{
+      await apiPost({ action:'saveBanCMHS', record });
+      cmhsRecords.push(record);
+    }
+    closeCmhsEditor();
+    renderCmhsList();
+  }catch(err){
+    alert('Lỗi lưu: ' + err.message);
+  }
+}
+
+async function deleteCmhsRecord(id){
+  if(!confirm('Xóa thành viên này?')) return;
+  cmhsRecords = cmhsRecords.filter(r=>r.id!==id);
+  renderCmhsList();
+  try{
+    await apiPost({ action:'deleteBanCMHS', id });
+  }catch(err){
+    alert('Lỗi xóa: ' + err.message);
+  }
+}
+
+/* ---------- Sổ chủ nhiệm: Khen thưởng - Kỷ luật ---------- */
+
+let ktklRecords = [];
+let ktklLoaded = false;
+
+async function loadKhenThuongKyLuatList(){
+  const sel = document.getElementById('ktklHocSinh');
+  if(!students.length){
+    try{ students = await apiGet('getStudents'); }catch(e){}
+  }
+  sel.innerHTML = students.map(s=>`<option value="${s.maHS}">${s.hoTen}</option>`).join('');
+  if(!document.getElementById('ktklNgay').value){
+    document.getElementById('ktklNgay').value = todayStr();
+  }
+  const el = document.getElementById('ktklList');
+  el.innerHTML = '<div class="empty">Đang tải…</div>';
+  try{
+    ktklRecords = await apiGet('getKhenThuongKyLuat');
+    ktklLoaded = true;
+    renderKtklList();
+  }catch(err){
+    el.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
+  }
+}
+
+function renderKtklList(){
+  const el = document.getElementById('ktklList');
+  if(!ktklRecords.length){
+    el.innerHTML = '<div class="empty">Chưa có ghi nhận nào.</div>';
+    return;
+  }
+  const sorted = [...ktklRecords].sort((a,b)=> b.ngay.localeCompare(a.ngay));
+  el.innerHTML = sorted.map(r=>{
+    const student = students.find(s=>s.maHS===r.maHS);
+    const color = r.loai==='Khen thưởng' ? 'var(--present)' : 'var(--absent)';
+    return `<div class="sll-entry">
+      <div>
+        <div class="sll-date">${r.ngay} — <span style="color:${color};font-weight:600;">${r.loai}</span></div>
+        <div class="sll-text"><b>${student?student.hoTen:r.maHS}:</b> ${r.noiDung}</div>
+      </div>
+      <button class="task-del" onclick="deleteKtklEntry('${r.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+async function addKhenThuongKyLuat(){
+  const maHS = document.getElementById('ktklHocSinh').value;
+  const ngay = document.getElementById('ktklNgay').value || todayStr();
+  const loai = document.getElementById('ktklLoai').value;
+  const noiDung = document.getElementById('ktklNoiDung').value.trim();
+  if(!maHS){ alert('Chọn học sinh trước.'); return; }
+  if(!noiDung){ alert('Nhập nội dung.'); return; }
+  const record = { id:String(Date.now()), maHS, ngay, loai, noiDung };
+  ktklRecords.push(record);
+  renderKtklList();
+  document.getElementById('ktklNoiDung').value = '';
+  try{
+    await apiPost({ action:'saveKhenThuongKyLuat', record });
+  }catch(err){
+    alert('Lỗi lưu: ' + err.message);
+  }
+}
+
+async function deleteKtklEntry(id){
+  if(!confirm('Xóa ghi nhận này?')) return;
+  ktklRecords = ktklRecords.filter(r=>r.id!==id);
+  renderKtklList();
+  try{
+    await apiPost({ action:'deleteKhenThuongKyLuat', id });
+  }catch(err){
+    alert('Lỗi xóa: ' + err.message);
+  }
 }
 
 syncCaiDatFromServer();
