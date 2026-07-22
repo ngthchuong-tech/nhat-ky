@@ -1179,19 +1179,45 @@
     </div>
 
     <div id="rdSub-bangdiem" style="display:none;">
-      <div class="task-form">
-        <div class="hs-grid">
-          <select id="bdHocSinh" style="padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);"></select>
-          <select id="bdKy" style="padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
-            <option>Giữa học kỳ 1</option>
-            <option>Cuối học kỳ 1</option>
-            <option>Giữa học kỳ 2</option>
-            <option>Cuối học kỳ 2 (Cuối năm)</option>
-          </select>
-        </div>
-        <button class="btn-primary" style="width:100%;margin-top:10px;" onclick="loadBangDiemTable()">Tải bảng điểm</button>
+      <div class="lienlac-type">
+        <select id="bdViewMode" onchange="onBdViewModeChange()">
+          <option value="hocsinh">Xem theo học sinh (đủ các môn)</option>
+          <option value="monhoc">Xem theo môn học (cả lớp)</option>
+        </select>
       </div>
-      <div id="bdArea"></div>
+
+      <div id="bdModeHocSinh">
+        <div class="task-form">
+          <div class="hs-grid">
+            <select id="bdHocSinh" style="padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);"></select>
+            <select id="bdKy" style="padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
+              <option>Giữa học kỳ 1</option>
+              <option>Cuối học kỳ 1</option>
+              <option>Giữa học kỳ 2</option>
+              <option>Cuối học kỳ 2 (Cuối năm)</option>
+            </select>
+          </div>
+          <button class="btn-primary" style="width:100%;margin-top:10px;" onclick="loadBangDiemTable()">Tải bảng điểm</button>
+        </div>
+        <div id="bdArea"></div>
+      </div>
+
+      <div id="bdModeMonHoc" style="display:none;">
+        <div class="task-form">
+          <div class="hs-grid">
+            <select id="bdMonHocSelect"></select>
+            <select id="bdMonKy" style="padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
+              <option>Giữa học kỳ 1</option>
+              <option>Cuối học kỳ 1</option>
+              <option>Giữa học kỳ 2</option>
+              <option>Cuối học kỳ 2 (Cuối năm)</option>
+            </select>
+          </div>
+          <input type="text" id="bdMonHocKhac" placeholder="Hoặc gõ tên môn khác (bỏ trống nếu chọn ở trên)" style="width:100%;margin-top:8px;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
+          <button class="btn-primary" style="width:100%;margin-top:10px;" onclick="loadBangDiemByMon()">Tải bảng điểm cả lớp</button>
+        </div>
+        <div id="bdMonArea"></div>
+      </div>
     </div>
 
     <div id="rdSub-khobai" style="display:none;">
@@ -3481,6 +3507,7 @@ async function saveCbResult(idx, btn){
 
 let bdRecords = [];
 let bdStudentsFilled = false;
+let bdMonHocFilled = false;
 
 async function fillBdStudentSelect(){
   if(bdStudentsFilled) return;
@@ -3494,6 +3521,16 @@ async function fillBdStudentSelect(){
   }
   sel.innerHTML = students.map(s=>`<option value="${s.maHS}">${s.hoTen}</option>`).join('');
   bdStudentsFilled = true;
+}
+
+function onBdViewModeChange(){
+  const mode = document.getElementById('bdViewMode').value;
+  document.getElementById('bdModeHocSinh').style.display = mode==='hocsinh' ? '' : 'none';
+  document.getElementById('bdModeMonHoc').style.display = mode==='monhoc' ? '' : 'none';
+  if(mode==='monhoc' && !bdMonHocFilled){
+    document.getElementById('bdMonHocSelect').innerHTML = MON_HOC.map(m=>`<option>${m}</option>`).join('');
+    bdMonHocFilled = true;
+  }
 }
 
 async function loadBangDiemTable(){
@@ -3615,6 +3652,113 @@ function exportBangDiemWord(){
     <div class="meta">${hoTen}${className?' — Lớp '+className:''} — ${ky}</div>
     <table><tr><th>Môn học</th><th>Điểm</th></tr>${rowsHtml}</table>`;
   downloadWordDoc('BangDiem_' + hoTen, body);
+}
+
+/* ---------- Bảng điểm theo môn học (cả lớp) ---------- */
+
+let bdMonRecords = [];
+
+function getBdMonHocValue(){
+  const custom = document.getElementById('bdMonHocKhac').value.trim();
+  return custom || document.getElementById('bdMonHocSelect').value;
+}
+
+async function loadBangDiemByMon(){
+  const monHoc = getBdMonHocValue();
+  const ky = document.getElementById('bdMonKy').value;
+  const area = document.getElementById('bdMonArea');
+  if(!monHoc){ alert('Chọn hoặc nhập tên môn học trước.'); return; }
+  area.innerHTML = '<div class="empty">Đang tải…</div>';
+  if(!students.length){
+    try{ students = await apiGet('getStudents'); }catch(e){}
+  }
+  try{
+    bdMonRecords = await apiGet('getBangDiem');
+  }catch(err){
+    area.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
+    return;
+  }
+  const existing = {};
+  bdMonRecords.filter(r=>r.monHoc===monHoc && r.ky===ky).forEach(r=>{ existing[r.maHS] = r.diem; });
+
+  const sorted = [...students].sort((a,b)=> tenSapXep(a.hoTen).localeCompare(tenSapXep(b.hoTen), 'vi'));
+  let html = `<div class="hc-card"><div class="hc-title" style="margin-bottom:10px;">${monHoc} — ${ky}</div>
+    <div class="table-scroll"><table class="hs-table"><thead><tr><th>Học sinh</th><th>Điểm (0-10)</th></tr></thead><tbody>`;
+  sorted.forEach(s=>{
+    const val = existing[s.maHS] !== undefined ? existing[s.maHS] : '';
+    html += `<tr><td class="name">${s.hoTen}</td><td><input type="number" min="0" max="10" step="0.5" data-mahs="${s.maHS}" value="${val}" style="width:70px;padding:5px 8px;border-radius:6px;border:1px solid var(--paper-line);"></td></tr>`;
+  });
+  html += `</tbody></table></div>
+    <div class="modal-actions" style="justify-content:flex-start;margin-top:12px;">
+      <button class="btn-primary" onclick="saveBangDiemByMon()">Lưu bảng điểm</button>
+      <button class="btn-export" onclick="exportBangDiemByMonExcel()">⬇ Tải Excel</button>
+      <button class="btn-export" onclick="exportBangDiemByMonWord()">⬇ Tải Word</button>
+      <span id="bdMonAvg" class="hint" style="align-self:center;"></span>
+    </div></div>`;
+  area.innerHTML = html;
+  updateBdMonAverage();
+  area.querySelectorAll('input[data-mahs]').forEach(inp=>{
+    inp.addEventListener('input', updateBdMonAverage);
+  });
+}
+
+function updateBdMonAverage(){
+  const inputs = [...document.querySelectorAll('#bdMonArea input[data-mahs]')];
+  const vals = inputs.map(i=>parseFloat(i.value)).filter(v=>!isNaN(v));
+  const avgEl = document.getElementById('bdMonAvg');
+  if(!avgEl) return;
+  if(!vals.length){ avgEl.textContent = 'Chưa có điểm nào'; return; }
+  const avg = vals.reduce((a,b)=>a+b,0) / vals.length;
+  avgEl.textContent = 'Điểm trung bình lớp: ' + avg.toFixed(2) + ' (' + vals.length + '/' + inputs.length + ' học sinh đã nhập)';
+}
+
+async function saveBangDiemByMon(){
+  const monHoc = getBdMonHocValue();
+  const ky = document.getElementById('bdMonKy').value;
+  const records = [...document.querySelectorAll('#bdMonArea input[data-mahs]')]
+    .filter(inp=>inp.value !== '')
+    .map(inp=>({ maHS: inp.dataset.mahs, diem: inp.value }));
+  try{
+    await apiPost({ action:'saveBangDiem', monHoc, ky, records });
+    alert('Đã lưu bảng điểm.');
+  }catch(err){
+    alert('Lỗi lưu: ' + err.message);
+  }
+}
+
+function exportBangDiemByMonExcel(){
+  const monHoc = getBdMonHocValue();
+  const ky = document.getElementById('bdMonKy').value;
+  const className = localStorage.getItem('sdd_className') || '';
+  const rows = [['Bảng điểm môn ' + monHoc + ' — ' + ky + (className?' — '+className:'')], [], ['Học sinh','Điểm']];
+  document.querySelectorAll('#bdMonArea tbody tr').forEach(tr=>{
+    const name = tr.children[0].textContent;
+    const val = tr.querySelector('input').value;
+    rows.push([name, val]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:26},{wch:10}];
+  ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:1} }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'BangDiem');
+  const safeClass = className.replace(/[^a-zA-Z0-9À-ỹ\s-]/g,'').replace(/\s+/g,'_');
+  XLSX.writeFile(wb, 'BangDiem_' + monHoc + '_' + (safeClass||'Lop') + '.xlsx');
+}
+
+function exportBangDiemByMonWord(){
+  const monHoc = getBdMonHocValue();
+  const ky = document.getElementById('bdMonKy').value;
+  const className = localStorage.getItem('sdd_className') || '';
+  let rowsHtml = '';
+  document.querySelectorAll('#bdMonArea tbody tr').forEach(tr=>{
+    const name = tr.children[0].textContent;
+    const val = tr.querySelector('input').value;
+    rowsHtml += `<tr><td>${name}</td><td class="center">${val}</td></tr>`;
+  });
+  const body = `<h1>Bảng điểm môn ${monHoc}</h1>
+    <div class="meta">${ky}${className?' — Lớp '+className:''}</div>
+    <table><tr><th>Học sinh</th><th>Điểm</th></tr>${rowsHtml}</table>`;
+  downloadWordDoc('BangDiem_' + monHoc + '_' + (className||'Lop'), body);
 }
 
 /* ---------- Kho bài kiểm tra ---------- */
