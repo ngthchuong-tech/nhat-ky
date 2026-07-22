@@ -1019,26 +1019,31 @@
     </div>
 
     <div id="rdSub-chambaiai" style="display:none;">
-      <p class="hint" style="margin-bottom:12px;">Công cụ chỉ đưa ra gợi ý nhận xét và điểm tham khảo — giáo viên xem lại và quyết định điểm cuối cùng.</p>
+      <p class="hint" style="margin-bottom:12px;">Tải ảnh chụp hoặc file PDF bài kiểm tra lên, AI đọc và đề xuất điểm + nhận xét — chỉ lưu vào bảng điểm sau khi bạn xem lại và bấm Lưu cho từng bài.</p>
       <div class="task-form">
-        <div class="hs-field" style="margin-bottom:10px;">
-          <label>Đề bài / câu hỏi</label>
-          <textarea id="cbDeBai" rows="2" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.88rem;"></textarea>
+        <div class="hs-grid">
+          <div class="hs-field"><label>Môn học</label><input type="text" id="cbMonHoc" placeholder="vd: Toán"></div>
+          <select id="cbKy" style="padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);align-self:end;">
+            <option>Giữa học kỳ 1</option>
+            <option>Cuối học kỳ 1</option>
+            <option>Giữa học kỳ 2</option>
+            <option>Cuối học kỳ 2 (Cuối năm)</option>
+          </select>
         </div>
         <div class="hs-field" style="margin-bottom:10px;">
-          <label>Đáp án mẫu / tiêu chí chấm (không bắt buộc)</label>
+          <label>Đáp án mẫu / tiêu chí chấm (không bắt buộc, giúp AI chấm chính xác hơn)</label>
           <textarea id="cbDapAn" rows="2" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.88rem;"></textarea>
         </div>
         <div class="hs-field" style="margin-bottom:10px;">
-          <label>Bài làm của học sinh</label>
-          <textarea id="cbBaiLam" rows="5" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.88rem;"></textarea>
+          <label>Ảnh hoặc PDF bài kiểm tra (chọn được nhiều file cùng lúc)</label>
+          <input type="file" id="cbFiles" accept="image/*,.pdf" multiple style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--paper-line);background:#fff;">
         </div>
         <div class="hs-field" style="margin-bottom:10px;">
           <label>Gemini API key</label>
           <input type="password" id="cbApiKey" placeholder="Dán API key từ Google AI Studio">
         </div>
         <div class="modal-actions" style="justify-content:flex-start;">
-          <button class="btn-export" onclick="chamBaiAI()" id="cbGenBtn">✨ Chấm bằng AI</button>
+          <button class="btn-export" onclick="chamBaiAI()" id="cbGenBtn">✨ Đọc &amp; chấm bằng AI</button>
           <span id="cbGenStatus" class="hint" style="align-self:center;"></span>
         </div>
       </div>
@@ -2683,37 +2688,165 @@ function printRdRecord(id){
   setTimeout(()=>w.print(), 300);
 }
 
-/* ---------- Chấm bài AI ---------- */
+/* ---------- Chấm bài AI từ ảnh/PDF ---------- */
+
+let cbResultItems = []; // { fileName, hoTenGoiY, maHS, nhanXet, diem, saved }
+
+function fileToBase64(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function callGeminiVisionJSON(apiKey, promptText, file){
+  const base64 = await fileToBase64(file);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const body = {
+    contents: [{
+      parts: [
+        { text: promptText },
+        { inline_data: { mime_type: file.type || 'application/pdf', data: base64 } }
+      ]
+    }],
+    generationConfig: { temperature: 0.4, responseMimeType: 'application/json' }
+  };
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  if(!res.ok){
+    const t = await res.text();
+    throw new Error('Gemini API lỗi (' + res.status + '): ' + t.slice(0,300));
+  }
+  const data = await res.json();
+  const text = (((data.candidates||[])[0]||{}).content||{}).parts?.map(p=>p.text||'').join('') || '';
+  if(!text) throw new Error('Gemini không trả về nội dung.');
+  const clean = text.trim().replace(/^```json\s*/,'').replace(/```$/,'').trim();
+  return JSON.parse(clean);
+}
+
+function guessStudentId(hoTenGoiY){
+  if(!hoTenGoiY || !students.length) return '';
+  const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  const target = norm(hoTenGoiY);
+  const found = students.find(s => norm(s.hoTen) === target);
+  return found ? found.maHS : '';
+}
 
 async function chamBaiAI(){
   const status = document.getElementById('cbGenStatus');
   const resultEl = document.getElementById('cbResult');
   const apiKey = document.getElementById('cbApiKey').value.trim();
-  const deBai = document.getElementById('cbDeBai').value.trim();
+  const monHoc = document.getElementById('cbMonHoc').value.trim();
   const dapAn = document.getElementById('cbDapAn').value.trim();
-  const baiLam = document.getElementById('cbBaiLam').value.trim();
+  const files = [...document.getElementById('cbFiles').files];
   if(!apiKey){ alert('Cần dán Gemini API key trước.'); return; }
-  if(!deBai || !baiLam){ alert('Cần nhập Đề bài và Bài làm của học sinh trước.'); return; }
-  localStorage.setItem('sdd_geminiApiKey', apiKey);
-  status.textContent = 'Đang chấm bằng AI…';
-  document.getElementById('cbGenBtn').disabled = true;
-  resultEl.innerHTML = '';
-  try{
-    const prompt = `Bạn là giáo viên tiểu học Việt Nam, hỗ trợ chấm bài tự luận. Đây CHỈ là gợi ý tham khảo cho giáo viên, giáo viên sẽ tự quyết định điểm cuối cùng.
-
-ĐỀ BÀI: """${deBai}"""
-${dapAn ? 'ĐÁP ÁN MẪU / TIÊU CHÍ CHẤM: """' + dapAn + '"""\n' : ''}
-BÀI LÀM CỦA HỌC SINH: """${baiLam}"""
-
-Hãy nhận xét ngắn gọn về bài làm (điểm tốt, điểm cần cải thiện), rồi đề xuất một mức điểm tham khảo trên thang điểm 10. Trình bày rõ 2 phần: "Nhận xét:" và "Điểm gợi ý:". Văn bản thuần, không dùng markdown.`;
-    const text = await callGeminiText(apiKey, prompt);
-    resultEl.innerHTML = `<div class="hc-card"><pre style="white-space:pre-wrap;font-family:inherit;font-size:0.88rem;margin:0;">${text.replace(/</g,'&lt;')}</pre></div>`;
-    status.textContent = '';
-  }catch(err){
-    status.textContent = 'Lỗi: ' + err.message;
+  if(!files.length){ alert('Chọn ít nhất 1 ảnh hoặc file PDF bài kiểm tra.'); return; }
+  if(!students.length){
+    try{ students = await apiGet('getStudents'); }catch(e){}
   }
+  localStorage.setItem('sdd_geminiApiKey', apiKey);
+  document.getElementById('cbGenBtn').disabled = true;
+  cbResultItems = [];
+  resultEl.innerHTML = '';
+
+  const promptText = `Bạn là giáo viên tiểu học Việt Nam. Đây là ảnh/PDF chụp bài kiểm tra${monHoc ? ' môn ' + monHoc : ''} một học sinh đã làm.
+${dapAn ? 'Đáp án/tiêu chí chấm tham khảo: """' + dapAn + '"""\n' : ''}
+Hãy đọc kỹ bài làm trong ảnh, rồi trả về DUY NHẤT một đối tượng JSON đúng định dạng sau, không thêm chữ nào khác ngoài JSON:
+{"hoTenHocSinh": "tên học sinh đọc được trên bài, để chuỗi rỗng nếu không thấy", "nhanXet": "nhận xét ngắn gọn, nêu điểm tốt và điểm cần cải thiện", "diem": "điểm số đề xuất trên thang 10, chỉ ghi số"}
+Đây chỉ là gợi ý tham khảo, giáo viên sẽ xem lại và quyết định điểm cuối cùng.`;
+
+  for(let i=0; i<files.length; i++){
+    const file = files[i];
+    status.textContent = `Đang đọc file ${i+1}/${files.length}: ${file.name}…`;
+    try{
+      const json = await callGeminiVisionJSON(apiKey, promptText, file);
+      cbResultItems.push({
+        fileName: file.name,
+        hoTenGoiY: json.hoTenHocSinh || '',
+        maHS: guessStudentId(json.hoTenHocSinh),
+        nhanXet: json.nhanXet || '',
+        diem: json.diem || '',
+        saved: false
+      });
+    }catch(err){
+      cbResultItems.push({ fileName: file.name, hoTenGoiY:'', maHS:'', nhanXet:'Lỗi đọc file: ' + err.message, diem:'', saved:false, error:true });
+    }
+    renderCbResults();
+  }
+  status.textContent = `✓ Đã xử lý ${files.length} file — kiểm tra lại từng bài trước khi lưu`;
   document.getElementById('cbGenBtn').disabled = false;
 }
+
+function renderCbResults(){
+  const resultEl = document.getElementById('cbResult');
+  const studentOptions = students.map(s=>`<option value="${s.maHS}">${s.hoTen}</option>`).join('');
+  resultEl.innerHTML = cbResultItems.map((item, idx)=>{
+    if(item.error){
+      return `<div class="hc-card"><div class="hc-title">${item.fileName}</div><p class="hint" style="color:var(--absent);">${item.nhanXet}</p></div>`;
+    }
+    return `<div class="hc-card">
+      <div class="hc-title" style="margin-bottom:8px;">${item.fileName}${item.hoTenGoiY ? ' — AI đọc được tên: "'+item.hoTenGoiY+'"' : ' — không đọc được tên trên bài'}</div>
+      <div class="hs-grid">
+        <div class="hs-field"><label>Học sinh</label>
+          <select data-idx="${idx}" class="cb-mahs" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);">
+            <option value="">-- Chọn học sinh --</option>
+            ${studentOptions}
+          </select>
+        </div>
+        <div class="hs-field"><label>Điểm</label><input type="number" min="0" max="10" step="0.5" class="cb-diem" data-idx="${idx}" value="${item.diem}" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);"></div>
+      </div>
+      <div class="hs-field" style="margin:10px 0;">
+        <label>Nhận xét</label>
+        <textarea class="cb-nhanxet" data-idx="${idx}" rows="2" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;">${item.nhanXet}</textarea>
+      </div>
+      <button class="btn-primary" onclick="saveCbResult(${idx})" ${item.saved?'disabled':''}>${item.saved ? '✓ Đã lưu' : 'Lưu vào bảng điểm'}</button>
+    </div>`;
+  }).join('');
+  resultEl.querySelectorAll('.cb-mahs').forEach(sel=>{
+    const idx = sel.dataset.idx;
+    sel.value = cbResultItems[idx].maHS || '';
+    sel.addEventListener('change', ()=>{ cbResultItems[idx].maHS = sel.value; });
+  });
+  resultEl.querySelectorAll('.cb-diem').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ cbResultItems[inp.dataset.idx].diem = inp.value; });
+  });
+  resultEl.querySelectorAll('.cb-nhanxet').forEach(ta=>{
+    ta.addEventListener('input', ()=>{ cbResultItems[ta.dataset.idx].nhanXet = ta.value; });
+  });
+}
+
+async function saveCbResult(idx){
+  const item = cbResultItems[idx];
+  const monHoc = document.getElementById('cbMonHoc').value.trim();
+  const ky = document.getElementById('cbKy').value;
+  if(!item.maHS){ alert('Chọn học sinh cho bài này trước.'); return; }
+  if(!monHoc){ alert('Nhập Môn học ở trên trước.'); return; }
+  try{
+    // Lưu điểm: cập nhật bảng điểm môn+kỳ hiện tại, giữ nguyên điểm các em khác
+    let current = [];
+    try{ current = await apiGet('getBangDiem'); }catch(e){}
+    const others = current.filter(r => !(r.monHoc===monHoc && r.ky===ky && r.maHS===item.maHS));
+    const sameGroup = current.filter(r => r.monHoc===monHoc && r.ky===ky && r.maHS!==item.maHS)
+      .map(r=>({ maHS:r.maHS, diem:r.diem }));
+    sameGroup.push({ maHS:item.maHS, diem:item.diem });
+    await apiPost({ action:'saveBangDiem', monHoc, ky, records: sameGroup });
+
+    // Lưu nhận xét vào Sổ liên lạc cá nhân
+    if(item.nhanXet){
+      await apiPost({ action:'saveSoLienLac', record:{ id:String(Date.now())+idx, maHS:item.maHS, ngay: todayStr(), noiDung: `[${monHoc}] ${item.nhanXet}` } });
+    }
+    cbResultItems[idx].saved = true;
+    renderCbResults();
+  }catch(err){
+    alert('Lỗi lưu: ' + err.message);
+  }
+}
+
 
 /* ---------- Bảng điểm ---------- */
 
