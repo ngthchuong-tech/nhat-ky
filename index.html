@@ -353,6 +353,24 @@
     color:var(--ink);
     margin:0 0 10px;
   }
+  .sll-entry{
+    background:var(--card);
+    border-radius:10px;
+    padding:10px 14px;
+    margin-bottom:8px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.04);
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+  }
+  .sll-entry .sll-date{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.7rem;
+    color:var(--ink-soft);
+    margin-bottom:3px;
+  }
+  .sll-entry .sll-text{ font-size:0.85rem; }
   .copy-btn{
     background:var(--chalk-green);
     color:#F5F1E3;
@@ -707,6 +725,7 @@
       <select id="thongBaoType" onchange="onThongBaoTypeChange()">
         <option value="vangHoc">Báo nghỉ học (tự động theo điểm danh)</option>
         <option value="danhBa">Danh bạ phụ huynh (nhắn Zalo nhanh)</option>
+        <option value="soLienLac">Sổ liên lạc cá nhân</option>
         <option value="hopPH">Họp phụ huynh</option>
         <option value="thuQuy">Thu quỹ lớp</option>
         <option value="tuyChinh">Thông báo tùy chỉnh</option>
@@ -723,6 +742,19 @@
 
     <div id="danhBaSection" style="display:none;">
       <div id="danhBaResult"><div class="empty">Đang tải danh bạ…</div></div>
+    </div>
+
+    <div id="soLienLacSection" style="display:none;">
+      <div class="task-form">
+        <select id="sllHocSinh" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);margin-bottom:10px;" onchange="loadSoLienLacEntries()"></select>
+      </div>
+      <div id="sllContacts"></div>
+      <div class="task-form">
+        <textarea id="sllNoiDung" rows="3" placeholder="Nhận xét, tình hình học tập của con trong tuần/hôm nay..." style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.88rem;margin-bottom:10px;"></textarea>
+        <input type="date" id="sllNgay" style="margin-bottom:10px;">
+        <button class="btn-primary" style="width:100%;" onclick="addSoLienLacEntry()">+ Thêm ghi chú</button>
+      </div>
+      <div id="sllList"><div class="empty">Chọn học sinh để xem sổ liên lạc</div></div>
     </div>
 
     <div id="broadcastSection" style="display:none;">
@@ -1300,10 +1332,16 @@ function onThongBaoTypeChange(){
   const type = document.getElementById('thongBaoType').value;
   document.getElementById('vangHocSection').style.display = type==='vangHoc' ? '' : 'none';
   document.getElementById('danhBaSection').style.display = type==='danhBa' ? '' : 'none';
-  document.getElementById('broadcastSection').style.display = (type!=='vangHoc' && type!=='danhBa') ? '' : 'none';
+  document.getElementById('soLienLacSection').style.display = type==='soLienLac' ? '' : 'none';
+  document.getElementById('broadcastSection').style.display = (type==='hopPH'||type==='thuQuy'||type==='tuyChinh') ? '' : 'none';
   if(type === 'danhBa'){
     renderDanhBa();
-  } else if(type !== 'vangHoc'){
+  } else if(type === 'soLienLac'){
+    if(!document.getElementById('sllNgay').value){
+      document.getElementById('sllNgay').value = todayStr();
+    }
+    fillSllStudentSelect();
+  } else if(type==='hopPH'||type==='thuQuy'||type==='tuyChinh'){
     const className = localStorage.getItem('sdd_className') || 'lớp mình';
     document.getElementById('broadcastText').value = BROADCAST_TEMPLATES[type].replace('{Lop}', className);
   }
@@ -2306,6 +2344,86 @@ function quickGiaoAnFromPp(idx){
   openGaEditor(null);
   document.getElementById('gaMonHoc').value = r.monHoc;
   document.getElementById('gaTenBai').value = r.tenBai;
+}
+
+/* ---------- Sổ liên lạc cá nhân từng học sinh ---------- */
+
+let sllEntries = [];
+let sllStudentsFilled = false;
+
+async function fillSllStudentSelect(){
+  const sel = document.getElementById('sllHocSinh');
+  if(!students.length){
+    try{ students = await apiGet('getStudents'); }catch(e){}
+  }
+  if(!students.length){
+    sel.innerHTML = '<option value="">(chưa có danh sách học sinh)</option>';
+    return;
+  }
+  sel.innerHTML = students.map(s=>`<option value="${s.maHS}">${s.hoTen}</option>`).join('');
+  sllStudentsFilled = true;
+  if(!parentsLoaded) await loadParents();
+  loadSoLienLacEntries();
+}
+
+async function loadSoLienLacEntries(){
+  const maHS = document.getElementById('sllHocSinh').value;
+  const listEl = document.getElementById('sllList');
+  const contactsEl = document.getElementById('sllContacts');
+  if(!maHS){ listEl.innerHTML = ''; contactsEl.innerHTML = ''; return; }
+  contactsEl.innerHTML = `<div class="msg-card">${renderContactRows(maHS)}</div>`;
+  listEl.innerHTML = '<div class="empty">Đang tải…</div>';
+  try{
+    sllEntries = await apiGet('getSoLienLac');
+    renderSllList();
+  }catch(err){
+    listEl.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
+  }
+}
+
+function renderSllList(){
+  const maHS = document.getElementById('sllHocSinh').value;
+  const listEl = document.getElementById('sllList');
+  const entries = sllEntries.filter(e=>e.maHS===maHS).sort((a,b)=> b.ngay.localeCompare(a.ngay));
+  if(!entries.length){
+    listEl.innerHTML = '<div class="empty">Chưa có ghi chú nào cho học sinh này.</div>';
+    return;
+  }
+  listEl.innerHTML = entries.map(e=>`<div class="sll-entry">
+    <div>
+      <div class="sll-date">${e.ngay}</div>
+      <div class="sll-text">${e.noiDung}</div>
+    </div>
+    <button class="task-del" onclick="deleteSllEntry('${e.id}')">✕</button>
+  </div>`).join('');
+}
+
+async function addSoLienLacEntry(){
+  const maHS = document.getElementById('sllHocSinh').value;
+  const ngay = document.getElementById('sllNgay').value || todayStr();
+  const noiDung = document.getElementById('sllNoiDung').value.trim();
+  if(!maHS){ alert('Chọn học sinh trước.'); return; }
+  if(!noiDung){ alert('Nhập nội dung ghi chú trước.'); return; }
+  const entry = { id: String(Date.now()), maHS, ngay, noiDung };
+  sllEntries.push(entry);
+  renderSllList();
+  document.getElementById('sllNoiDung').value = '';
+  try{
+    await apiPost({ action:'saveSoLienLac', record: entry });
+  }catch(err){
+    alert('Lỗi lưu: ' + err.message);
+  }
+}
+
+async function deleteSllEntry(id){
+  if(!confirm('Xóa ghi chú này?')) return;
+  sllEntries = sllEntries.filter(e=>e.id!==id);
+  renderSllList();
+  try{
+    await apiPost({ action:'deleteSoLienLac', id });
+  }catch(err){
+    alert('Lỗi xóa: ' + err.message);
+  }
 }
 
 loadStudents();
