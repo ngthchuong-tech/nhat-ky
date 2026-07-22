@@ -403,6 +403,28 @@
     margin-bottom:3px;
   }
   .sll-entry .sll-text{ font-size:0.85rem; }
+  .mau-pill{
+    display:inline-block;
+    background:#FFF7E2;
+    border:1px solid var(--chalk-yellow);
+    color:var(--chalk-green-dark);
+    border-radius:14px;
+    padding:6px 12px;
+    font-size:0.78rem;
+    cursor:pointer;
+    margin:0 6px 6px 0;
+  }
+  .mau-pill:hover{ background:var(--chalk-yellow); }
+  .mau-manage-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:var(--card);
+    border-radius:8px;
+    padding:6px 10px;
+    margin-bottom:6px;
+    font-size:0.8rem;
+  }
   .copy-btn{
     background:var(--chalk-green);
     color:#F5F1E3;
@@ -1017,6 +1039,23 @@
           <select id="sllHocSinh" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);margin-bottom:10px;" onchange="loadSoLienLacEntries()"></select>
         </div>
         <div id="sllContacts"></div>
+
+        <div class="task-form">
+          <div class="modal-actions" style="justify-content:space-between;margin-bottom:8px;">
+            <span class="rate-label" style="margin-bottom:0;">Mẫu câu nhận xét (bấm để chèn vào ô bên dưới)</span>
+            <button class="copy-btn" style="font-size:0.72rem;padding:4px 10px;" onclick="toggleMauNhanXetManager()">⚙ Quản lý mẫu</button>
+          </div>
+          <div id="sllMauList" class="hint">Đang tải mẫu câu…</div>
+
+          <div id="mauNhanXetManager" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--paper-line);">
+            <div class="task-form-row">
+              <input type="text" id="mauNhanXetMoi" placeholder="Soạn mẫu câu mới, vd: Con tích cực phát biểu, hăng hái xây dựng bài.">
+              <button class="btn-primary" onclick="addMauNhanXet()">+ Lưu mẫu</button>
+            </div>
+            <div id="mauNhanXetManageList" style="margin-top:8px;"></div>
+          </div>
+        </div>
+
         <div class="task-form">
           <textarea id="sllNoiDung" rows="3" placeholder="Nhận xét, tình hình học tập của con trong tuần/hôm nay..." style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.88rem;margin-bottom:10px;"></textarea>
           <input type="date" id="sllNgay" style="margin-bottom:10px;">
@@ -1878,6 +1917,7 @@ function onThongBaoTypeChange(){
       document.getElementById('sllNgay').value = todayStr();
     }
     fillSllStudentSelect();
+    if(!mauNhanXetLoaded) loadMauNhanXet();
   } else if(type==='hopPH'||type==='thuQuy'||type==='tuyChinh'){
     const className = localStorage.getItem('sdd_className') || 'lớp mình';
     document.getElementById('broadcastText').value = BROADCAST_TEMPLATES[type].replace('{Lop}', className);
@@ -5105,6 +5145,88 @@ async function addSelectedKhenThuong(maHSList){
   }
   renderKtklList();
   document.getElementById('ktklGoiYList').innerHTML = `<div class="empty">✓ Đã thêm ${count} mục vào sổ Khen thưởng - Kỷ luật.</div>`;
+}
+
+/* ---------- Mẫu nhận xét (câu mẫu tự soạn cho Sổ liên lạc cá nhân) ---------- */
+
+let mauNhanXetRecords = [];
+let mauNhanXetLoaded = false;
+
+async function loadMauNhanXet(){
+  const pickEl = document.getElementById('sllMauList');
+  pickEl.textContent = 'Đang tải mẫu câu…';
+  try{
+    mauNhanXetRecords = await apiGet('getMauNhanXet');
+    mauNhanXetLoaded = true;
+    renderMauNhanXetPicker();
+    renderMauNhanXetManageList();
+  }catch(err){
+    pickEl.textContent = 'Lỗi tải mẫu câu: ' + err.message;
+  }
+}
+
+function renderMauNhanXetPicker(){
+  const pickEl = document.getElementById('sllMauList');
+  if(!mauNhanXetRecords.length){
+    pickEl.innerHTML = '<span class="hint">Chưa có mẫu câu nào — bấm "⚙ Quản lý mẫu" để soạn mẫu đầu tiên.</span>';
+    return;
+  }
+  pickEl.innerHTML = mauNhanXetRecords.map(m=>
+    `<span class="mau-pill" onclick="insertMauNhanXet('${m.id}')">${m.noiDung}</span>`
+  ).join('');
+}
+
+function insertMauNhanXet(id){
+  const m = mauNhanXetRecords.find(x=>x.id===id);
+  if(!m) return;
+  const ta = document.getElementById('sllNoiDung');
+  ta.value = ta.value.trim() ? (ta.value.trim() + ' ' + m.noiDung) : m.noiDung;
+  ta.focus();
+}
+
+function toggleMauNhanXetManager(){
+  const el = document.getElementById('mauNhanXetManager');
+  el.style.display = el.style.display === 'none' ? '' : 'none';
+}
+
+function renderMauNhanXetManageList(){
+  const el = document.getElementById('mauNhanXetManageList');
+  if(!mauNhanXetRecords.length){
+    el.innerHTML = '<span class="hint">Chưa có mẫu câu nào.</span>';
+    return;
+  }
+  el.innerHTML = mauNhanXetRecords.map(m=>`<div class="mau-manage-row">
+    <span>${m.noiDung}</span>
+    <button class="task-del" onclick="deleteMauNhanXetItem('${m.id}')">✕</button>
+  </div>`).join('');
+}
+
+async function addMauNhanXet(){
+  const input = document.getElementById('mauNhanXetMoi');
+  const noiDung = input.value.trim();
+  if(!noiDung){ alert('Nhập nội dung mẫu câu trước.'); return; }
+  const record = { id: String(Date.now()), noiDung };
+  mauNhanXetRecords.push(record);
+  renderMauNhanXetPicker();
+  renderMauNhanXetManageList();
+  input.value = '';
+  try{
+    await apiPost({ action:'saveMauNhanXet', record });
+  }catch(err){
+    alert('Lỗi lưu mẫu câu: ' + err.message);
+  }
+}
+
+async function deleteMauNhanXetItem(id){
+  if(!confirm('Xóa mẫu câu này?')) return;
+  mauNhanXetRecords = mauNhanXetRecords.filter(m=>m.id!==id);
+  renderMauNhanXetPicker();
+  renderMauNhanXetManageList();
+  try{
+    await apiPost({ action:'deleteMauNhanXet', id });
+  }catch(err){
+    alert('Lỗi xóa: ' + err.message);
+  }
 }
 
 syncCaiDatFromServer();
