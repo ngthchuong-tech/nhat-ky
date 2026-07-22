@@ -36,22 +36,48 @@
     padding-bottom:90px;
   }
   header{
-    background:var(--chalk-green);
+    background:linear-gradient(135deg, var(--chalk-green) 0%, var(--chalk-green-dark) 100%);
     color:#F5F1E3;
     padding:22px 20px 26px;
     border-radius:0 0 22px 22px;
     position:relative;
-    box-shadow:0 6px 18px rgba(31,77,61,0.25);
+    box-shadow:0 6px 18px rgba(31,77,61,0.3);
+    overflow:hidden;
+  }
+  header::before{
+    content:"";
+    position:absolute;
+    top:-40px; right:-40px;
+    width:160px; height:160px;
+    background:radial-gradient(circle, rgba(227,179,65,0.25) 0%, transparent 70%);
+    pointer-events:none;
   }
   header h1{
     margin:0 0 2px;
-    font-size:1.5rem;
+    font-size:1.7rem;
     font-weight:800;
-    letter-spacing:0.2px;
+    letter-spacing:0.3px;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    text-shadow:0 2px 6px rgba(0,0,0,0.15);
+  }
+  header h1 .book-icon{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:34px; height:34px;
+    background:var(--chalk-yellow);
+    color:var(--chalk-green-dark);
+    border-radius:9px;
+    font-size:1.1rem;
+    transform:rotate(-4deg);
+    box-shadow:0 3px 6px rgba(0,0,0,0.2);
+    flex-shrink:0;
   }
   header .sub{
     font-size:0.85rem;
-    opacity:0.75;
+    opacity:0.8;
     font-family:'JetBrains Mono', monospace;
   }
   .settings-btn{
@@ -64,12 +90,15 @@
     width:38px;height:38px;
     font-size:1.1rem;
     cursor:pointer;
+    z-index:1;
   }
   .datebar{
     margin-top:16px;
     display:flex;
     align-items:center;
     gap:10px;
+    position:relative;
+    z-index:1;
   }
   .datebar input[type=date]{
     font-family:'JetBrains Mono', monospace;
@@ -83,13 +112,15 @@
   }
   .tabs{
     display:flex;
-    margin:18px 20px 0;
+    margin:0 0 0;
     background:var(--card);
-    border-radius:12px;
-    padding:4px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.06);
+    padding:6px 20px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
     overflow-x:auto;
     -webkit-overflow-scrolling:touch;
+    position:sticky;
+    top:0;
+    z-index:30;
   }
   .tab{
     flex:0 0 auto;
@@ -691,7 +722,7 @@
 
 <header>
   <button class="settings-btn" onclick="openSettings()">⚙</button>
-  <h1>Sổ Tay Giáo Viên</h1>
+  <h1><span class="book-icon">📘</span> Sổ Tay Giáo Viên</h1>
   <div class="sub" id="className">Chưa đặt tên lớp</div>
   <div class="datebar">
     <input type="date" id="datePicker">
@@ -699,16 +730,15 @@
 </header>
 
 <div class="tabs">
-  <div class="tab active" data-tab="diemdanh" onclick="switchTab('diemdanh')">Điểm danh</div>
-  <div class="tab" data-tab="lienlac" onclick="switchTab('lienlac')">Liên lạc</div>
-  <div class="tab" data-tab="lichcongtac" onclick="switchTab('lichcongtac')">Lịch công tác</div>
-  <div class="tab" data-tab="hanhchinh" onclick="switchTab('hanhchinh')">Đánh giá học sinh</div>
-  <div class="tab" data-tab="hocsinh" onclick="switchTab('hocsinh')">Học sinh</div>
-  <div class="tab" data-tab="phieubaitap" onclick="switchTab('phieubaitap')">Phiếu bài tập Toán</div>
-  <div class="tab" data-tab="giaoan" onclick="switchTab('giaoan')">Soạn giáo án</div>
-  <div class="tab" data-tab="radekt" onclick="switchTab('radekt')">Ra đề &amp; Chấm điểm</div>
-  <div class="tab" data-tab="skkn" onclick="switchTab('skkn')">Sáng kiến kinh nghiệm</div>
-  <div class="tab" data-tab="sochunhiem" onclick="switchTab('sochunhiem')">Sổ chủ nhiệm</div>
+  <div class="tab active" data-tab="lichcongtac" onclick="switchTab('lichcongtac')">📅 Lịch công tác</div>
+  <div class="tab" data-tab="diemdanh" onclick="switchTab('diemdanh')">📋 Điểm danh</div>
+  <div class="tab" data-tab="hocsinh" onclick="switchTab('hocsinh')">🧒 Học sinh</div>
+  <div class="tab" data-tab="hanhchinh" onclick="switchTab('hanhchinh')">📊 Đánh giá học sinh</div>
+  <div class="tab" data-tab="sochunhiem" onclick="switchTab('sochunhiem')">🗂️ Sổ chủ nhiệm</div>
+  <div class="tab" data-tab="giaoan" onclick="switchTab('giaoan')">📘 Soạn giáo án</div>
+  <div class="tab" data-tab="radekt" onclick="switchTab('radekt')">📝 Ra đề &amp; Chấm điểm</div>
+  <div class="tab" data-tab="skkn" onclick="switchTab('skkn')">💡 Sáng kiến kinh nghiệm</div>
+  <div class="tab" data-tab="phieubaitap" onclick="switchTab('phieubaitap')">✏️ Phiếu bài tập Toán</div>
 </div>
 
 <main>
@@ -729,52 +759,6 @@
         <button class="btn-export" id="exportBtn" onclick="exportStatsExcel()" disabled>⬇ Tải Excel</button>
       </div>
       <div id="statsResult"><div class="empty">Chọn tháng để xem thống kê chuyên cần</div></div>
-    </div>
-  </div>
-
-  <div id="tab-lienlac" style="display:none;">
-    <div class="lienlac-type">
-      <select id="thongBaoType" onchange="onThongBaoTypeChange()">
-        <option value="vangHoc">Báo nghỉ học (tự động theo điểm danh)</option>
-        <option value="danhBa">Danh bạ phụ huynh (nhắn Zalo nhanh)</option>
-        <option value="soLienLac">Sổ liên lạc cá nhân</option>
-        <option value="hopPH">Họp phụ huynh</option>
-        <option value="thuQuy">Thu quỹ lớp</option>
-        <option value="tuyChinh">Thông báo tùy chỉnh</option>
-      </select>
-    </div>
-
-    <div id="vangHocSection">
-      <div class="stats-controls">
-        <input type="date" id="vangHocDate">
-        <button class="btn-primary" onclick="loadVangHocMessages()">Tạo thông báo</button>
-      </div>
-      <div id="vangHocResult"><div class="empty">Chọn ngày để tạo thông báo nghỉ học cho phụ huynh</div></div>
-    </div>
-
-    <div id="danhBaSection" style="display:none;">
-      <div id="danhBaResult"><div class="empty">Đang tải danh bạ…</div></div>
-    </div>
-
-    <div id="soLienLacSection" style="display:none;">
-      <div class="task-form">
-        <select id="sllHocSinh" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);margin-bottom:10px;" onchange="loadSoLienLacEntries()"></select>
-      </div>
-      <div id="sllContacts"></div>
-      <div class="task-form">
-        <textarea id="sllNoiDung" rows="3" placeholder="Nhận xét, tình hình học tập của con trong tuần/hôm nay..." style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.88rem;margin-bottom:10px;"></textarea>
-        <input type="date" id="sllNgay" style="margin-bottom:10px;">
-        <button class="btn-primary" style="width:100%;" onclick="addSoLienLacEntry()">+ Thêm ghi chú</button>
-      </div>
-      <div id="sllList"><div class="empty">Chọn học sinh để xem sổ liên lạc</div></div>
-    </div>
-
-    <div id="broadcastSection" style="display:none;">
-      <textarea id="broadcastText" rows="9"></textarea>
-      <div class="modal-actions" style="justify-content:flex-start; margin-top:10px;">
-        <button class="btn-primary" onclick="copyBroadcast()">📋 Sao chép nội dung</button>
-        <span id="broadcastCopyStatus" class="hint" style="align-self:center;"></span>
-      </div>
     </div>
   </div>
 
@@ -885,6 +869,12 @@
   </div>
 
   <div id="tab-hocsinh" style="display:none;">
+    <div class="sub-tabs">
+      <div class="sub-tab active" data-subtab="ds" onclick="switchHsSubTab('ds')">Danh sách học sinh</div>
+      <div class="sub-tab" data-subtab="lienlac" onclick="switchHsSubTab('lienlac')">Liên lạc phụ huynh</div>
+    </div>
+
+    <div id="hsSub-ds">
     <div id="hsListView">
       <div class="modal-actions" style="justify-content:flex-start; margin-bottom:14px;">
         <button class="btn-primary" onclick="openHsEditor(null)">+ Thêm học sinh mới</button>
@@ -972,6 +962,53 @@
       <div class="modal-actions" style="justify-content:flex-start;">
         <button class="btn-secondary" onclick="closeHsEditor()">Hủy</button>
         <button class="btn-primary" onclick="saveHsEditor()">Lưu</button>
+      </div>
+    </div>
+    </div>
+
+    <div id="hsSub-lienlac" style="display:none;">
+      <div class="lienlac-type">
+        <select id="thongBaoType" onchange="onThongBaoTypeChange()">
+          <option value="vangHoc">Báo nghỉ học (tự động theo điểm danh)</option>
+          <option value="danhBa">Danh bạ phụ huynh (nhắn Zalo nhanh)</option>
+          <option value="soLienLac">Sổ liên lạc cá nhân</option>
+          <option value="hopPH">Họp phụ huynh</option>
+          <option value="thuQuy">Thu quỹ lớp</option>
+          <option value="tuyChinh">Thông báo tùy chỉnh</option>
+        </select>
+      </div>
+
+      <div id="vangHocSection">
+        <div class="stats-controls">
+          <input type="date" id="vangHocDate">
+          <button class="btn-primary" onclick="loadVangHocMessages()">Tạo thông báo</button>
+        </div>
+        <div id="vangHocResult"><div class="empty">Chọn ngày để tạo thông báo nghỉ học cho phụ huynh</div></div>
+      </div>
+
+      <div id="danhBaSection" style="display:none;">
+        <div id="danhBaResult"><div class="empty">Đang tải danh bạ…</div></div>
+      </div>
+
+      <div id="soLienLacSection" style="display:none;">
+        <div class="task-form">
+          <select id="sllHocSinh" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--paper-line);margin-bottom:10px;" onchange="loadSoLienLacEntries()"></select>
+        </div>
+        <div id="sllContacts"></div>
+        <div class="task-form">
+          <textarea id="sllNoiDung" rows="3" placeholder="Nhận xét, tình hình học tập của con trong tuần/hôm nay..." style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--paper-line);font-family:inherit;font-size:0.88rem;margin-bottom:10px;"></textarea>
+          <input type="date" id="sllNgay" style="margin-bottom:10px;">
+          <button class="btn-primary" style="width:100%;" onclick="addSoLienLacEntry()">+ Thêm ghi chú</button>
+        </div>
+        <div id="sllList"><div class="empty">Chọn học sinh để xem sổ liên lạc</div></div>
+      </div>
+
+      <div id="broadcastSection" style="display:none;">
+        <textarea id="broadcastText" rows="9"></textarea>
+        <div class="modal-actions" style="justify-content:flex-start; margin-top:10px;">
+          <button class="btn-primary" onclick="copyBroadcast()">📋 Sao chép nội dung</button>
+          <span id="broadcastCopyStatus" class="hint" style="align-self:center;"></span>
+        </div>
       </div>
     </div>
   </div>
@@ -1462,7 +1499,6 @@ function switchDiemDanhSubTab(name){
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
   document.getElementById('tab-diemdanh').style.display = name==='diemdanh' ? '' : 'none';
-  document.getElementById('tab-lienlac').style.display = name==='lienlac' ? '' : 'none';
   document.getElementById('tab-lichcongtac').style.display = name==='lichcongtac' ? '' : 'none';
   document.getElementById('tab-hanhchinh').style.display = name==='hanhchinh' ? '' : 'none';
   document.getElementById('tab-hocsinh').style.display = name==='hocsinh' ? '' : 'none';
@@ -1472,12 +1508,6 @@ function switchTab(name){
   document.getElementById('tab-skkn').style.display = name==='skkn' ? '' : 'none';
   document.getElementById('tab-sochunhiem').style.display = name==='sochunhiem' ? '' : 'none';
   document.getElementById('bottomBar').style.display = isDiemDanhTabActive() && students.length ? 'flex' : 'none';
-  if(name==='lienlac'){
-    if(!document.getElementById('vangHocDate').value){
-      document.getElementById('vangHocDate').value = todayStr();
-    }
-    if(!parentsLoaded) loadParents();
-  }
   if(name==='lichcongtac'){
     if(!tasksLoaded) loadTasksUI();
     if(!timetableLoaded) loadTimetableUI();
@@ -1514,6 +1544,18 @@ function switchScnSubTab(name){
   document.getElementById('scnSub-canbo').style.display = name==='canbo' ? '' : 'none';
   document.getElementById('scnSub-cmhs').style.display = name==='cmhs' ? '' : 'none';
   document.getElementById('scnSub-khenthuong').style.display = name==='khenthuong' ? '' : 'none';
+}
+
+function switchHsSubTab(name){
+  document.querySelectorAll('#tab-hocsinh .sub-tab').forEach(t=>t.classList.toggle('active', t.dataset.subtab===name));
+  document.getElementById('hsSub-ds').style.display = name==='ds' ? '' : 'none';
+  document.getElementById('hsSub-lienlac').style.display = name==='lienlac' ? '' : 'none';
+  if(name==='lienlac'){
+    if(!document.getElementById('vangHocDate').value){
+      document.getElementById('vangHocDate').value = todayStr();
+    }
+    if(!parentsLoaded) loadParents();
+  }
 }
 
 function switchGaSubTab(name){
@@ -2307,9 +2349,14 @@ async function loadDanhGiaForm(){
       <button class="btn-primary" onclick="saveDanhGiaForm()">Lưu phiếu đánh giá</button>
       <button class="copy-btn" onclick="printDanhGia()">🖨 In phiếu</button>
       <button class="copy-btn" onclick="exportDanhGiaWord()">⬇ Tải Word</button>
+      <button class="copy-btn" onclick="copyDanhGiaSummary(this)">📋 Sao chép tóm tắt</button>
       <span id="dgSaveStatus" class="hint" style="align-self:center;"></span>
-    </div>`;
+    </div>
+    <div class="dg-section-title">Gửi phụ huynh</div>
+    <div id="dgZaloArea"><p class="hint">Đang tải thông tin phụ huynh…</p></div>`;
   area.innerHTML = html;
+  if(!parentsLoaded) await loadParents();
+  document.getElementById('dgZaloArea').innerHTML = renderContactRows(maHS);
 
   // Bảng điểm chi tiết + nhận xét — tham khảo bên phải khi đánh giá
   const diemHocSinh = bangDiem.filter(r=>r.maHS===maHS && r.ky===ky);
@@ -2376,6 +2423,30 @@ async function saveDanhGiaForm(){
   }catch(err){
     status.textContent = 'Lỗi: ' + err.message;
   }
+}
+
+function copyDanhGiaSummary(btn){
+  const maHS = document.getElementById('dgHocSinh').value;
+  const ky = document.getElementById('dgKy').value;
+  const student = students.find(s=>s.maHS===maHS);
+  const hoTen = student ? student.hoTen : maHS;
+  const records = collectDanhGiaRecords();
+  const tongHop = records.find(r=>r.loai==='TongHop' && r.tenTieuChi==='Muc');
+  const khenThuong = records.find(r=>r.loai==='TongHop' && r.tenTieuChi==='KhenThuong');
+  const monHocList = records.filter(r=>r.loai==='MonHoc' && (r.muc||r.nhanXet))
+    .map(r=>`- ${r.tenTieuChi}: ${r.muc}${r.nhanXet ? ' ('+r.nhanXet+')' : ''}`).join('\n');
+  const text = `Kết quả đánh giá ${ky} của con ${hoTen}:
+
+Môn học:
+${monHocList || '(chưa có)'}
+
+Mức đạt chung: ${tongHop?tongHop.muc:''}
+Khen thưởng: ${khenThuong?khenThuong.nhanXet:''}`;
+  navigator.clipboard.writeText(text).then(()=>{
+    const original = btn.textContent;
+    btn.textContent = '✓ Đã sao chép';
+    setTimeout(()=>{ btn.textContent = original; }, 1800);
+  });
 }
 
 function buildDanhGiaBodyHtml(){
@@ -3386,9 +3457,15 @@ async function loadBangDiemTable(){
     <div class="modal-actions" style="justify-content:flex-start;margin-top:12px;">
       <button class="btn-primary" onclick="saveBangDiemTable()">Lưu bảng điểm</button>
       <button class="btn-export" onclick="exportBangDiemExcel()">⬇ Tải Excel</button>
+      <button class="copy-btn" onclick="copyBangDiemSummary(this)">📋 Sao chép tóm tắt</button>
       <span id="bdAvg" class="hint" style="align-self:center;"></span>
-    </div></div>`;
+    </div>
+    <div class="dg-section-title">Gửi phụ huynh</div>
+    <div id="bdZaloArea"><p class="hint">Đang tải thông tin phụ huynh…</p></div>
+    </div>`;
   area.innerHTML = html;
+  if(!parentsLoaded) await loadParents();
+  document.getElementById('bdZaloArea').innerHTML = renderContactRows(maHS);
   updateBdAverage();
   area.querySelectorAll('input[data-mon]').forEach(inp=>{
     inp.addEventListener('input', updateBdAverage);
@@ -3403,6 +3480,24 @@ function updateBdAverage(){
   if(!vals.length){ avgEl.textContent = 'Chưa có điểm nào'; return; }
   const avg = vals.reduce((a,b)=>a+b,0) / vals.length;
   avgEl.textContent = 'Điểm trung bình các môn có điểm: ' + avg.toFixed(2) + ' (' + vals.length + '/' + inputs.length + ' môn đã nhập)';
+}
+
+function copyBangDiemSummary(btn){
+  const maHS = document.getElementById('bdHocSinh').value;
+  const ky = document.getElementById('bdKy').value;
+  const student = students.find(s=>s.maHS===maHS);
+  const hoTen = student ? student.hoTen : maHS;
+  const rows = [...document.querySelectorAll('#bdArea input[data-mon]')]
+    .filter(inp=>inp.value !== '')
+    .map(inp=>`- ${inp.dataset.mon}: ${inp.value}`).join('\n');
+  const text = `Bảng điểm ${ky} của con ${hoTen}:
+
+${rows || '(chưa có điểm)'}`;
+  navigator.clipboard.writeText(text).then(()=>{
+    const original = btn.textContent;
+    btn.textContent = '✓ Đã sao chép';
+    setTimeout(()=>{ btn.textContent = original; }, 1800);
+  });
 }
 
 async function saveBangDiemTable(){
