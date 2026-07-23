@@ -1702,7 +1702,11 @@ async function apiGet(action, params){
   url.searchParams.set('action', action);
   Object.entries(params||{}).forEach(([k,v])=>url.searchParams.set(k,v));
   const res = await fetchWithTimeout(url.toString(), {}, 20000);
-  return res.json();
+  const json = await res.json();
+  if(json && !Array.isArray(json) && typeof json === 'object' && json.error){
+    throw new Error('Lỗi từ máy chủ: ' + json.error);
+  }
+  return json;
 }
 async function apiPost(payload){
   if(!webAppUrl){ throw new Error('Chưa cài đặt Web App URL'); }
@@ -1711,7 +1715,11 @@ async function apiPost(payload){
     headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify(payload)
   }, 20000);
-  return res.json();
+  const json = await res.json();
+  if(json && json.error){
+    throw new Error('Lỗi từ máy chủ: ' + json.error);
+  }
+  return json;
 }
 
 async function loadStudents(){
@@ -2553,6 +2561,7 @@ async function loadDanhGiaForm(){
     refPanel.innerHTML = '';
     return;
   }
+  try{
   const existingForKy = dgAllRecords.filter(r => r.maHS===maHS && r.ky===ky);
   const savedMonHocNames = existingForKy.filter(r=>r.loai==='MonHoc').map(r=>r.tenTieuChi);
   const monHocList = [...MON_HOC];
@@ -2659,6 +2668,10 @@ async function loadDanhGiaForm(){
       }
     }
   });
+  }catch(err){
+    area.innerHTML = '<div class="empty">Lỗi hiển thị phiếu đánh giá: '+err.message+'</div>';
+    refPanel.innerHTML = '';
+  }
 }
 
 function suggestMucFromDiem(diem){
@@ -3726,6 +3739,7 @@ async function loadBangDiemTable(){
     area.innerHTML = '<div class="empty">Lỗi tải dữ liệu: '+err.message+'</div>';
     return;
   }
+  try{
   const existing = {};
   bdRecords.filter(r=>r.maHS===maHS && r.ky===ky).forEach(r=>{ existing[r.monHoc] = r.diem; });
 
@@ -3754,6 +3768,9 @@ async function loadBangDiemTable(){
   area.querySelectorAll('input[data-mon]').forEach(inp=>{
     inp.addEventListener('input', updateBdAverage);
   });
+  }catch(err){
+    area.innerHTML = '<div class="empty">Lỗi hiển thị bảng điểm: '+err.message+'</div>';
+  }
 }
 
 function updateBdAverage(){
