@@ -1270,7 +1270,6 @@ rFiltersMB(); goMB();
 </script>
 
 <script>
-
 /* ============================================================
    TAB SWITCHING
    ============================================================ */
@@ -1870,16 +1869,30 @@ function posBlockParas(list, headingText, opts={}){
   const paras = [];
   if(headingText) paras.push(new Paragraph({spacing:{before:120,after:60}, indent:{left:200}, children:[new TextRun({text:headingText, bold:true})]}));
   list.forEach(pb=>{
-    const empText = pb.employees && pb.employees.length
-      ? pb.employees.map(e=>`${e.name || '……………………'} (${e.status})`).join('; ')
-      : '……………………… (Đang có mặt tại vị trí làm việc)';
-    const runs = [ new TextRun({text: pb.label || '…………', bold:true}) ];
-    if(opts.showCondition && pb.condition){
-      runs.push(new TextRun({text:` — Tình trạng thiết bị: ${pb.condition}; Nhân viên vận hành: ${empText}`}));
+    const employees = (pb.employees && pb.employees.length) ? pb.employees : [{name:'', status:'Đang có mặt tại vị trí làm việc'}];
+    if(opts.expand){
+      // Heading line for this vị trí/thiết bị, then one bullet line per employee below it
+      const headRuns = [ new TextRun({text: pb.label || '…………', bold:true}) ];
+      if(opts.showCondition && pb.condition){
+        headRuns.push(new TextRun({text:` — Tình trạng thiết bị: ${pb.condition};`}));
+      } else {
+        headRuns.push(new TextRun({text:':'}));
+      }
+      paras.push(new Paragraph({indent:{left:400}, spacing:{before:60,after:20}, children:headRuns}));
+      employees.forEach(e=>{
+        const prefix = opts.showCondition ? 'Nhân viên vận hành: ' : '';
+        paras.push(new Paragraph({indent:{left:600}, spacing:{after:20}, children:[
+          new TextRun({text:`- ${prefix}${e.name || '……………………'} - ${e.status}`})
+        ]}));
+      });
     } else {
-      runs.push(new TextRun({text:`: ${empText}`}));
+      const empText = employees.map(e=>`${e.name || '……………………'} - ${e.status}`).join('; ');
+      const condSuffix = (opts.showCondition && pb.condition) ? `  — Tình trạng thiết bị: ${pb.condition}` : '';
+      paras.push(new Paragraph({indent:{left:400}, spacing:{after:40}, children:[
+        new TextRun({text: pb.label || '…………', bold:true}),
+        new TextRun({text:`: ${empText}${condSuffix}`})
+      ]}));
     }
-    paras.push(new Paragraph({indent:{left:400}, spacing:{after:40}, children:runs}));
   });
   return paras;
 }
@@ -1891,13 +1904,11 @@ function berthParas(berths){
       new TextRun({text:`Cầu bến ${b.name || '……'}`, bold:true}),
       new TextRun({text:` — ${b.hoatdong || 'Đang hoạt động'}`})
     ]}));
-    paras.push(new Paragraph({indent:{left:400}, spacing:{after:40}, children:[
-      new TextRun({text:`Phương tiện cập bến: ${b.pt || '……………'}  |  Thực hiện làm hàng: ${b.lh || '……………'}  |  Thiết bị làm hàng: ${b.tb || '……………'}`})
-    ]}));
+    paras.push(new Paragraph({indent:{left:400}, spacing:{after:20}, children:[new TextRun({text:`- Phương tiện cập bến: ${b.pt || '……………………………'}`})]}));
+    paras.push(new Paragraph({indent:{left:400}, spacing:{after:20}, children:[new TextRun({text:`- Thực hiện làm hàng: ${b.lh || '……………………………'}`})]}));
+    paras.push(new Paragraph({indent:{left:400}, spacing:{after:40}, children:[new TextRun({text:`- Thiết bị làm hàng: ${b.tb || '……………………………'}`})]}));
     if(b.hoatdong === 'Tạm ngừng hoạt động'){
-      paras.push(new Paragraph({indent:{left:400}, spacing:{after:40}, children:[
-        new TextRun({text:`Lý do tạm ngừng: ${b.lydo || '……………………………………'}`})
-      ]}));
+      paras.push(new Paragraph({indent:{left:400}, spacing:{after:40}, children:[new TextRun({text:`- Lý do tạm ngừng: ${b.lydo || '……………………………………'}`})]}));
     }
   });
   return paras;
@@ -1906,8 +1917,8 @@ function berthParas(berths){
 function companyParas(companies){
   const paras = [];
   companies.forEach(c=>{
-    paras.push(new Paragraph({indent:{left:200}, spacing:{before:100, after:40}, children:[new TextRun({text:c.name || 'Công ty ……', bold:true})]}));
-    paras.push(...posBlockParas(c.devices, null, {showCondition:true}));
+    paras.push(new Paragraph({indent:{left:200}, spacing:{before:100, after:40}, children:[new TextRun({text:`* ${c.name || 'Công ty ……'}`, bold:true})]}));
+    paras.push(...posBlockParas(c.devices, null, {expand:true, showCondition:true}));
   });
   return paras;
 }
@@ -1991,8 +2002,8 @@ function exportGD1(){
     children.push(...berthParas(readBerths('gd1_berths')));
 
     children.push(headingArabic(2, "Ban Khai thác điều độ"));
-    children.push(...posBlockParas(readPositionBlocks('gd1_dieuDo'), "Bộ phận điều độ:"));
-    children.push(...posBlockParas(readPositionBlocks('gd1_coGioi'), "Bộ phận cơ giới:", {showCondition:true}));
+    children.push(...posBlockParas(readPositionBlocks('gd1_dieuDo'), "Bộ phận điều độ:", {expand:true}));
+    children.push(...posBlockParas(readPositionBlocks('gd1_coGioi'), "Bộ phận cơ giới:", {expand:true, showCondition:true}));
 
     children.push(headingArabic(3, "Ban Kế toán Tài vụ"));
     children.push(...posBlockParas(readPositionBlocks('gd1_ketoan'), null));
@@ -2061,8 +2072,8 @@ function exportLBT(){
     children.push(...berthParas(readBerths('lbt_berths')));
 
     children.push(headingArabic(2, "Ban Khai thác điều độ"));
-    children.push(...posBlockParas(readPositionBlocks('lbt_dieuDo'), "Bộ phận điều độ:"));
-    children.push(...posBlockParas(readPositionBlocks('lbt_coGioi'), "Bộ phận cơ giới:", {showCondition:true}));
+    children.push(...posBlockParas(readPositionBlocks('lbt_dieuDo'), "Bộ phận điều độ:", {expand:true}));
+    children.push(...posBlockParas(readPositionBlocks('lbt_coGioi'), "Bộ phận cơ giới:", {expand:true, showCondition:true}));
 
     children.push(headingArabic(3, "Ban Kế toán thương vụ"));
     children.push(...posBlockParas(readPositionBlocks('lbt_ketoan'), null));
@@ -2155,7 +2166,6 @@ function exportViPham(){
     showStatus('vp_status','Có lỗi khi xuất file: '+e.message, false);
   }
 }
-
 </script>
 </body>
 </html>
