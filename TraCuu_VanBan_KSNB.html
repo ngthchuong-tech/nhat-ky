@@ -662,6 +662,18 @@ mark{background:#fff3cd;border-radius:2px;padding:0 2px}
 
   <fieldset>
     <legend>Kết luận</legend>
+    <div style="margin-bottom:10px;">
+      <label class="field-label">Văn phong khi viết lại bằng AI</label>
+      <select id="gd1_aiStyle">
+        <option value="default">Mặc định — trang trọng, đầy đủ</option>
+        <option value="concise">Ngắn gọn, đi thẳng vào trọng tâm</option>
+        <option value="emphasize">Nhấn mạnh các trường hợp vi phạm/bất thường</option>
+        <option value="gentle">Nhẹ nhàng, mang tính nhắc nhở</option>
+      </select>
+      <label class="field-label" style="margin-top:8px;">Yêu cầu thêm cho AI (tùy chọn)</label>
+      <textarea id="gd1_aiCustom" rows="2" placeholder="VD: đề xuất thời hạn khắc phục; nhấn mạnh trách nhiệm Ban Khai thác điều độ..."></textarea>
+      <div class="hint" style="margin:6px 0 0 0;">Dù chọn văn phong nào, AI luôn phải giữ đầy đủ toàn bộ số liệu, tên người, tên vị trí đã tổng hợp — chỉ đổi cách hành văn.</div>
+    </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
       <button type="button" class="btn btn-add" onclick="autoConclude('gd1')">🪄 Tự động tổng hợp</button>
       <button type="button" class="btn btn-add" id="gd1_aiBtn" onclick="aiConclude('gd1')">✨ Viết lại bằng AI (Gemini)</button>
@@ -806,6 +818,18 @@ mark{background:#fff3cd;border-radius:2px;padding:0 2px}
 
   <fieldset>
     <legend>Kết luận</legend>
+    <div style="margin-bottom:10px;">
+      <label class="field-label">Văn phong khi viết lại bằng AI</label>
+      <select id="lbt_aiStyle">
+        <option value="default">Mặc định — trang trọng, đầy đủ</option>
+        <option value="concise">Ngắn gọn, đi thẳng vào trọng tâm</option>
+        <option value="emphasize">Nhấn mạnh các trường hợp vi phạm/bất thường</option>
+        <option value="gentle">Nhẹ nhàng, mang tính nhắc nhở</option>
+      </select>
+      <label class="field-label" style="margin-top:8px;">Yêu cầu thêm cho AI (tùy chọn)</label>
+      <textarea id="lbt_aiCustom" rows="2" placeholder="VD: đề xuất thời hạn khắc phục; nhấn mạnh trách nhiệm Ban Khai thác điều độ..."></textarea>
+      <div class="hint" style="margin:6px 0 0 0;">Dù chọn văn phong nào, AI luôn phải giữ đầy đủ toàn bộ số liệu, tên người, tên vị trí đã tổng hợp — chỉ đổi cách hành văn.</div>
+    </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
       <button type="button" class="btn btn-add" onclick="autoConclude('lbt')">🪄 Tự động tổng hợp</button>
       <button type="button" class="btn btn-add" id="lbt_aiBtn" onclick="aiConclude('lbt')">✨ Viết lại bằng AI (Gemini)</button>
@@ -1667,6 +1691,15 @@ function autoConclude(prefix){
   document.getElementById(prefix+'_ketluan').value = buildConclusionText(facts);
 }
 
+// Style templates for the AI rewrite. Every template MUST keep all summarized facts intact —
+// only the phrasing/tone changes. Never let a template imply omitting data.
+const AI_STYLE_TEMPLATES = {
+  default: "Văn phong hành chính trang trọng, đầy đủ, rõ ràng, mạch lạc — đúng chuẩn biên bản kiểm tra nội bộ.",
+  concise: "Viết ngắn gọn, đi thẳng vào trọng tâm, câu văn súc tích, giảm bớt các câu chuyển tiếp dài dòng — nhưng vẫn phải liệt kê đủ từng trường hợp/số liệu, không được gộp tắt hay lược bỏ.",
+  emphasize: "Nhấn mạnh và làm nổi bật các trường hợp vi phạm, thiết bị hư hỏng, cầu bến ngừng hoạt động, hoặc bất thường được phát hiện; nêu rõ mức độ cần lưu ý — nhưng vẫn giữ đầy đủ các trường hợp bình thường/đạt yêu cầu để bảo đảm tính khách quan.",
+  gentle: "Văn phong nhẹ nhàng, mang tính nhắc nhở và xây dựng, tránh từ ngữ nặng nề hay quy kết — nhưng vẫn nêu đầy đủ, chính xác từng trường hợp đã ghi nhận."
+};
+
 async function aiConclude(prefix){
   const key = loadGeminiKey();
   const statusEl = document.getElementById(prefix+'_aiStatus');
@@ -1683,11 +1716,27 @@ async function aiConclude(prefix){
     return;
   }
   const draftFacts = buildConclusionText(facts);
+  const styleKey = document.getElementById(prefix+'_aiStyle').value;
+  const styleInstruction = AI_STYLE_TEMPLATES[styleKey] || AI_STYLE_TEMPLATES.default;
+  const customInstruction = (document.getElementById(prefix+'_aiCustom').value || '').trim();
+
   statusEl.textContent = 'Đang gọi AI để viết lại kết luận...';
   statusEl.className = 'status-msg';
   btn.disabled = true;
   try{
-    const prompt = `Bạn là trợ lý soạn thảo văn bản hành chính tiếng Việt cho Ban Kiểm soát nội bộ của một công ty cảng biển. Dựa CHÍNH XÁC vào dữ liệu kiểm tra dưới đây (không bịa thêm thông tin không có), hãy viết lại thành một đoạn kết luận biên bản kiểm tra: văn phong hành chính, chuyên nghiệp, súc tích, mạch lạc. Chỉ trả về đúng đoạn văn kết luận, không thêm tiêu đề hay lời giải thích nào khác.\n\nDữ liệu kiểm tra:\n${draftFacts}`;
+    const prompt = `Bạn là trợ lý soạn thảo văn bản hành chính tiếng Việt cho Ban Kiểm soát nội bộ của một công ty cảng biển.
+
+YÊU CẦU VĂN PHONG: ${styleInstruction}
+${customInstruction ? `YÊU CẦU BỔ SUNG TỪ NGƯỜI DÙNG: ${customInstruction}\n` : ''}
+QUY TẮC BẮT BUỘC — KHÔNG ĐƯỢC VI PHẠM:
+1. Phải giữ đầy đủ TẤT CẢ số liệu, tên người, tên vị trí/thiết bị/cầu bến, trạng thái đã liệt kê trong "DỮ LIỆU KIỂM TRA" bên dưới. Không được bỏ sót, không được tóm lược hay gộp chung các trường hợp riêng lẻ thành một câu chung chung.
+2. Không bịa thêm bất kỳ thông tin, số liệu, hay kết luận nào không có trong dữ liệu.
+3. Giữ nguyên cấu trúc 3 phần theo đúng thứ tự: "1. Về tuân thủ nội quy lao động", "2. Về tình hình sản xuất", "3. Về tình hình an ninh trật tự".
+4. Chỉ được thay đổi cách hành văn, câu chữ, cách trình bày theo yêu cầu văn phong ở trên — tuyệt đối không thay đổi nội dung sự việc, không thêm/bớt trường hợp nào.
+5. Chỉ trả về đúng đoạn văn kết luận hoàn chỉnh, không thêm tiêu đề, lời chào, hay giải thích nào khác ngoài đoạn kết luận.
+
+DỮ LIỆU KIỂM TRA (giữ nguyên toàn bộ nội dung sau, chỉ viết lại câu chữ):
+${draftFacts}`;
     const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
@@ -1698,7 +1747,7 @@ async function aiConclude(prefix){
     const text = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
     if(!text) throw new Error('Không nhận được nội dung trả về từ Gemini.');
     document.getElementById(prefix+'_ketluan').value = text.trim();
-    statusEl.textContent = 'Đã viết lại kết luận bằng AI.';
+    statusEl.textContent = 'Đã viết lại kết luận bằng AI. Vui lòng đọc lại để chắc chắn không thiếu số liệu/tên người trước khi xuất file.';
     statusEl.className = 'status-msg ok';
   }catch(err){
     console.error(err);
