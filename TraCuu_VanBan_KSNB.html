@@ -425,7 +425,7 @@ mark{background:#fff3cd;border-radius:2px;padding:0 2px}
       <div><h1>📁 Ban KSNB — Cảng Đồng Nai</h1></div>
       <div style="display:flex;align-items:center;gap:12px;">
         <a href="https://drive.google.com/drive/folders/1yyyZ-8Fzz5wbqhsmvFIzX8hvXCxFfm5p" target="_blank" class="upload-shortcut">📤 Tải văn bản lên INBOX</a>
-        <small>Cập nhật: 29/07/2026 06:43</small>
+        <small>Cập nhật: 31/07/2026 06:43</small>
       </div>
     </div>
   </div>
@@ -435,7 +435,6 @@ mark{background:#fff3cd;border-radius:2px;padding:0 2px}
     <button class="tab-btn" id="tabbtn-bb" onclick="switchTab('bb')">📝 Lập biên bản</button>
     <button class="tab-btn" id="tabbtn-pl" onclick="switchTab('pl')">📤 Phân loại nhanh (loại cũ)</button>
     <button class="tab-btn" id="tabbtn-mb" onclick="switchTab('mb')">📎 Mẫu biểu (77)</button>
-    <button class="tab-btn" id="tabbtn-st" onclick="switchTab('st')">✍️ Soạn thảo văn bản</button>
   </div>
   <div id="toolbar-vb" class="tab-toolbar active">
     <div class="search-wrap">
@@ -663,18 +662,6 @@ mark{background:#fff3cd;border-radius:2px;padding:0 2px}
 
   <fieldset>
     <legend>Kết luận</legend>
-    <div style="margin-bottom:10px;">
-      <label class="field-label">Văn phong khi viết lại bằng AI</label>
-      <select id="gd1_aiStyle">
-        <option value="default">Mặc định — trang trọng, đầy đủ</option>
-        <option value="concise">Ngắn gọn, đi thẳng vào trọng tâm</option>
-        <option value="emphasize">Nhấn mạnh các trường hợp vi phạm/bất thường</option>
-        <option value="gentle">Nhẹ nhàng, mang tính nhắc nhở</option>
-      </select>
-      <label class="field-label" style="margin-top:8px;">Yêu cầu thêm cho AI (tùy chọn)</label>
-      <textarea id="gd1_aiCustom" rows="2" placeholder="VD: đề xuất thời hạn khắc phục; nhấn mạnh trách nhiệm Ban Khai thác điều độ..."></textarea>
-      <div class="hint" style="margin:6px 0 0 0;">Dù chọn văn phong nào, AI luôn phải giữ đầy đủ toàn bộ số liệu, tên người, tên vị trí đã tổng hợp — chỉ đổi cách hành văn.</div>
-    </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
       <button type="button" class="btn btn-add" onclick="autoConclude('gd1')">🪄 Tự động tổng hợp</button>
       <button type="button" class="btn btn-add" id="gd1_aiBtn" onclick="aiConclude('gd1')">✨ Viết lại bằng AI (Gemini)</button>
@@ -819,18 +806,6 @@ mark{background:#fff3cd;border-radius:2px;padding:0 2px}
 
   <fieldset>
     <legend>Kết luận</legend>
-    <div style="margin-bottom:10px;">
-      <label class="field-label">Văn phong khi viết lại bằng AI</label>
-      <select id="lbt_aiStyle">
-        <option value="default">Mặc định — trang trọng, đầy đủ</option>
-        <option value="concise">Ngắn gọn, đi thẳng vào trọng tâm</option>
-        <option value="emphasize">Nhấn mạnh các trường hợp vi phạm/bất thường</option>
-        <option value="gentle">Nhẹ nhàng, mang tính nhắc nhở</option>
-      </select>
-      <label class="field-label" style="margin-top:8px;">Yêu cầu thêm cho AI (tùy chọn)</label>
-      <textarea id="lbt_aiCustom" rows="2" placeholder="VD: đề xuất thời hạn khắc phục; nhấn mạnh trách nhiệm Ban Khai thác điều độ..."></textarea>
-      <div class="hint" style="margin:6px 0 0 0;">Dù chọn văn phong nào, AI luôn phải giữ đầy đủ toàn bộ số liệu, tên người, tên vị trí đã tổng hợp — chỉ đổi cách hành văn.</div>
-    </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
       <button type="button" class="btn btn-add" onclick="autoConclude('lbt')">🪄 Tự động tổng hợp</button>
       <button type="button" class="btn btn-add" id="lbt_aiBtn" onclick="aiConclude('lbt')">✨ Viết lại bằng AI (Gemini)</button>
@@ -961,18 +936,6 @@ mark{background:#fff3cd;border-radius:2px;padding:0 2px}
   </div>
 </div>
 
-<!-- ==================== TAB 6: SOẠN THẢO VĂN BẢN (Web App riêng, nhúng qua iframe) ==================== -->
-<div id="tab-st" class="tab-pane">
-  <div style="max-width:1600px;margin:16px auto;padding:0 20px;">
-    <div style="background:#EAF6EC;border:1px solid #B8E0BE;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#2c5e30;margin-bottom:10px;">
-      ℹ️ Công cụ này chạy trên 1 trang riêng (Trợ lý soạn thảo văn bản, có gọi AI qua Apps Script Web App). Nếu khung bên dưới không hiện, mở trực tiếp:
-      <a href="_SoanThaoVanBan_.html" target="_blank" style="color:#1F4E78;font-weight:600;">mở ở tab mới ↗</a>
-    </div>
-    <iframe id="iframe-st" data-src="_SoanThaoVanBan_.html"
-      style="width:100%;height:85vh;border:1px solid #e8edf2;border-radius:10px;background:#fff;"></iframe>
-  </div>
-</div>
-
 <script>
 // ================= TAB SWITCH =================
 function switchTab(tab){
@@ -981,13 +944,11 @@ function switchTab(tab){
   document.getElementById('tab-bb').classList.toggle('active', tab==='bb');
   document.getElementById('tab-pl').classList.toggle('active', tab==='pl');
   document.getElementById('tab-mb').classList.toggle('active', tab==='mb');
-  document.getElementById('tab-st').classList.toggle('active', tab==='st');
   document.getElementById('tabbtn-vb').classList.toggle('active', tab==='vb');
   document.getElementById('tabbtn-ch').classList.toggle('active', tab==='ch');
   document.getElementById('tabbtn-bb').classList.toggle('active', tab==='bb');
   document.getElementById('tabbtn-pl').classList.toggle('active', tab==='pl');
   document.getElementById('tabbtn-mb').classList.toggle('active', tab==='mb');
-  document.getElementById('tabbtn-st').classList.toggle('active', tab==='st');
   document.getElementById('toolbar-vb').classList.toggle('active', tab==='vb');
   document.getElementById('toolbar-ch').classList.toggle('active', tab==='ch');
   document.getElementById('toolbar-mb').classList.toggle('active', tab==='mb');
@@ -995,15 +956,11 @@ function switchTab(tab){
     var ifr = document.getElementById('iframe-pl');
     if (ifr && !ifr.getAttribute('src')) ifr.setAttribute('src', ifr.getAttribute('data-src'));
   }
-  if (tab === 'st') {
-    var ifr2 = document.getElementById('iframe-st');
-    if (ifr2 && !ifr2.getAttribute('src')) ifr2.setAttribute('src', ifr2.getAttribute('data-src'));
-  }
   localStorage.setItem('ksnb_active_tab', tab);
 }
 (function(){
   var saved = localStorage.getItem('ksnb_active_tab');
-  if (saved === 'ch' || saved === 'bb' || saved === 'pl' || saved === 'mb' || saved === 'st') switchTab(saved);
+  if (saved === 'ch' || saved === 'bb' || saved === 'pl' || saved === 'mb') switchTab(saved);
 })();
 
 // ================= TAB 1: VĂN BẢN =================
@@ -1313,6 +1270,7 @@ rFiltersMB(); goMB();
 </script>
 
 <script>
+
 /* ============================================================
    TAB SWITCHING
    ============================================================ */
@@ -1710,15 +1668,6 @@ function autoConclude(prefix){
   document.getElementById(prefix+'_ketluan').value = buildConclusionText(facts);
 }
 
-// Style templates for the AI rewrite. Every template MUST keep all summarized facts intact —
-// only the phrasing/tone changes. Never let a template imply omitting data.
-const AI_STYLE_TEMPLATES = {
-  default: "Văn phong hành chính trang trọng, đầy đủ, rõ ràng, mạch lạc — đúng chuẩn biên bản kiểm tra nội bộ.",
-  concise: "Viết ngắn gọn, đi thẳng vào trọng tâm, câu văn súc tích, giảm bớt các câu chuyển tiếp dài dòng — nhưng vẫn phải liệt kê đủ từng trường hợp/số liệu, không được gộp tắt hay lược bỏ.",
-  emphasize: "Nhấn mạnh và làm nổi bật các trường hợp vi phạm, thiết bị hư hỏng, cầu bến ngừng hoạt động, hoặc bất thường được phát hiện; nêu rõ mức độ cần lưu ý — nhưng vẫn giữ đầy đủ các trường hợp bình thường/đạt yêu cầu để bảo đảm tính khách quan.",
-  gentle: "Văn phong nhẹ nhàng, mang tính nhắc nhở và xây dựng, tránh từ ngữ nặng nề hay quy kết — nhưng vẫn nêu đầy đủ, chính xác từng trường hợp đã ghi nhận."
-};
-
 async function aiConclude(prefix){
   const key = loadGeminiKey();
   const statusEl = document.getElementById(prefix+'_aiStatus');
@@ -1735,27 +1684,11 @@ async function aiConclude(prefix){
     return;
   }
   const draftFacts = buildConclusionText(facts);
-  const styleKey = document.getElementById(prefix+'_aiStyle').value;
-  const styleInstruction = AI_STYLE_TEMPLATES[styleKey] || AI_STYLE_TEMPLATES.default;
-  const customInstruction = (document.getElementById(prefix+'_aiCustom').value || '').trim();
-
   statusEl.textContent = 'Đang gọi AI để viết lại kết luận...';
   statusEl.className = 'status-msg';
   btn.disabled = true;
   try{
-    const prompt = `Bạn là trợ lý soạn thảo văn bản hành chính tiếng Việt cho Ban Kiểm soát nội bộ của một công ty cảng biển.
-
-YÊU CẦU VĂN PHONG: ${styleInstruction}
-${customInstruction ? `YÊU CẦU BỔ SUNG TỪ NGƯỜI DÙNG: ${customInstruction}\n` : ''}
-QUY TẮC BẮT BUỘC — KHÔNG ĐƯỢC VI PHẠM:
-1. Phải giữ đầy đủ TẤT CẢ số liệu, tên người, tên vị trí/thiết bị/cầu bến, trạng thái đã liệt kê trong "DỮ LIỆU KIỂM TRA" bên dưới. Không được bỏ sót, không được tóm lược hay gộp chung các trường hợp riêng lẻ thành một câu chung chung.
-2. Không bịa thêm bất kỳ thông tin, số liệu, hay kết luận nào không có trong dữ liệu.
-3. Giữ nguyên cấu trúc 3 phần theo đúng thứ tự: "1. Về tuân thủ nội quy lao động", "2. Về tình hình sản xuất", "3. Về tình hình an ninh trật tự".
-4. Chỉ được thay đổi cách hành văn, câu chữ, cách trình bày theo yêu cầu văn phong ở trên — tuyệt đối không thay đổi nội dung sự việc, không thêm/bớt trường hợp nào.
-5. Chỉ trả về đúng đoạn văn kết luận hoàn chỉnh, không thêm tiêu đề, lời chào, hay giải thích nào khác ngoài đoạn kết luận.
-
-DỮ LIỆU KIỂM TRA (giữ nguyên toàn bộ nội dung sau, chỉ viết lại câu chữ):
-${draftFacts}`;
+    const prompt = `Bạn là trợ lý soạn thảo văn bản hành chính tiếng Việt cho Ban Kiểm soát nội bộ của một công ty cảng biển. Dựa CHÍNH XÁC vào dữ liệu kiểm tra dưới đây (không bịa thêm thông tin không có), hãy viết lại thành một đoạn kết luận biên bản kiểm tra: văn phong hành chính, chuyên nghiệp, súc tích, mạch lạc. Chỉ trả về đúng đoạn văn kết luận, không thêm tiêu đề hay lời giải thích nào khác.\n\nDữ liệu kiểm tra:\n${draftFacts}`;
     const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
@@ -1766,7 +1699,7 @@ ${draftFacts}`;
     const text = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
     if(!text) throw new Error('Không nhận được nội dung trả về từ Gemini.');
     document.getElementById(prefix+'_ketluan').value = text.trim();
-    statusEl.textContent = 'Đã viết lại kết luận bằng AI. Vui lòng đọc lại để chắc chắn không thiếu số liệu/tên người trước khi xuất file.';
+    statusEl.textContent = 'Đã viết lại kết luận bằng AI.';
     statusEl.className = 'status-msg ok';
   }catch(err){
     console.error(err);
@@ -1937,30 +1870,16 @@ function posBlockParas(list, headingText, opts={}){
   const paras = [];
   if(headingText) paras.push(new Paragraph({spacing:{before:120,after:60}, indent:{left:200}, children:[new TextRun({text:headingText, bold:true})]}));
   list.forEach(pb=>{
-    const employees = (pb.employees && pb.employees.length) ? pb.employees : [{name:'', status:'Đang có mặt tại vị trí làm việc'}];
-    if(opts.expand){
-      // Heading line for this vị trí/thiết bị, then one bullet line per employee below it
-      const headRuns = [ new TextRun({text: pb.label || '…………', bold:true}) ];
-      if(opts.showCondition && pb.condition){
-        headRuns.push(new TextRun({text:` — Tình trạng thiết bị: ${pb.condition};`}));
-      } else {
-        headRuns.push(new TextRun({text:':'}));
-      }
-      paras.push(new Paragraph({indent:{left:400}, spacing:{before:60,after:20}, children:headRuns}));
-      employees.forEach(e=>{
-        const prefix = opts.showCondition ? 'Nhân viên vận hành: ' : '';
-        paras.push(new Paragraph({indent:{left:600}, spacing:{after:20}, children:[
-          new TextRun({text:`- ${prefix}${e.name || '……………………'} - ${e.status}`})
-        ]}));
-      });
+    const empText = pb.employees && pb.employees.length
+      ? pb.employees.map(e=>`${e.name || '……………………'} (${e.status})`).join('; ')
+      : '……………………… (Đang có mặt tại vị trí làm việc)';
+    const runs = [ new TextRun({text: pb.label || '…………', bold:true}) ];
+    if(opts.showCondition && pb.condition){
+      runs.push(new TextRun({text:` — Tình trạng thiết bị: ${pb.condition}; Nhân viên vận hành: ${empText}`}));
     } else {
-      const empText = employees.map(e=>`${e.name || '……………………'} - ${e.status}`).join('; ');
-      const condSuffix = (opts.showCondition && pb.condition) ? `  — Tình trạng thiết bị: ${pb.condition}` : '';
-      paras.push(new Paragraph({indent:{left:400}, spacing:{after:40}, children:[
-        new TextRun({text: pb.label || '…………', bold:true}),
-        new TextRun({text:`: ${empText}${condSuffix}`})
-      ]}));
+      runs.push(new TextRun({text:`: ${empText}`}));
     }
+    paras.push(new Paragraph({indent:{left:400}, spacing:{after:40}, children:runs}));
   });
   return paras;
 }
@@ -1972,11 +1891,13 @@ function berthParas(berths){
       new TextRun({text:`Cầu bến ${b.name || '……'}`, bold:true}),
       new TextRun({text:` — ${b.hoatdong || 'Đang hoạt động'}`})
     ]}));
-    paras.push(new Paragraph({indent:{left:400}, spacing:{after:20}, children:[new TextRun({text:`- Phương tiện cập bến: ${b.pt || '……………………………'}`})]}));
-    paras.push(new Paragraph({indent:{left:400}, spacing:{after:20}, children:[new TextRun({text:`- Thực hiện làm hàng: ${b.lh || '……………………………'}`})]}));
-    paras.push(new Paragraph({indent:{left:400}, spacing:{after:40}, children:[new TextRun({text:`- Thiết bị làm hàng: ${b.tb || '……………………………'}`})]}));
+    paras.push(new Paragraph({indent:{left:400}, spacing:{after:40}, children:[
+      new TextRun({text:`Phương tiện cập bến: ${b.pt || '……………'}  |  Thực hiện làm hàng: ${b.lh || '……………'}  |  Thiết bị làm hàng: ${b.tb || '……………'}`})
+    ]}));
     if(b.hoatdong === 'Tạm ngừng hoạt động'){
-      paras.push(new Paragraph({indent:{left:400}, spacing:{after:40}, children:[new TextRun({text:`- Lý do tạm ngừng: ${b.lydo || '……………………………………'}`})]}));
+      paras.push(new Paragraph({indent:{left:400}, spacing:{after:40}, children:[
+        new TextRun({text:`Lý do tạm ngừng: ${b.lydo || '……………………………………'}`})
+      ]}));
     }
   });
   return paras;
@@ -1985,8 +1906,8 @@ function berthParas(berths){
 function companyParas(companies){
   const paras = [];
   companies.forEach(c=>{
-    paras.push(new Paragraph({indent:{left:200}, spacing:{before:100, after:40}, children:[new TextRun({text:`* ${c.name || 'Công ty ……'}`, bold:true})]}));
-    paras.push(...posBlockParas(c.devices, null, {expand:true, showCondition:true}));
+    paras.push(new Paragraph({indent:{left:200}, spacing:{before:100, after:40}, children:[new TextRun({text:c.name || 'Công ty ……', bold:true})]}));
+    paras.push(...posBlockParas(c.devices, null, {showCondition:true}));
   });
   return paras;
 }
@@ -2070,8 +1991,8 @@ function exportGD1(){
     children.push(...berthParas(readBerths('gd1_berths')));
 
     children.push(headingArabic(2, "Ban Khai thác điều độ"));
-    children.push(...posBlockParas(readPositionBlocks('gd1_dieuDo'), "Bộ phận điều độ:", {expand:true}));
-    children.push(...posBlockParas(readPositionBlocks('gd1_coGioi'), "Bộ phận cơ giới:", {expand:true, showCondition:true}));
+    children.push(...posBlockParas(readPositionBlocks('gd1_dieuDo'), "Bộ phận điều độ:"));
+    children.push(...posBlockParas(readPositionBlocks('gd1_coGioi'), "Bộ phận cơ giới:", {showCondition:true}));
 
     children.push(headingArabic(3, "Ban Kế toán Tài vụ"));
     children.push(...posBlockParas(readPositionBlocks('gd1_ketoan'), null));
@@ -2140,8 +2061,8 @@ function exportLBT(){
     children.push(...berthParas(readBerths('lbt_berths')));
 
     children.push(headingArabic(2, "Ban Khai thác điều độ"));
-    children.push(...posBlockParas(readPositionBlocks('lbt_dieuDo'), "Bộ phận điều độ:", {expand:true}));
-    children.push(...posBlockParas(readPositionBlocks('lbt_coGioi'), "Bộ phận cơ giới:", {expand:true, showCondition:true}));
+    children.push(...posBlockParas(readPositionBlocks('lbt_dieuDo'), "Bộ phận điều độ:"));
+    children.push(...posBlockParas(readPositionBlocks('lbt_coGioi'), "Bộ phận cơ giới:", {showCondition:true}));
 
     children.push(headingArabic(3, "Ban Kế toán thương vụ"));
     children.push(...posBlockParas(readPositionBlocks('lbt_ketoan'), null));
@@ -2234,6 +2155,7 @@ function exportViPham(){
     showStatus('vp_status','Có lỗi khi xuất file: '+e.message, false);
   }
 }
+
 </script>
 </body>
 </html>
