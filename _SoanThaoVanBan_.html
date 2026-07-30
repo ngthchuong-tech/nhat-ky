@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trợ Lý Soạn Thảo Văn Bản</title>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5/build/index.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.11.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.min.js"></script>
+<style>
+  :root{
+    --paper:#F7F4EC;
+    --paper-line:#E4DCC8;
+    --ink:#2B2A28;
+    --ink-soft:#635F55;
+    --seal:#A63A2E;
+    --seal-soft:#C97A6E;
+    --panel:#FFFFFF;
+    --panel-border:#D9D2C0;
+    --accent-bg:#EFE7D6;
+    --good:#3E6B4F;
+    --font-display: "Noto Serif", "Times New Roman", serif;
+    --font-body: "Inter", "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:var(--font-body);
+    background:var(--paper);
+    color:var(--ink);
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 24px;
+    background:var(--panel);
+    border-bottom:2px solid var(--seal);
+  }
+  header .brand{display:flex;align-items:center;gap:10px;}
+  header .brand .mark{
+    width:34px;height:34px;border-radius:50%;
+    border:2px solid var(--seal);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--seal); font-family:var(--font-display); font-weight:700; font-size:15px;
+    transform:rotate(-8deg);
+  }
+  header h1{font-family:var(--font-display); font-size:19px; margin:0; font-weight:600; letter-spacing:.2px;}
+  header .status{font-size:12px; color:var(--ink-soft);}
+  header .status b{color:var(--good);}
+
+  /* ---------- Layout ---------- */
+  .layout{
+    flex:1;
+    display:grid;
+    grid-template-columns:340px 1fr 300px;
+    gap:16px;
+    padding:16px 20px 24px;
+    min-height:0;
+    max-width:1600px;
+    margin:0 auto;
+    width:100%;
+  }
+  @media (max-width: 1000px){
+    .layout{grid-template-columns:1fr; }
+  }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:10px;
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    overflow:hidden;
+  }
+
+  /* ---------- Left: tabs ---------- */
+  .tabs{display:flex; border-bottom:1px solid var(--panel-border);}
+  .tab-btn{
+    flex:1; padding:11px 8px; background:none; border:none; cursor:pointer;
+    font-size:12.5px; font-weight:600; color:var(--ink-soft);
+    border-bottom:2px solid transparent;
+  }
+  .tab-btn.active{color:var(--seal); border-bottom-color:var(--seal); background:var(--accent-bg);}
+  .tab-content{padding:12px; overflow-y:auto; flex:1;}
+  .tab-pane{display:none;}
+  .tab-pane.active{display:block;}
+
+  .sample-item{
+    padding:9px 10px; border:1px solid var(--panel-border); border-radius:7px;
+    margin-bottom:8px; cursor:pointer; font-size:13px; background:#FEFDFB;
+    transition:border-color .15s;
+  }
+  .sample-item:hover{border-color:var(--seal-soft);}
+  .sample-item .tag{
+    display:inline-block; font-size:10px; text-transform:uppercase; letter-spacing:.4px;
+    color:var(--seal); font-weight:700; margin-bottom:3px;
+  }
+  .sample-item .name{font-weight:600;}
+  .sample-item .desc{color:var(--ink-soft); font-size:11.5px; margin-top:2px;}
+  .sample-item .actions{display:flex; gap:6px; margin-top:7px;}
+  .sample-item .actions button{
+    font-size:11px; padding:4px 8px; border-radius:5px; border:1px solid var(--panel-border);
+    background:#fff; cursor:pointer;
+  }
+  .sample-item .actions button.insert{border-color:var(--seal); color:var(--seal); font-weight:600;}
+  .sample-item .actions button:hover{border-color:var(--seal-soft);}
+
+  label.field-label{
+    display:block; font-size:11.5px; font-weight:700; color:var(--ink-soft);
+    text-transform:uppercase; letter-spacing:.3px; margin:12px 0 5px;
+  }
+  label.field-label:first-child{margin-top:0;}
+  textarea.ctx-input, input.ctx-input, select.ctx-input{
+    width:100%; border:1px solid var(--panel-border); border-radius:6px;
+    padding:8px 9px; font-family:var(--font-body); font-size:13px; resize:vertical;
+    background:#FEFDFB;
+  }
+  textarea.ctx-input{min-height:70px;}
+
+  .ref-doc-item{
+    border:1px solid var(--panel-border); border-radius:7px; padding:8px 9px; background:#FEFDFB;
+  }
+  .ref-doc-name{font-size:12.5px; font-weight:600; margin-bottom:5px; word-break:break-word;}
+  .ref-doc-item select{
+    width:100%; border:1px solid var(--panel-border); border-radius:5px; padding:5px 6px; font-size:12px; margin-bottom:5px;
+  }
+  .ref-doc-item .ref-doc-remove{
+    font-size:11px; padding:4px 8px; border-radius:5px; border:1px solid var(--panel-border);
+    background:#fff; cursor:pointer; color:var(--seal);
+  }
+
+  .outline-summary{
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;
+    font-size:11.5px; color:var(--ink-soft);
+  }
+  .outline-summary button{
+    font-size:11px; padding:4px 8px; border-radius:5px; border:1px solid var(--panel-border);
+    background:#fff; cursor:pointer; color:var(--seal);
+  }
+  .outline-item{
+    border:1px solid var(--panel-border); border-radius:8px; padding:10px; margin-bottom:10px; background:#FEFDFB;
+  }
+  .outline-item-head{display:flex; align-items:center; gap:7px; margin-bottom:7px;}
+  .outline-num{
+    width:20px; height:20px; border-radius:50%; background:var(--seal); color:#fff;
+    font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .outline-title{
+    flex:1; border:none; border-bottom:1px solid var(--panel-border); background:transparent;
+    font-size:13.5px; font-weight:600; padding:3px 0; min-width:0;
+  }
+  .outline-title:focus{outline:none; border-bottom-color:var(--seal);}
+  .outline-points{
+    width:100%; border:1px solid var(--panel-border); border-radius:5px; padding:7px 8px;
+    font-size:12px; font-family:var(--font-body); min-height:52px; resize:vertical; background:#fff;
+    display:block; margin-bottom:8px;
+  }
+  .outline-item-actions{
+    display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+    padding-top:8px; border-top:1px solid var(--panel-border);
+  }
+  .outline-item-actions button{
+    border:1px solid var(--panel-border); background:#fff; border-radius:5px;
+    font-size:11.5px; font-weight:600; cursor:pointer; padding:5px 9px; white-space:nowrap;
+  }
+  .outline-item-actions button:disabled{opacity:.35; cursor:default;}
+  .outline-item-actions .ol-remove{
+    margin-left:auto; color:var(--seal); border-color:var(--seal-soft); background:#FFF5F3;
+  }
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    padding:9px 14px; border-radius:7px; border:1px solid var(--panel-border);
+    background:#FEFDFB; color:var(--ink); font-size:12.5px; font-weight:600;
+    cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal-soft);}
+  .btn-primary{background:var(--seal); border-color:var(--seal); color:#fff;}
+  .btn-primary:hover{background:#8f3126;}
+  .btn-block{width:100%; margin-top:14px;}
+
+  /* ---------- Center: editor ---------- */
+  .editor-panel{padding:0;}
+  .doc-format{
+    padding:16px 22px 10px; border-bottom:1px dashed var(--panel-border);
+    display:grid; grid-template-columns:1fr 1fr; gap:10px 18px;
+    font-family:var(--font-display);
+  }
+  .doc-format .col-left, .doc-format .col-right{display:flex; flex-direction:column; gap:6px;}
+  .doc-format .col-right{text-align:center;}
+  .fmt-line{font-size:12.5px;}
+  .fmt-line input{
+    border:none; border-bottom:1px solid var(--panel-border); background:transparent;
+    font-family:var(--font-display); font-size:13px; width:100%; padding:2px 0;
+    text-align:inherit;
+  }
+  .fmt-line input:focus{outline:none; border-bottom-color:var(--seal);}
+  .fmt-line.center{text-align:center;}
+  .fmt-line.bold input{font-weight:700;}
+  .so-hieu-row{display:flex; align-items:center; gap:6px; font-size:12px;}
+  .quochieu{font-weight:700; font-size:13.5px;}
+  .khauhieu{font-size:12px; border-top:1px solid var(--ink); display:inline-block; padding-top:2px;}
+
+  .toolbar{
+    display:flex; gap:6px; padding:8px 22px; border-bottom:1px solid var(--panel-border);
+    align-items:center; flex-wrap:wrap;
+  }
+  .toolbar button{
+    border:1px solid var(--panel-border); background:#FEFDFB; border-radius:5px;
+    width:30px; height:30px; cursor:pointer; font-size:13px; font-weight:700;
+  }
+  .toolbar button:hover{border-color:var(--seal-soft);}
+  .toolbar .spacer{flex:1;}
+
+  .editor-scroll{flex:1; overflow-y:auto; padding:8px 22px 30px; display:flex; gap:18px; align-items:flex-start; justify-content:center;}
+  .editor-toc{
+    width:180px; flex-shrink:0; position:sticky; top:8px;
+    border:1px solid var(--panel-border); border-radius:8px; padding:12px; background:#FBF8F0;
+    display:none;
+  }
+  .editor-toc-title{
+    font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-soft);
+    font-size:10px; margin-bottom:9px;
+  }
+  .editor-toc a{
+    display:block; padding:6px 8px; border-radius:6px; color:var(--ink); text-decoration:none;
+    margin-bottom:2px; line-height:1.4; font-size:12px; border-left:2px solid transparent;
+  }
+  .editor-toc a:hover{background:var(--accent-bg);}
+  .editor-toc a.active{background:var(--seal); color:#fff; font-weight:600;}
+  .editor-paper-col{display:flex; flex-direction:column; align-items:center; min-width:0;}
+  #editor{
+    width:100%; max-width:640px; min-height:420px;
+    background:#fff; border:1px solid var(--panel-border);
+    box-shadow:0 1px 3px rgba(0,0,0,.05);
+    padding:36px 42px; font-family:var(--font-display); font-size:14.5px; line-height:1.9;
+  }
+  #editor:focus{outline:none;}
+  #editor .placeholder{color:#B7AF9D; font-style:italic;}
+  #editor p{margin:0 0 10px;}
+
+  .signature-block{
+    max-width:640px; margin:0 auto; padding:0 42px 40px;
+    display:flex; align-items:flex-start; gap:20px;
+  }
+  .noi-nhan-block{
+    flex:1; font-family:var(--font-body); font-size:11px; color:var(--ink);
+  }
+  .noi-nhan-block .label{font-weight:700; font-style:italic; margin-bottom:4px;}
+  .noi-nhan-block textarea{
+    width:100%; border:1px dashed var(--panel-border); border-radius:5px; padding:6px 7px;
+    font-size:11px; font-style:italic; font-family:var(--font-body); min-height:70px; resize:vertical; background:transparent;
+  }
+  .sig-inner{flex:1; text-align:right; font-family:var(--font-display); font-size:13.5px;}
+  .sig-inner .place-date{margin-bottom:36px;}
+  .sig-inner .role{font-weight:700;}
+  .sig-inner .name{margin-top:70px; font-weight:700;}
+
+  /* Selection AI popover */
+  .ai-popover{
+    position:absolute; z-index:50; background:var(--ink); color:#fff;
+    padding:6px; border-radius:8px; display:none; gap:4px; box-shadow:0 6px 18px rgba(0,0,0,.25);
+  }
+  .ai-popover button{
+    background:none; border:none; color:#fff; font-size:11.5px; padding:6px 9px;
+    border-radius:5px; cursor:pointer; white-space:nowrap;
+  }
+  .ai-popover button:hover{background:rgba(255,255,255,.15);}
+
+  /* ---------- Right: AI assistant ---------- */
+  .ai-panel-header{
+    padding:12px 14px; border-bottom:1px solid var(--panel-border);
+    display:flex; align-items:center; gap:8px;
+  }
+  .ai-dot{width:8px;height:8px;border-radius:50%;background:var(--good);}
+  .ai-panel-header h3{font-size:13px; margin:0; font-weight:700;}
+  .ai-panel-header span{font-size:10.5px; color:var(--ink-soft); margin-left:auto;}
+
+  .ai-log{flex:1; overflow-y:auto; padding:12px 14px; display:flex; flex-direction:column; gap:10px;}
+  .msg{font-size:12.8px; line-height:1.55; max-width:100%;}
+  .msg.user{align-self:flex-end; background:var(--accent-bg); padding:8px 10px; border-radius:9px 9px 2px 9px;}
+  .msg.ai{background:#FEFDFB; border:1px solid var(--panel-border); padding:8px 10px; border-radius:9px 9px 9px 2px;}
+  .msg.ai .diff-suggestion{
+    margin-top:8px; padding:8px; border-radius:6px; background:var(--accent-bg); font-family:var(--font-mono); font-size:11.5px;
+  }
+  .msg.ai .diff-actions{display:flex; gap:6px; margin-top:8px;}
+  .msg.ai .diff-actions button{
+    font-size:11px; padding:5px 9px; border-radius:5px; border:1px solid var(--panel-border);
+    background:#fff; cursor:pointer;
+  }
+  .msg.ai .diff-actions button.accept{border-color:var(--good); color:var(--good); font-weight:700;}
+  .msg.typing{font-size:12px; color:var(--ink-soft); font-style:italic;}
+
+  .ai-input-row{
+    display:flex; gap:6px; padding:10px; border-top:1px solid var(--panel-border);
+  }
+  .ai-input-row input{
+    flex:1; border:1px solid var(--panel-border); border-radius:7px; padding:8px 10px; font-size:12.8px;
+  }
+  .ai-input-row button{
+    border:none; background:var(--seal); color:#fff; border-radius:7px; padding:0 14px; cursor:pointer; font-size:13px;
+  }
+
+  footer{
+    text-align:center; font-size:11px; color:var(--ink-soft); padding:8px 0 14px;
+  }
+  .mock-tag{
+    display:inline-block; font-size:9.5px; text-transform:uppercase; letter-spacing:.4px;
+    background:var(--accent-bg); color:var(--seal); padding:2px 6px; border-radius:4px; margin-left:6px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="mark">VB</div>
+    <div>
+      <h1>Trợ Lý Soạn Thảo Văn Bản</h1>
+    </div>
+  </div>
+  <button class="btn" id="btn-new-doc" style="width:auto; flex-shrink:0;">＋ Soạn văn bản mới</button>
+  <div class="status">Đã kết nối trợ lý AI (Gemini qua Apps Script Web App) — nếu gọi AI báo lỗi, kiểm tra lại CONFIG.WEB_APP_URL trong file</div>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT PANEL -->
+  <div class="panel">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="samples">Tài liệu</button>
+      <button class="tab-btn" data-tab="context">Bối cảnh</button>
+      <button class="tab-btn" data-tab="outline">Dàn ý</button>
+    </div>
+    <div class="tab-content">
+      <div class="tab-pane active" id="tab-samples">
+        <label class="field-label">Tải tài liệu tham khảo lên</label>
+        <div style="font-size:11.5px; color:var(--ink-soft); margin-bottom:10px; line-height:1.5;">
+          Tải lên nhiều file cùng lúc (.docx, .txt, .md, .pdf). Với mỗi file, chọn đúng vai trò để AI dùng đúng chỗ: lấy số liệu, học văn phong, hay làm căn cứ. <strong>Lưu ý:</strong> PDF dạng ảnh scan (không phải PDF gõ chữ) sẽ không đọc được chữ.
+        </div>
+        <input type="file" id="ref-file-input" accept=".docx,.txt,.md,.pdf" multiple style="font-size:12.5px; width:100%;">
+        <div id="ref-doc-list" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+      <div class="tab-pane" id="tab-context">
+        <label class="field-label">Hướng dẫn văn phong chung <span style="font-weight:400; color:var(--ink-soft); text-transform:none;">(áp dụng cho mọi lần soạn, tự lưu lại)</span></label>
+        <textarea class="ctx-input" id="ctx-hdVanPhong" placeholder="Vd: Không dùng ngôi thứ nhất số ít. Câu ngắn gọn, tránh lặp từ. Không tự thêm số liệu ngoài tài liệu tham khảo. Xưng 'Ban Kiểm soát nội bộ' thay vì 'chúng tôi'..." style="min-height:55px;"></textarea>
+
+        <label class="field-label">Bối cảnh</label>
+        <textarea class="ctx-input" id="ctx-boiCanh" placeholder="Vd: Cảng cần thông báo tạm ngừng tiếp nhận hàng tại cầu cảng số 2 để bảo trì từ 20–25/7..."></textarea>
+
+        <label class="field-label">Yêu cầu cụ thể</label>
+        <textarea class="ctx-input" id="ctx-yeuCau" placeholder="Vd: Văn phong trang trọng, nêu rõ thời gian, lý do, phương án thay thế cho khách hàng..."></textarea>
+
+        <label class="field-label">Loại văn bản</label>
+        <input class="ctx-input" id="ctx-loaiVB" placeholder="Vd: Thông báo">
+
+        <label class="field-label">Đối tượng đọc</label>
+        <select class="ctx-input" id="ctx-doiTuong">
+          <option value="Nội bộ / đồng nghiệp">Nội bộ / đồng nghiệp</option>
+          <option value="Cấp trên / Ban lãnh đạo">Cấp trên / Ban lãnh đạo</option>
+          <option value="Khách hàng / đối tác">Khách hàng / đối tác</option>
+          <option value="Cơ quan nhà nước">Cơ quan nhà nước</option>
+        </select>
+
+        <button class="btn btn-primary btn-block" id="btn-outline">① Đề xuất dàn ý (cho văn bản dài/phức tạp)</button>
+        <button class="btn btn-block" id="btn-generate" style="margin-top:8px;">Viết thẳng luôn (văn bản ngắn, không cần dàn ý)</button>
+      </div>
+      <div class="tab-pane" id="tab-outline">
+        <div class="outline-summary" id="outline-summary" style="display:none;">
+          <span id="outline-count-text"></span>
+          <button id="btn-outline-clear-all">Xoá tất cả</button>
+        </div>
+        <div id="outline-list"></div>
+        <button class="btn btn-block" id="btn-outline-add" style="margin-top:8px;">+ Thêm mục</button>
+        <button class="btn btn-primary btn-block" id="btn-write-from-outline" style="margin-top:14px;" disabled>② Viết toàn bộ theo dàn ý này</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER PANEL -->
+  <div class="panel editor-panel">
+    <div class="doc-format">
+      <div class="col-left">
+        <div class="fmt-line bold"><input id="fmt-coQuanChuQuan" placeholder="TÊN CƠ QUAN CHỦ QUẢN (nếu có)"></div>
+        <div class="fmt-line bold"><input id="fmt-coQuanBanHanh" placeholder="TÊN CƠ QUAN BAN HÀNH"></div>
+        <div class="so-hieu-row">
+          Số: <input id="fmt-soKyHieu" placeholder=".../TB-CDN">
+        </div>
+      </div>
+      <div class="col-right">
+        <div class="quochieu">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+        <div class="khauhieu">Độc lập – Tự do – Hạnh phúc</div>
+        <div class="fmt-line center" style="margin-top:10px;">
+          <input id="fmt-diaDanhNgay" placeholder="Đồng Nai, ngày ... tháng ... năm 2026">
+        </div>
+      </div>
+    </div>
+    <div class="doc-format" style="grid-template-columns:1fr; border-top:none; padding-top:0;">
+      <div class="fmt-line center bold" style="text-transform:uppercase;">
+        <input id="fmt-tenLoai" placeholder="TÊN LOẠI VĂN BẢN (vd: THÔNG BÁO)" style="text-align:center; font-weight:700;">
+      </div>
+      <div class="fmt-line center" style="margin-top:4px;">
+        <input id="fmt-trichYeu" placeholder="Trích yếu nội dung (vd: Về việc tạm ngừng tiếp nhận hàng tại cầu cảng số 2)" style="text-align:center;">
+      </div>
+      <div class="fmt-line" style="font-size:12px; margin-top:8px;">
+        Kính gửi: <input id="fmt-noiNhan" placeholder="Nơi nhận...">
+      </div>
+    </div>
+
+    <div style="padding:6px 22px; font-size:11px; color:var(--ink-soft); border-bottom:1px dashed var(--panel-border); background:#FBF8F0;">
+      ⓘ Khung soạn thảo bên dưới chỉ chứa <strong>nội dung chính</strong> — không cần gõ lại quốc hiệu, tên cơ quan, số ký hiệu, ngày tháng hay "Kính gửi", vì các mục đó đã có ở khối phía trên rồi.
+    </div>
+
+    <div class="toolbar">
+      <button title="Đậm" onclick="fmtCmd('bold')"><b>B</b></button>
+      <button title="Nghiêng" onclick="fmtCmd('italic')"><i>I</i></button>
+      <button title="Gạch chân" onclick="fmtCmd('underline')"><u>U</u></button>
+      <div class="spacer"></div>
+      <button class="btn" id="btn-ai-edit-selection" style="width:auto;">✎ Nhờ AI sửa đoạn đã chọn</button>
+      <button class="btn" id="btn-clear-editor" style="width:auto;">Xoá nội dung</button>
+      <button class="btn btn-primary" id="btn-export" style="width:auto;">⬇ Xuất file Word</button>
+    </div>
+
+    <div class="editor-scroll">
+      <div class="editor-toc" id="editor-toc">
+        <div class="editor-toc-title">Mục lục</div>
+        <div id="editor-toc-list"></div>
+      </div>
+      <div class="editor-paper-col">
+        <div id="editor" contenteditable="true">
+          <p class="placeholder">Nội dung văn bản sẽ hiển thị ở đây. Bạn có thể gõ trực tiếp, chèn văn bản mẫu, hoặc để AI viết bản nháp từ mục Bối cảnh &amp; Yêu cầu.</p>
+        </div>
+        <div class="signature-block">
+          <div class="noi-nhan-block">
+            <div class="label">Nơi nhận:</div>
+            <textarea id="fmt-noiNhanCuoi" placeholder="- Như trên;&#10;- Lưu: VT, KSNB."></textarea>
+          </div>
+          <div class="sig-inner">
+            <div class="place-date">&nbsp;</div>
+            <div class="role"><input class="fmt-line" style="text-align:right; font-weight:700; border:none;" id="fmt-chucVuKy" placeholder="TRƯỞNG BAN KIỂM SOÁT NỘI BỘ"></div>
+            <div class="name"><input class="fmt-line" style="text-align:right; font-weight:700; border:none;" id="fmt-hoTenKy" placeholder="Nguyễn Văn A"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="panel">
+    <div class="ai-panel-header">
+      <div class="ai-dot"></div>
+      <h3>Trợ lý chỉnh sửa</h3>
+      <span>Gemini</span>
+    </div>
+    <div class="ai-log" id="ai-log">
+      <div class="msg ai">Chào bạn! Bôi đen một đoạn trong khung soạn thảo rồi chọn "Nhờ AI sửa", hoặc gõ yêu cầu bên dưới. (Đây là phản hồi mẫu — sẽ được thay bằng gọi API Gemini thật.)</div>
+    </div>
+    <div class="ai-input-row">
+      <input type="text" id="ai-input" placeholder="Vd: viết lại đoạn này ngắn gọn hơn...">
+      <button id="ai-send">Gửi</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="ai-popover" id="ai-popover">
+  <button data-action="rewrite">Viết lại</button>
+  <button data-action="shorten">Rút gọn</button>
+  <button data-action="formal">Trang trọng hơn</button>
+</div>
+
+<footer>
+  Trợ lý AI trong trang này gọi qua Apps Script Web App (xem <code>CONFIG.WEB_APP_URL</code> trong file) để soạn nội dung bằng Gemini.
+</footer>
+
+<script>
+window.addEventListener('error', function(e){
+  var box = document.createElement('div');
+  box.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#A63A2E;color:#fff;padding:10px 14px;font-family:sans-serif;font-size:13px;';
+  box.textContent = '⚠ Có lỗi JavaScript khiến trang không hoạt động đúng: ' + e.message + ' (dòng ' + e.lineno + '). Trình duyệt bạn dùng có thể không hỗ trợ 1 tính năng JS trong file — thử mở bằng Chrome/Safari bản mới, hoặc chụp màn hình lỗi này gửi lại để được sửa.';
+  document.body.prepend(box);
+});
+</script>
+<script>
+/* ======================================================================
+   CONFIG — dán URL Web App (Apps Script) sau khi deploy Code.gs kèm theo
+====================================================================== */
+const CONFIG = {
+  WEB_APP_URL: "https://script.google.com/macros/s/AKfycbxKIQf_-gYNqtv9Jze92vcgdyYiQlnRp3z7Wixiq2zK2mT6KY2GQ5Nu8i6yU2KWeO_4oQ/exec", // vd: "https://script.google.com/macros/s/AKfycb.../exec"
+  ACCESS_TOKEN: "123" // đặt trùng với ACCESS_TOKEN trong Code.gs để chỉ người biết mã mới gọi được AI. Để trống nếu không cần.
+};
+
+/* ======================================================================
+   TỰ LƯU TẠM (localStorage) — chống mất nội dung khi lỡ đóng tab.
+   Lưu ý: chỉ lưu trên máy/trình duyệt hiện tại, không đồng bộ giữa các máy,
+   và có giới hạn dung lượng (~5-10MB) nên nếu tài liệu tham khảo quá lớn,
+   việc lưu có thể thất bại — khi đó sẽ chỉ ghi cảnh báo ra console, không
+   làm gián đoạn việc soạn thảo.
+====================================================================== */
+const AUTOSAVE_KEY = 'vbdt_autosave_v1';
+let autosaveTimer = null;
+
+function collectAutosaveState(){
+  return {
+    boiCanh: document.getElementById('ctx-boiCanh').value,
+    yeuCau: document.getElementById('ctx-yeuCau').value,
+    loaiVB: document.getElementById('ctx-loaiVB').value,
+    doiTuong: document.getElementById('ctx-doiTuong').value,
+    fmt: Object.fromEntries(
+      ['fmt-coQuanChuQuan','fmt-coQuanBanHanh','fmt-soKyHieu','fmt-diaDanhNgay','fmt-tenLoai','fmt-trichYeu','fmt-noiNhan','fmt-chucVuKy','fmt-hoTenKy','fmt-noiNhanCuoi']
+        .map(id => [id, document.getElementById(id).value])
+    ),
+    outlineItems,
+    referenceDocs,
+    editorHtml: document.getElementById('editor').innerHTML,
+    savedAt: Date.now()
+  };
+}
+
+function autosaveNow(){
+  try{
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(collectAutosaveState()));
+  }catch(err){
+    console.warn('Tự lưu thất bại (có thể do dữ liệu quá lớn cho localStorage):', err);
+  }
+}
+
+function scheduleAutosave(){
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(autosaveNow, 1200);
+}
+
+function clearAutosave(){
+  try{ localStorage.removeItem(AUTOSAVE_KEY); }catch(err){}
+}
+
+function restoreAutosaveState(state){
+  document.getElementById('ctx-boiCanh').value = state.boiCanh || '';
+  document.getElementById('ctx-yeuCau').value = state.yeuCau || '';
+  document.getElementById('ctx-loaiVB').value = state.loaiVB || '';
+  if(state.doiTuong) document.getElementById('ctx-doiTuong').value = state.doiTuong;
+  if(state.fmt){
+    Object.entries(state.fmt).forEach(([id, val])=>{
+      const el = document.getElementById(id);
+      if(el) el.value = val || '';
+    });
+  }
+  outlineItems = Array.isArray(state.outlineItems) ? state.outlineItems : [];
+  referenceDocs = Array.isArray(state.referenceDocs) ? state.referenceDocs : [];
+  document.getElementById('editor').innerHTML = state.editorHtml || '<p class="placeholder">Nội dung văn bản sẽ hiển thị ở đây.</p>';
+  renderRefDocs();
+  renderOutline();
+}
+
+/* ======================================================================
+   TÀI LIỆU THAM KHẢO (upload, nhiều file, có gắn vai trò)
+   Mỗi tài liệu: {id, name, role, text}. referenceDocs dùng chung cho:
+   sinh dàn ý, viết theo dàn ý, viết thẳng, và sửa đoạn đã chọn.
+====================================================================== */
+let referenceDocs = [];
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderRefDocs(){
+  const list = document.getElementById('ref-doc-list');
+  list.innerHTML = referenceDocs.map(d=>`
+    <div class="ref-doc-item" data-id="${d.id}">
+      <div class="ref-doc-name">${escapeHtml(d.name)}</div>
+      <select class="ref-doc-role" data-id="${d.id}">
+        <option value="Dữ liệu/số liệu"${d.role==='Dữ liệu/số liệu'?' selected':''}>Vai trò: Dữ liệu/số liệu</option>
+        <option value="Văn bản mẫu văn phong"${d.role==='Văn bản mẫu văn phong'?' selected':''}>Vai trò: Mẫu văn phong</option>
+        <option value="Căn cứ pháp lý"${d.role==='Căn cứ pháp lý'?' selected':''}>Vai trò: Căn cứ pháp lý</option>
+        <option value="Khác"${d.role==='Khác'?' selected':''}>Vai trò: Khác</option>
+      </select>
+      <button class="ref-doc-remove" data-id="${d.id}">Xoá tài liệu này</button>
+    </div>`).join('');
+  list.querySelectorAll('.ref-doc-role').forEach(sel=>{
+    sel.onchange = (e)=>{
+      const doc = referenceDocs.find(d=>d.id===e.target.dataset.id);
+      if(doc) doc.role = e.target.value;
+      scheduleAutosave();
+    };
+  });
+  list.querySelectorAll('.ref-doc-remove').forEach(btn=>{
+    btn.onclick = (e)=>{
+      referenceDocs = referenceDocs.filter(d=>d.id!==e.target.dataset.id);
+      renderRefDocs();
+    };
+  });
+  scheduleAutosave();
+}
+
+if(typeof pdfjsLib !== 'undefined'){
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.worker.min.js';
+}
+
+async function readFileAsText(file){
+  const ext = file.name.split('.').pop().toLowerCase();
+  if(ext === 'docx'){
+    if(typeof mammoth === 'undefined') throw new Error('Chưa tải được thư viện đọc .docx (mammoth.js). Kiểm tra kết nối mạng.');
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return result.value;
+  } else if(ext === 'txt' || ext === 'md'){
+    return await file.text();
+  } else if(ext === 'pdf'){
+    if(typeof pdfjsLib === 'undefined') throw new Error('Chưa tải được thư viện đọc .pdf (pdf.js). Kiểm tra kết nối mạng.');
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let text = '';
+    for(let p = 1; p <= pdf.numPages; p++){
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      text += content.items.map(it => it.str).join(' ') + '\n\n';
+    }
+    text = text.trim();
+    if(!text){
+      throw new Error('Không trích được chữ nào — có thể đây là PDF dạng ảnh scan (chưa hỗ trợ đọc dạng này).');
+    }
+    return text;
+  }
+  throw new Error(`Định dạng ".${ext}" chưa hỗ trợ. Chỉ dùng được .docx, .txt, .md hoặc .pdf.`);
+}
+
+document.getElementById('ref-file-input').addEventListener('change', async (e)=>{
+  const files = Array.from(e.target.files);
+  e.target.value = ''; // reset để lần chọn sau vẫn kích hoạt được, không mất file đã có
+  for(const file of files){
+    try{
+      const text = await readFileAsText(file);
+      referenceDocs.push({ id: 'doc_'+Math.random().toString(36).slice(2,9), name: file.name, role: 'Khác', text });
+      logAI(`Đã đọc xong "${file.name}" (${Math.round(text.length/100)/10}k ký tự). Chọn đúng vai trò cho tài liệu này ở danh sách bên trái để AI dùng cho đúng mục đích.`);
+    }catch(err){
+      console.error('Lỗi đọc file tham khảo:', err);
+      logAI(`⚠ Không đọc được "${file.name}": ${err.message}`);
+    }
+  }
+  renderRefDocs();
+});
+
+function buildReferencePromptPart(maxCharsPerDoc){
+  maxCharsPerDoc = maxCharsPerDoc || 3000;
+  if(referenceDocs.length === 0) return '';
+  const parts = referenceDocs.map(d=>`[Nguồn: ${d.name} — vai trò: ${d.role}]\n${d.text.slice(0, maxCharsPerDoc)}`);
+  return `\n\nTài liệu tham khảo (tổng hợp đúng theo vai trò từng nguồn, không copy nguyên văn):\n"""${parts.join('\n\n---\n\n')}"""`;
+}
+
+
+/* ======================================================================
+   MARKDOWN -> HTML (rất cơ bản)
+   AI (Gemini) thường trả lời có cú pháp Markdown (**đậm**, - gạch đầu dòng,
+   # tiêu đề...). Hàm này chuyển sang HTML để hiển thị đẹp trong khung
+   soạn thảo thay vì hiện nguyên ký tự ** # - như văn bản thô.
+====================================================================== */
+function inlineMd(t){
+  return t
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+?)\*/g, '<em>$1</em>');
+}
+function mdToHtml(md){
+  const lines = (md||'').split('\n');
+  let html = '';
+  let inList = false;
+  lines.forEach(raw=>{
+    const l = raw.trim();
+    if(l === ''){ if(inList){html += '</ul>'; inList=false;} return; }
+    const headerMatch = l.match(/^#{1,6}\s+(.*)/);
+    if(headerMatch){
+      if(inList){html += '</ul>'; inList=false;}
+      html += `<p><strong>${inlineMd(headerMatch[1])}</strong></p>`;
+      return;
+    }
+    const bulletMatch = l.match(/^[-*]\s+(.*)/);
+    if(bulletMatch){
+      if(!inList){html += '<ul style="margin:0 0 10px 22px; padding:0;">'; inList=true;}
+      html += `<li>${inlineMd(bulletMatch[1])}</li>`;
+      return;
+    }
+    if(inList){html += '</ul>'; inList=false;}
+    html += `<p>${inlineMd(l)}</p>`;
+  });
+  if(inList) html += '</ul>';
+  return html;
+}
+
+/* ======================================================================
+   TAB SWITCHING
+====================================================================== */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+  };
+});
+
+/* ======================================================================
+   EDITOR TOOLBAR
+====================================================================== */
+function fmtCmd(cmd){ document.execCommand(cmd, false, null); }
+
+document.getElementById('editor').addEventListener('paste', (e)=>{
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+  document.execCommand('insertText', false, text);
+});
+
+document.getElementById('btn-clear-editor').onclick = ()=>{
+  document.getElementById('editor').innerHTML = '<p class="placeholder">Nội dung văn bản sẽ hiển thị ở đây.</p>';
+};
+
+/* ======================================================================
+   SOẠN VĂN BẢN MỚI — xoá sạch toàn bộ trạng thái đang làm việc
+====================================================================== */
+document.getElementById('btn-new-doc').onclick = ()=>{
+  const ok = confirm('Xoá toàn bộ nội dung đang soạn (bối cảnh, tài liệu tham khảo, dàn ý, nội dung, các trường thể thức) để bắt đầu văn bản mới?\n\nThao tác này không thể hoàn tác.');
+  if(!ok) return;
+
+  // Tài liệu tham khảo
+  referenceDocs = [];
+  renderRefDocs();
+
+  // Dàn ý
+  outlineItems = [];
+  renderOutline();
+
+  // Bối cảnh & yêu cầu
+  document.getElementById('ctx-boiCanh').value = '';
+  document.getElementById('ctx-yeuCau').value = '';
+  document.getElementById('ctx-loaiVB').value = '';
+  document.getElementById('ctx-doiTuong').selectedIndex = 0;
+
+  // Thể thức văn bản
+  ['fmt-coQuanChuQuan','fmt-coQuanBanHanh','fmt-soKyHieu','fmt-diaDanhNgay','fmt-tenLoai','fmt-trichYeu','fmt-noiNhan','fmt-chucVuKy','fmt-hoTenKy','fmt-noiNhanCuoi']
+    .forEach(id => { document.getElementById(id).value = ''; });
+
+  // Khung soạn thảo
+  document.getElementById('editor').innerHTML = '<p class="placeholder">Nội dung văn bản sẽ hiển thị ở đây. Bạn có thể gõ trực tiếp, chèn văn bản mẫu, hoặc để AI viết bản nháp từ mục Bối cảnh &amp; Yêu cầu.</p>';
+
+  // Vùng chọn đang lưu (nếu có)
+  savedRange = null;
+  savedText = '';
+
+  // Khung chat trợ lý
+  document.getElementById('ai-log').innerHTML = '<div class="msg ai">Đã xoá xong, sẵn sàng cho văn bản mới. Bạn tải tài liệu tham khảo (nếu có) rồi qua tab "Bối cảnh" để bắt đầu nhé.</div>';
+
+  // Quay về tab đầu tiên
+  document.querySelector('.tab-btn[data-tab="samples"]').click();
+};
+
+/* ======================================================================
+   MOCK AI LAYER
+   ---------------------------------------------------------------------
+   callAI(prompt) is the single seam to replace with a real Gemini API
+   call later. Everything else (UI, diff display, accept/reject) is
+   already wired to work with whatever text this function returns.
+====================================================================== */
+function getStyleInstruction(){
+  const el = document.getElementById('ctx-hdVanPhong');
+  return el ? el.value.trim() : '';
+}
+
+/* Nếu AI lỡ nhắc lại tiêu đề mục ở dòng đầu câu trả lời (dù đã dặn không làm vậy),
+   hàm này phát hiện và cắt bỏ dòng đó để tránh hiện tiêu đề 2 lần trong bài. */
+function normalizeForTitleCompare(s){
+  return (s||'')
+    .toLowerCase()
+    .replace(/^[#\s\d.\)\*–—\-]+/, '') // bỏ #, số thứ tự, dấu *, gạch đầu dòng ở đầu
+    .replace(/\*\*/g, '')
+    .replace(/[.:]+$/, '')
+    .trim();
+}
+function stripLeadingDuplicateTitle(reply, title){
+  if(!reply || !title) return reply;
+  const lines = reply.split('\n');
+  let idx = 0;
+  while(idx < lines.length && lines[idx].trim() === '') idx++;
+  if(idx >= lines.length) return reply;
+  const firstLine = normalizeForTitleCompare(lines[idx]);
+  const normTitle = normalizeForTitleCompare(title);
+  if(!firstLine || !normTitle) return reply;
+  const isDuplicate = firstLine === normTitle || firstLine.includes(normTitle) || normTitle.includes(firstLine);
+  if(isDuplicate){
+    lines.splice(idx, 1);
+    while(lines.length && lines[0].trim() === '') lines.shift();
+    return lines.join('\n');
+  }
+  return reply;
+}
+
+async function callAI(rawPrompt){
+  const style = getStyleInstruction();
+  const prompt = style ? `Hướng dẫn văn phong chung (luôn tuân thủ khi soạn/sửa): ${style}\n\n${rawPrompt}` : rawPrompt;
+
+  if(!CONFIG.WEB_APP_URL){
+    // Chưa deploy Code.gs / chưa dán WEB_APP_URL -> trả phản hồi mẫu để test giao diện
+    await new Promise(r=>setTimeout(r, 900));
+    if(prompt.startsWith('[OUTLINE]') || prompt.includes('[OUTLINE]')){
+      return "## Đặt vấn đề\nNêu lý do, căn cứ thực hiện.\nTóm tắt phạm vi nội dung.\n\n## Kết quả / nội dung chính\nTrình bày số liệu, kết quả theo từng phần việc.\n\n## Tồn tại, hạn chế\nCác khó khăn, vướng mắc gặp phải.\n\n## Kiến nghị, đề xuất\nHướng xử lý, đề xuất cấp có thẩm quyền xem xét.";
+    }
+    return "(Phản hồi mẫu) Đây là nội dung minh hoạ cho yêu cầu: \"" + rawPrompt.slice(0,60) + (rawPrompt.length>60?'...':'') + "\". Sau khi dán WEB_APP_URL trong CONFIG, đoạn này sẽ là văn bản do Gemini soạn thật.";
+  }
+  try{
+    const res = await fetch(CONFIG.WEB_APP_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'text/plain;charset=utf-8'}, // tránh preflight CORS với Apps Script
+      body: JSON.stringify({ action:'generate', prompt, token: CONFIG.ACCESS_TOKEN || undefined })
+    });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    return data.text || '(Không nhận được nội dung từ AI.)';
+  }catch(err){
+    console.error('Lỗi gọi AI:', err);
+    return '⚠ Không gọi được trợ lý AI (kiểm tra WEB_APP_URL hoặc kết nối mạng). Chi tiết: ' + err.message;
+  }
+}
+
+
+function logUser(text){
+  const log = document.getElementById('ai-log');
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+function logAI(text, opts={}){
+  const log = document.getElementById('ai-log');
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.innerHTML = text;
+  if(opts.suggestion){
+    const s = document.createElement('div');
+    s.className = 'diff-suggestion';
+    s.textContent = opts.suggestion;
+    div.appendChild(s);
+    const actions = document.createElement('div');
+    actions.className = 'diff-actions';
+    actions.innerHTML = `<button class="accept">✓ Áp dụng</button><button class="reject">✕ Bỏ qua</button>`;
+    actions.querySelector('.accept').onclick = ()=>{
+      if(opts.onAccept) opts.onAccept();
+      div.style.opacity = .55;
+    };
+    actions.querySelector('.reject').onclick = ()=>{ div.style.opacity = .55; };
+    div.appendChild(actions);
+  }
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+function logTyping(label){
+  const log = document.getElementById('ai-log');
+  const div = document.createElement('div');
+  div.className = 'msg typing';
+  div.textContent = label || 'AI đang soạn...';
+  div.id = 'typing-indicator';
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+  return ()=>div.remove();
+}
+
+document.getElementById('ai-send').onclick = sendAIRequest;
+document.getElementById('ai-input').addEventListener('keydown', e=>{ if(e.key==='Enter') sendAIRequest(); });
+
+async function sendAIRequest(){
+  const input = document.getElementById('ai-input');
+  const text = input.value.trim();
+  if(!text) return;
+  logUser(text);
+  input.value = '';
+  const removeTyping = logTyping();
+  const reply = await callAI(text);
+  removeTyping();
+  logAI(reply);
+}
+
+/* Generate draft from bối cảnh / yêu cầu */
+document.getElementById('btn-generate').onclick = async ()=>{
+  const boiCanh = document.getElementById('ctx-boiCanh').value.trim();
+  const yeuCau = document.getElementById('ctx-yeuCau').value.trim();
+  const loai = document.getElementById('ctx-loaiVB').value.trim() || 'văn bản';
+  const doiTuong = document.getElementById('ctx-doiTuong').value;
+  if(!boiCanh && !yeuCau){
+    logAI('Bạn hãy nhập ít nhất bối cảnh hoặc yêu cầu ở tab bên trái trước nhé.');
+    return;
+  }
+  const refPart = buildReferencePromptPart(6000);
+  const prompt = `Viết ${loai}. Đối tượng đọc: ${doiTuong}. Bối cảnh: ${boiCanh}. Yêu cầu: ${yeuCau}${refPart}\nChỉ viết PHẦN NỘI DUNG CHÍNH. Không viết quốc hiệu/tiêu ngữ, tên cơ quan, số ký hiệu, địa danh-ngày tháng, tên loại văn bản, hay dòng "Kính gửi" — các phần đó đã có sẵn ở khung riêng.`;
+  logUser('Viết bản nháp dựa trên bối cảnh & yêu cầu đã nhập');
+  const removeTyping = logTyping();
+  const draft = await callAI(prompt);
+  removeTyping();
+  document.getElementById('editor').innerHTML = mdToHtml(draft);
+  logAI('Đã đưa bản nháp vào khung soạn thảo. Bạn xem và chỉnh sửa trực tiếp, hoặc bôi đen từng đoạn để nhờ tôi sửa tiếp.');
+};
+
+/* ======================================================================
+   DÀN Ý (OUTLINE) — sinh dàn ý, cho phép sửa, rồi viết theo từng mục
+====================================================================== */
+let outlineItems = [];
+
+function parseOutline(text){
+  const lines = (text||'').split('\n');
+  const items = [];
+  let current = null;
+  lines.forEach(raw=>{
+    const l = raw.trim();
+    if(l === '') return;
+    const headerMatch = l.match(/^#{1,4}\s+(.*)/) || l.match(/^\d+[\.\)]\s+(.*)/);
+    if(headerMatch){
+      if(current) items.push(current);
+      current = { id:'sec_'+Math.random().toString(36).slice(2,9), title: headerMatch[1].replace(/\*\*/g,'').trim(), points:'' };
+    } else if(current){
+      current.points += (current.points ? '\n' : '') + l.replace(/^[-*]\s*/, '');
+    }
+  });
+  if(current) items.push(current);
+  return items;
+}
+
+function renderOutline(){
+  const container = document.getElementById('outline-list');
+  const writeBtn = document.getElementById('btn-write-from-outline');
+  const summary = document.getElementById('outline-summary');
+  const countText = document.getElementById('outline-count-text');
+
+  if(outlineItems.length === 0){
+    container.innerHTML = '<div style="font-size:12px;color:var(--ink-soft); line-height:1.6;">Chưa có dàn ý. Quay lại tab "Bối cảnh", điền thông tin rồi bấm "① Đề xuất dàn ý" — hoặc bấm "+ Thêm mục" bên dưới để tự tạo từ đầu.</div>';
+    writeBtn.disabled = true;
+    summary.style.display = 'none';
+    renderEditorToc();
+    scheduleAutosave();
+    return;
+  }
+  writeBtn.disabled = false;
+  summary.style.display = 'flex';
+  countText.textContent = `${outlineItems.length} mục`;
+  container.innerHTML = '';
+  outlineItems.forEach((item, idx)=>{
+    const el = document.createElement('div');
+    el.className = 'outline-item';
+    el.innerHTML = `
+      <div class="outline-item-head">
+        <span class="outline-num">${idx+1}</span>
+        <input class="outline-title" value="${escapeHtml(item.title)}" placeholder="Tiêu đề mục...">
+      </div>
+      <textarea class="outline-points" placeholder="Ý chính của mục này...">${escapeHtml(item.points)}</textarea>
+      <div class="outline-item-actions">
+        <button class="ol-up" title="Chuyển lên trên" ${idx===0?'disabled':''}>↑ Lên</button>
+        <button class="ol-down" title="Chuyển xuống dưới" ${idx===outlineItems.length-1?'disabled':''}>↓ Xuống</button>
+        <button class="ol-remove" title="Xoá mục này khỏi dàn ý">✕ Xoá mục</button>
+      </div>
+    `;
+    el.querySelector('.outline-title').oninput = (e)=>{ item.title = e.target.value; renderEditorToc(); scheduleAutosave(); };
+    el.querySelector('.outline-points').oninput = (e)=>{ item.points = e.target.value; scheduleAutosave(); };
+    el.querySelector('.ol-remove').onclick = ()=>{
+      if(!confirm(`Xoá mục "${item.title || '(chưa đặt tên)'}" khỏi dàn ý?`)) return;
+      outlineItems = outlineItems.filter(i=>i.id!==item.id);
+      renderOutline();
+    };
+    el.querySelector('.ol-up').onclick = ()=>{
+      if(idx===0) return;
+      [outlineItems[idx-1], outlineItems[idx]] = [outlineItems[idx], outlineItems[idx-1]];
+      renderOutline();
+    };
+    el.querySelector('.ol-down').onclick = ()=>{
+      if(idx===outlineItems.length-1) return;
+      [outlineItems[idx+1], outlineItems[idx]] = [outlineItems[idx], outlineItems[idx+1]];
+      renderOutline();
+    };
+    container.appendChild(el);
+  });
+  renderEditorToc();
+  scheduleAutosave();
+}
+
+/* ======================================================================
+   MỤC LỤC BÊN CẠNH KHUNG SOẠN THẢO — đồng bộ từ outlineItems.
+   Bấm 1 mục sẽ cuộn tới đúng đoạn tương ứng trong khung soạn thảo
+   (nếu đoạn đó đã được viết); đồng thời tô sáng mục đang xem khi cuộn.
+====================================================================== */
+let tocObserver = null;
+
+function renderEditorToc(){
+  const wrap = document.getElementById('editor-toc');
+  const list = document.getElementById('editor-toc-list');
+
+  if(tocObserver){ tocObserver.disconnect(); tocObserver = null; }
+
+  if(outlineItems.length === 0){
+    wrap.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+  wrap.style.display = 'block';
+  list.innerHTML = outlineItems.map((item, idx) =>
+    `<a href="#sec-${item.id}" data-target="sec-${item.id}">${idx+1}. ${escapeHtml(item.title || '(chưa đặt tên)')}</a>`
+  ).join('');
+
+  list.querySelectorAll('a').forEach(a=>{
+    a.onclick = (e)=>{
+      e.preventDefault();
+      const target = document.getElementById(a.dataset.target);
+      if(!target){
+        logAI('Mục này chưa được viết trong khung soạn thảo — bấm "② Viết toàn bộ theo dàn ý này" ở tab Dàn ý trước đã nhé.');
+        return;
+      }
+      target.scrollIntoView({behavior:'smooth', block:'start'});
+      list.querySelectorAll('a').forEach(x=>x.classList.remove('active'));
+      a.classList.add('active');
+    };
+  });
+
+  // Tô sáng mục đang xem khi cuộn trang (nếu các đoạn tương ứng đã tồn tại)
+  const targets = outlineItems
+    .map(item => document.getElementById('sec-'+item.id))
+    .filter(Boolean);
+  if(targets.length){
+    tocObserver = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        if(entry.isIntersecting){
+          list.querySelectorAll('a').forEach(x=>x.classList.remove('active'));
+          const link = list.querySelector(`a[data-target="${entry.target.id}"]`);
+          if(link) link.classList.add('active');
+        }
+      });
+    }, { root: document.querySelector('.editor-scroll'), threshold: 0, rootMargin: '-10% 0px -70% 0px' });
+    targets.forEach(t => tocObserver.observe(t));
+  }
+}
+
+document.getElementById('btn-outline-clear-all').onclick = ()=>{
+  if(outlineItems.length === 0) return;
+  if(!confirm('Xoá toàn bộ dàn ý hiện tại (không ảnh hưởng tài liệu tham khảo hay bối cảnh đã nhập)?')) return;
+  outlineItems = [];
+  renderOutline();
+};
+
+document.getElementById('btn-outline-add').onclick = ()=>{
+  outlineItems.push({ id:'sec_'+Math.random().toString(36).slice(2,9), title:'Mục mới', points:'' });
+  renderOutline();
+  document.querySelector('.tab-btn[data-tab="outline"]').click();
+};
+
+document.getElementById('btn-outline').onclick = async ()=>{
+  const boiCanh = document.getElementById('ctx-boiCanh').value.trim();
+  const yeuCau = document.getElementById('ctx-yeuCau').value.trim();
+  const loai = document.getElementById('ctx-loaiVB').value.trim() || 'văn bản';
+  const doiTuong = document.getElementById('ctx-doiTuong').value;
+  if(!boiCanh && !yeuCau && referenceDocs.length===0){
+    logAI('Bạn hãy nhập bối cảnh/yêu cầu, hoặc tải tài liệu tham khảo lên trước, để tôi có cơ sở đề xuất dàn ý.');
+    return;
+  }
+  const refPart = buildReferencePromptPart(4000);
+  const prompt = `[OUTLINE] Đề xuất dàn ý cho ${loai}. Đối tượng đọc: ${doiTuong}. Bối cảnh: ${boiCanh}. Yêu cầu: ${yeuCau}${refPart}\nTrả lời dưới dạng danh sách các mục, mỗi mục bắt đầu bằng tiêu đề (dùng ## hoặc số thứ tự), theo sau là 1-3 dòng ý chính cần có trong mục đó.`;
+  logUser('Đề xuất dàn ý dựa trên bối cảnh, yêu cầu' + (referenceDocs.length ? ` và ${referenceDocs.length} tài liệu tham khảo` : ''));
+  const removeTyping = logTyping('AI đang phác dàn ý...');
+  const reply = await callAI(prompt);
+  removeTyping();
+  outlineItems = parseOutline(reply);
+  if(outlineItems.length === 0){
+    logAI('Không tách được dàn ý rõ ràng từ phản hồi. Bạn có thể bấm "+ Thêm mục" ở tab Dàn ý để tự tạo, hoặc thử lại.');
+  } else {
+    logAI(`Đã đề xuất dàn ý gồm ${outlineItems.length} mục. Bạn xem, sửa/thêm/bớt ở tab "Dàn ý", rồi bấm "② Viết toàn bộ theo dàn ý này".`);
+  }
+  renderOutline();
+  document.querySelector('.tab-btn[data-tab="outline"]').click();
+};
+
+document.getElementById('btn-write-from-outline').onclick = async ()=>{
+  if(outlineItems.length === 0) return;
+  const boiCanh = document.getElementById('ctx-boiCanh').value.trim();
+  const yeuCau = document.getElementById('ctx-yeuCau').value.trim();
+  const loai = document.getElementById('ctx-loaiVB').value.trim() || 'văn bản';
+  const doiTuong = document.getElementById('ctx-doiTuong').value;
+  const refPart = buildReferencePromptPart(3500);
+  logUser(`Viết toàn bộ nội dung theo dàn ý đã duyệt (${outlineItems.length} mục)`);
+
+  let combinedHtml = '';
+  for(let i=0; i<outlineItems.length; i++){
+    const item = outlineItems[i];
+    const removeTyping = logTyping(`Đang viết mục ${i+1}/${outlineItems.length}: "${item.title}"...`);
+    const prompt = `Viết chi tiết mục "${item.title}" trong ${loai}. Ý chính cần thể hiện: ${item.points || '(không có ghi chú thêm, tự triển khai hợp lý theo tiêu đề)'}. Đối tượng đọc: ${doiTuong}. Bối cảnh chung của toàn văn bản: ${boiCanh}. Yêu cầu chung: ${yeuCau}.${refPart}\nChỉ viết nội dung của riêng mục này, không lặp lại quốc hiệu/tên cơ quan/số ký hiệu/ngày tháng ở đầu văn bản. TUYỆT ĐỐI KHÔNG nhắc lại tiêu đề "${item.title}" ở đầu câu trả lời — tiêu đề này đã được hiển thị riêng, hãy bắt đầu thẳng vào nội dung.`;
+    const reply = await callAI(prompt);
+    removeTyping();
+    const cleanedReply = stripLeadingDuplicateTitle(reply, item.title);
+    combinedHtml += `<p id="sec-${item.id}"><strong>${escapeHtml(item.title)}</strong></p>` + mdToHtml(cleanedReply);
+  }
+  document.getElementById('editor').innerHTML = combinedHtml;
+  renderEditorToc();
+  logAI('Đã viết xong toàn bộ nội dung theo dàn ý. Bạn xem lại, bôi đen từng đoạn nếu muốn nhờ tôi sửa tiếp mục nào.');
+};
+
+/* ======================================================================
+   BÔI ĐEN VĂN BẢN TRONG EDITOR ĐỂ NHỜ AI SỬA
+   ---------------------------------------------------------------------
+   Dùng "selectionchange" (thay vì chỉ mouseup) vì sự kiện này bắt được cả
+   thao tác chạm-giữ-chọn trên điện thoại. Vùng chọn được lưu lại
+   (cloneRange) ngay khi phát hiện, nên khi người dùng chạm sang nút bên
+   ngoài khung soạn thảo (làm mất highlight), ta vẫn còn tham chiếu đúng
+   vị trí để chèn kết quả AI vào.
+====================================================================== */
+const editor = document.getElementById('editor');
+const popover = document.getElementById('ai-popover');
+let savedRange = null;
+let savedText = '';
+
+document.addEventListener('selectionchange', ()=>{
+  const sel = window.getSelection();
+  if(!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+  const range = sel.getRangeAt(0);
+  if(!editor.contains(range.commonAncestorContainer)) return;
+  const text = sel.toString().trim();
+  if(text.length === 0) return;
+
+  savedRange = range.cloneRange();
+  savedText = text;
+
+  const rect = range.getBoundingClientRect();
+  if(rect.width || rect.height){
+    popover.style.top = (window.scrollY + rect.top - 44) + 'px';
+    popover.style.left = (window.scrollX + rect.left) + 'px';
+    popover.style.display = 'flex';
+  }
+});
+
+document.addEventListener('mousedown', (e)=>{
+  if(!popover.contains(e.target) && e.target.id !== 'btn-ai-edit-selection') popover.style.display = 'none';
+});
+document.addEventListener('touchstart', (e)=>{
+  if(!popover.contains(e.target) && e.target.id !== 'btn-ai-edit-selection') popover.style.display = 'none';
+});
+
+async function runAIEditOnSelection(actionLabel, promptPrefix){
+  if(!savedRange || !savedText){
+    logAI('Bạn hãy bôi đen (chọn) một đoạn trong khung soạn thảo trước, rồi bấm nút này lại nhé.');
+    return;
+  }
+  const rangeToApply = savedRange;
+  const refPart = buildReferencePromptPart(3000);
+  logUser(`Nhờ AI ${actionLabel} đoạn: "${savedText.slice(0,50)}${savedText.length>50?'...':''}"`);
+  const removeTyping = logTyping();
+  const reply = await callAI(`${promptPrefix}: ${savedText}${refPart}`);
+  removeTyping();
+  logAI(`Gợi ý (${actionLabel}):`, {
+    suggestion: reply,
+    onAccept: ()=>{
+      const temp = document.createElement('div');
+      temp.innerHTML = mdToHtml(reply);
+      const frag = document.createDocumentFragment();
+      let node;
+      while((node = temp.firstChild)) frag.appendChild(node);
+      rangeToApply.deleteContents();
+      rangeToApply.insertNode(frag);
+    }
+  });
+}
+
+popover.querySelectorAll('button').forEach(btn=>{
+  btn.onclick = ()=>{
+    const action = btn.dataset.action;
+    const map = {rewrite:['viết lại','viết lại'], shorten:['rút gọn','rút gọn'], formal:['trang trọng hơn','trang trọng hơn']};
+    const [label, prefix] = map[action];
+    popover.style.display = 'none';
+    runAIEditOnSelection(label, prefix);
+  };
+});
+
+/* Nút cố định trên thanh công cụ — luôn hoạt động kể cả trên điện thoại,
+   không phụ thuộc vào việc popover nổi có hiện đúng vị trí hay không. */
+document.getElementById('btn-ai-edit-selection').onclick = ()=>{
+  runAIEditOnSelection('viết lại', 'viết lại');
+};
+
+/* ======================================================================
+   EXPORT TO WORD (.docx) — dùng thư viện docx.js, chạy hoàn toàn client-side
+====================================================================== */
+document.getElementById('btn-export').onclick = async ()=>{
+  if(typeof docx === 'undefined'){
+    alert('Chưa tải được thư viện xuất Word (docx.js). Kiểm tra kết nối mạng rồi tải lại trang, hoặc mở Console (F12) để xem lỗi cụ thể.');
+    return;
+  }
+  try{
+  const { Document, Packer, Paragraph, TextRun, AlignmentType, Table, TableRow, TableCell, WidthType, BorderStyle } = docx;
+
+  const val = id => document.getElementById(id).value.trim();
+
+  const requiredFields = ['fmt-coQuanBanHanh','fmt-soKyHieu','fmt-diaDanhNgay','fmt-tenLoai'];
+  const missing = requiredFields.some(id => !val(id));
+  if(missing){
+    const proceed = confirm('Bạn chưa điền đủ các trường thể thức ở đầu trang (cơ quan ban hành, số ký hiệu, ngày tháng, tên loại văn bản). File Word xuất ra sẽ để trống các mục này. Vẫn tiếp tục xuất?');
+    if(!proceed) return;
+  }
+
+  /* Chuyển nội dung HTML trong khung soạn thảo sang các Paragraph của docx,
+     giữ nguyên đậm/nghiêng/gạch chân/danh sách thay vì làm phẳng thành chữ thô. */
+  function inlineRuns(node, fmt){
+    let runs = [];
+    node.childNodes.forEach(child=>{
+      if(child.nodeType === Node.TEXT_NODE){
+        if(child.textContent) runs.push(new TextRun({
+          text: child.textContent, size:28,
+          bold: !!fmt.bold, italics: !!fmt.italic,
+          underline: fmt.underline ? {} : undefined
+        }));
+      } else if(child.nodeType === Node.ELEMENT_NODE){
+        const tag = child.tagName.toLowerCase();
+        const next = { ...fmt };
+        if(tag==='strong' || tag==='b') next.bold = true;
+        if(tag==='em' || tag==='i') next.italic = true;
+        if(tag==='u') next.underline = true;
+        runs = runs.concat(inlineRuns(child, next));
+      }
+    });
+    return runs;
+  }
+
+  function convertEditorToParagraphs(root){
+    const out = [];
+    Array.from(root.children).forEach(child=>{
+      const tag = child.tagName.toLowerCase();
+
+      if(tag === 'ul' || tag === 'ol'){
+        Array.from(child.children).forEach(li=>{
+          const runs = inlineRuns(li, {});
+          out.push(new Paragraph({
+            children: runs.length ? runs : [new TextRun({text:'', size:28})],
+            bullet: { level: 0 },
+            spacing: { after:120, line:360 }
+          }));
+        });
+        return;
+      }
+
+      if(tag === 'p'){
+        const text = child.textContent.trim();
+        if(!text){ out.push(new Paragraph({ text:'', spacing:{after:120} })); return; }
+        // Mục tiêu đề (do bước "Viết theo dàn ý" tạo ra: <p id="sec-..."><strong>...</strong></p>)
+        const isHeading = child.id && child.id.startsWith('sec-');
+        const runs = inlineRuns(child, isHeading ? {bold:true} : {});
+        out.push(new Paragraph({
+          children: runs,
+          spacing: { after:150, line:360 },
+          indent: isHeading ? undefined : { firstLine:567 }
+        }));
+        return;
+      }
+
+      // Thẻ lạ khác (hiếm gặp) — lấy chữ thô, vẫn giữ khoảng cách dòng chuẩn
+      const text = child.textContent.trim();
+      if(text){
+        out.push(new Paragraph({
+          children:[ new TextRun({text, size:28}) ],
+          spacing:{after:150, line:360},
+          indent:{firstLine:567}
+        }));
+      }
+    });
+    return out.length ? out : [new Paragraph({text:''})];
+  }
+
+  const bodyParagraphs = convertEditorToParagraphs(document.getElementById('editor'));
+
+  const noiNhanText = val('fmt-noiNhanCuoi');
+  const noiNhanLines = noiNhanText ? noiNhanText.split('\n').map(l=>l.trim()).filter(Boolean) : [];
+  const noiNhanParagraphs = [
+    new Paragraph({children:[new TextRun({text:'Nơi nhận:', bold:true, italics:true, size:20})]}),
+    ...(noiNhanLines.length
+      ? noiNhanLines.map(l => new Paragraph({children:[new TextRun({text:l, italics:true, size:20})]}))
+      : [new Paragraph({children:[new TextRun({text:'- Như trên;', italics:true, size:20})]})])
+  ];
+
+  const doc = new Document({
+    styles: {
+      default: { document: { run: { font: 'Times New Roman', size: 28 } } }
+    },
+    sections: [{
+      children: [
+        new Table({
+          width:{size:100, type:WidthType.PERCENTAGE},
+          borders:{
+            top:{style:BorderStyle.NONE}, bottom:{style:BorderStyle.NONE},
+            left:{style:BorderStyle.NONE}, right:{style:BorderStyle.NONE},
+            insideHorizontal:{style:BorderStyle.NONE}, insideVertical:{style:BorderStyle.NONE}
+          },
+          rows:[
+            new TableRow({children:[
+              new TableCell({width:{size:50,type:WidthType.PERCENTAGE}, children:[
+                new Paragraph({children:[new TextRun({text:val('fmt-coQuanChuQuan'), bold:true, size:22})]}),
+                new Paragraph({children:[new TextRun({text:val('fmt-coQuanBanHanh'), bold:true, size:22})]}),
+                new Paragraph({children:[new TextRun({text:'Số: '+val('fmt-soKyHieu'), size:22})]}),
+              ]}),
+              new TableCell({width:{size:50,type:WidthType.PERCENTAGE}, children:[
+                new Paragraph({alignment:AlignmentType.CENTER, children:[new TextRun({text:'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM', bold:true, size:22})]}),
+                new Paragraph({alignment:AlignmentType.CENTER, children:[new TextRun({text:'Độc lập – Tự do – Hạnh phúc', size:22})]}),
+                new Paragraph({alignment:AlignmentType.CENTER, children:[new TextRun({text:val('fmt-diaDanhNgay'), italics:true, size:22})]}),
+              ]}),
+            ]})
+          ]
+        }),
+        new Paragraph({text:'', spacing:{after:200}}),
+        new Paragraph({alignment:AlignmentType.CENTER, children:[new TextRun({text:val('fmt-tenLoai'), bold:true, size:28})]}),
+        new Paragraph({alignment:AlignmentType.CENTER, spacing:{after:200}, children:[new TextRun({text:val('fmt-trichYeu'), bold:true, size:24})]}),
+        ...(val('fmt-noiNhan') ? [new Paragraph({children:[new TextRun({text:'Kính gửi: '+val('fmt-noiNhan'), size:24})]})] : []),
+        new Paragraph({text:'', spacing:{after:200}}),
+        ...bodyParagraphs,
+        new Paragraph({text:'', spacing:{after:400}}),
+        new Table({
+          width:{size:100, type:WidthType.PERCENTAGE},
+          borders:{
+            top:{style:BorderStyle.NONE}, bottom:{style:BorderStyle.NONE},
+            left:{style:BorderStyle.NONE}, right:{style:BorderStyle.NONE},
+            insideHorizontal:{style:BorderStyle.NONE}, insideVertical:{style:BorderStyle.NONE}
+          },
+          rows:[
+            new TableRow({children:[
+              new TableCell({width:{size:45,type:WidthType.PERCENTAGE}, children: noiNhanParagraphs}),
+              new TableCell({width:{size:55,type:WidthType.PERCENTAGE}, children:[
+                new Paragraph({alignment:AlignmentType.RIGHT, text:''}),
+                new Paragraph({alignment:AlignmentType.RIGHT, children:[new TextRun({text:val('fmt-chucVuKy'), bold:true, size:24})]}),
+                new Paragraph({text:'', spacing:{after:600}}),
+                new Paragraph({alignment:AlignmentType.RIGHT, children:[new TextRun({text:val('fmt-hoTenKy'), bold:true, size:24})]}),
+              ]}),
+            ]})
+          ]
+        }),
+      ]
+    }]
+  });
+
+  const blob = await Packer.toBlob(doc);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (val('fmt-tenLoai') || 'van-ban') + '.docx';
+  a.click();
+  URL.revokeObjectURL(url);
+  }catch(err){
+    console.error('Lỗi xuất Word:', err);
+    alert('Không xuất được file Word. Chi tiết lỗi: ' + err.message + '\n(Xem thêm ở Console - F12)');
+  }
+};
+
+/* Gắn tự lưu cho các ô nhập trực tiếp và khung soạn thảo */
+['ctx-hdVanPhong','ctx-boiCanh','ctx-yeuCau','ctx-loaiVB','ctx-doiTuong',
+ 'fmt-coQuanChuQuan','fmt-coQuanBanHanh','fmt-soKyHieu','fmt-diaDanhNgay','fmt-tenLoai','fmt-trichYeu','fmt-noiNhan','fmt-chucVuKy','fmt-hoTenKy','fmt-noiNhanCuoi']
+  .forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('input', scheduleAutosave);
+  });
+document.getElementById('editor').addEventListener('input', scheduleAutosave);
+
+/* Xoá autosave khi bắt đầu văn bản mới, để không hỏi khôi phục lại nội dung vừa xoá */
+document.getElementById('btn-new-doc').addEventListener('click', ()=>{
+  // chạy sau khi handler xoá dữ liệu ở trên đã thực thi xong (cùng click, nhưng đăng ký sau nên chạy sau)
+  setTimeout(clearAutosave, 0);
+});
+
+/* Khởi tạo hiển thị ban đầu — đặt ở cuối cùng, sau khi mọi biến/hàm
+   (đặc biệt là outlineItems, referenceDocs) đã được khai báo.
+   Nếu có phiên làm việc tự lưu trước đó, hỏi khôi phục lại. */
+(function initApp(){
+  try{
+    const raw = localStorage.getItem(AUTOSAVE_KEY);
+    if(raw){
+      const state = JSON.parse(raw);
+      const when = state.savedAt ? new Date(state.savedAt).toLocaleString('vi-VN') : '';
+      const hasContent = (state.boiCanh || state.yeuCau || (state.outlineItems && state.outlineItems.length) || (state.referenceDocs && state.referenceDocs.length) || (state.editorHtml && !state.editorHtml.includes('class="placeholder"')));
+      if(hasContent && confirm(`Phát hiện phiên làm việc trước đó chưa lưu${when ? ' (lúc ' + when + ')' : ''}. Khôi phục lại không?`)){
+        restoreAutosaveState(state);
+        return;
+      }
+    }
+  }catch(err){
+    console.warn('Không đọc được dữ liệu tự lưu:', err);
+  }
+  renderRefDocs();
+  renderOutline();
+})();
+</script>
+
+</body>
+</html>
