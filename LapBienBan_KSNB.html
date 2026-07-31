@@ -473,6 +473,18 @@
 
   <fieldset>
     <legend>Kết luận</legend>
+    <div style="margin-bottom:10px;">
+      <label class="field-label">Văn phong khi viết lại bằng AI</label>
+      <select id="gd1_aiStyle">
+        <option value="default">Mặc định — trang trọng, đầy đủ</option>
+        <option value="concise">Ngắn gọn, đi thẳng vào trọng tâm</option>
+        <option value="emphasize">Nhấn mạnh các trường hợp vi phạm/bất thường</option>
+        <option value="gentle">Nhẹ nhàng, mang tính nhắc nhở</option>
+      </select>
+      <label class="field-label" style="margin-top:8px;">Yêu cầu thêm cho AI (tùy chọn)</label>
+      <textarea id="gd1_aiCustom" rows="2" placeholder="VD: đề xuất thời hạn khắc phục; nhấn mạnh trách nhiệm Ban Khai thác điều độ..."></textarea>
+      <div class="hint" style="margin:6px 0 0 0;">Dù chọn văn phong nào, AI luôn phải giữ đầy đủ toàn bộ số liệu, tên người, tên vị trí đã tổng hợp — chỉ đổi cách hành văn.</div>
+    </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
       <button type="button" class="btn btn-add" onclick="autoConclude('gd1')">🪄 Tự động tổng hợp</button>
       <button type="button" class="btn btn-add" id="gd1_aiBtn" onclick="aiConclude('gd1')">✨ Viết lại bằng AI (Gemini)</button>
@@ -617,6 +629,18 @@
 
   <fieldset>
     <legend>Kết luận</legend>
+    <div style="margin-bottom:10px;">
+      <label class="field-label">Văn phong khi viết lại bằng AI</label>
+      <select id="lbt_aiStyle">
+        <option value="default">Mặc định — trang trọng, đầy đủ</option>
+        <option value="concise">Ngắn gọn, đi thẳng vào trọng tâm</option>
+        <option value="emphasize">Nhấn mạnh các trường hợp vi phạm/bất thường</option>
+        <option value="gentle">Nhẹ nhàng, mang tính nhắc nhở</option>
+      </select>
+      <label class="field-label" style="margin-top:8px;">Yêu cầu thêm cho AI (tùy chọn)</label>
+      <textarea id="lbt_aiCustom" rows="2" placeholder="VD: đề xuất thời hạn khắc phục; nhấn mạnh trách nhiệm Ban Khai thác điều độ..."></textarea>
+      <div class="hint" style="margin:6px 0 0 0;">Dù chọn văn phong nào, AI luôn phải giữ đầy đủ toàn bộ số liệu, tên người, tên vị trí đã tổng hợp — chỉ đổi cách hành văn.</div>
+    </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
       <button type="button" class="btn btn-add" onclick="autoConclude('lbt')">🪄 Tự động tổng hợp</button>
       <button type="button" class="btn btn-add" id="lbt_aiBtn" onclick="aiConclude('lbt')">✨ Viết lại bằng AI (Gemini)</button>
@@ -906,16 +930,20 @@ function readLabelRows(containerId){
 }
 
 // Position/equipment block: one "vị trí/thiết bị" that can hold MULTIPLE employees,
-// each with their own attendance status. hasCondition=true adds an equipment-condition dropdown.
+// each with their own attendance status. hasCondition=true adds an equipment-condition dropdown
+// (with a "Lý do" field that only appears when the condition is "Ngừng hoạt động").
 const STATUS_OPTIONS = ['Đang có mặt tại vị trí làm việc','Không có mặt tại vị trí làm việc'];
-const CONDITION_OPTIONS = ['Hoạt động tốt','Hư hỏng','Đang sửa chữa'];
+const CONDITION_OPTIONS = ['Đang hoạt động','Ngừng hoạt động'];
 
-function addPositionBlock(containerId, labelPlaceholder='Vị trí/Thiết bị', label='', hasCondition=false, condition='Hoạt động tốt', employees=null){
+function addPositionBlock(containerId, labelPlaceholder='Vị trí/Thiết bị', label='', hasCondition=false, condition='Đang hoạt động', employees=null, reason=''){
   const c = document.getElementById(containerId);
   const block = document.createElement('div');
   block.className = 'pos-block';
   const condHtml = hasCondition
-    ? `<select class="l-condition">${CONDITION_OPTIONS.map(o=>`<option value="${esc(o)}"${o===condition?' selected':''}>${esc(o)}</option>`).join('')}</select>`
+    ? `<select class="l-condition" onchange="toggleConditionReason(this)">${CONDITION_OPTIONS.map(o=>`<option value="${esc(o)}"${o===condition?' selected':''}>${esc(o)}</option>`).join('')}</select>`
+    : '';
+  const reasonHtml = hasCondition
+    ? `<div class="posblock-reason" style="display:${condition==='Ngừng hoạt động'?'block':'none'};margin-bottom:8px;"><input type="text" class="l-reason" placeholder="Lý do ngừng hoạt động" value="${esc(reason)}"></div>`
     : '';
   block.innerHTML = `
     <div class="posblock-row1">
@@ -923,6 +951,7 @@ function addPositionBlock(containerId, labelPlaceholder='Vị trí/Thiết bị'
       ${condHtml}
       <button type="button" class="btn btn-remove btn-sm" onclick="this.closest('.pos-block').remove()">✕ Xóa vị trí</button>
     </div>
+    ${reasonHtml}
     <div class="posblock-employees"></div>
     <button type="button" class="btn btn-add btn-sm" onclick="addEmployeeSubRow(this.previousElementSibling)">+ Thêm nhân viên</button>
   `;
@@ -930,6 +959,12 @@ function addPositionBlock(containerId, labelPlaceholder='Vị trí/Thiết bị'
   const empList = (employees && employees.length) ? employees : [{name:'', status:'Đang có mặt tại vị trí làm việc'}];
   const empContainer = block.querySelector('.posblock-employees');
   empList.forEach(e=>addEmployeeSubRow(empContainer, e.name, e.status));
+}
+
+function toggleConditionReason(selectEl){
+  const block = selectEl.closest('.pos-block');
+  const reasonWrap = block.querySelector('.posblock-reason');
+  if(reasonWrap) reasonWrap.style.display = (selectEl.value === 'Ngừng hoạt động') ? 'block' : 'none';
 }
 
 function addEmployeeSubRow(empContainer, name='', status='Đang có mặt tại vị trí làm việc'){
@@ -952,11 +987,13 @@ function readPositionBlocks(containerIdOrEl){
     const label = b.querySelector('.l-label').value.trim();
     const condEl = b.querySelector('.l-condition');
     const condition = condEl ? condEl.value : null;
+    const reasonEl = b.querySelector('.l-reason');
+    const reason = reasonEl ? reasonEl.value.trim() : '';
     const employees = [...b.querySelectorAll('.emp-subrow')].map(r=>({
       name: r.querySelector('.l-employee').value.trim(),
       status: r.querySelector('.l-status').value
     })).filter(e=>e.name);
-    return { label, condition, employees };
+    return { label, condition, reason, employees };
   }).filter(pb=>pb.label || pb.employees.length);
 }
 
@@ -1072,7 +1109,7 @@ function gatherConclusionFacts(prefix){
   const activeBerths = berths.filter(b=>b.hoatdong !== 'Tạm ngừng hoạt động' && (b.name || b.pt || b.lh || b.tb));
 
   const equipmentBlocks = document.getElementById(prefix+'_coGioi') ? readPositionBlocks(prefix+'_coGioi') : [];
-  const brokenEquip = equipmentBlocks.filter(pb=>pb.condition && pb.condition !== 'Hoạt động tốt');
+  const brokenEquip = equipmentBlocks.filter(pb=>pb.condition === 'Ngừng hoạt động');
 
   // Phần 3: Tình hình an ninh trật tự — báo cáo trực tiếp của bảo vệ
   const anttEl = document.getElementById(prefix+'_antt');
@@ -1103,8 +1140,8 @@ function buildConclusionText(facts){
     part2Lines.push(`${facts.activeBerths.length} cầu bến đang hoạt động bình thường: ${facts.activeBerths.map(b=>b.name || '……').join(', ')}.`);
   }
   if(facts.brokenEquip.length){
-    part2Lines.push(`Có ${facts.brokenEquip.length} thiết bị không ở trạng thái hoạt động tốt:`);
-    facts.brokenEquip.forEach(pb=>part2Lines.push(`  + ${pb.label || '……'}: ${pb.condition}`));
+    part2Lines.push(`Có ${facts.brokenEquip.length} thiết bị ngừng hoạt động:`);
+    facts.brokenEquip.forEach(pb=>part2Lines.push(`  + ${pb.label || '……'}: ${pb.reason || 'chưa ghi rõ lý do'}`));
   }
   if(!part2Lines.length){
     part2Lines.push('Tình hình sản xuất tại các cầu bến diễn ra bình thường, các phương tiện, thiết bị hoạt động ổn định.');
@@ -1122,6 +1159,15 @@ function autoConclude(prefix){
   document.getElementById(prefix+'_ketluan').value = buildConclusionText(facts);
 }
 
+// Style templates for the AI rewrite. Every template MUST keep all summarized facts intact —
+// only the phrasing/tone changes. Never let a template imply omitting data.
+const AI_STYLE_TEMPLATES = {
+  default: "Văn phong hành chính trang trọng, đầy đủ, rõ ràng, mạch lạc — đúng chuẩn biên bản kiểm tra nội bộ.",
+  concise: "Viết ngắn gọn, đi thẳng vào trọng tâm, câu văn súc tích, giảm bớt các câu chuyển tiếp dài dòng — nhưng vẫn phải liệt kê đủ từng trường hợp/số liệu, không được gộp tắt hay lược bỏ.",
+  emphasize: "Nhấn mạnh và làm nổi bật các trường hợp vi phạm, thiết bị hư hỏng, cầu bến ngừng hoạt động, hoặc bất thường được phát hiện; nêu rõ mức độ cần lưu ý — nhưng vẫn giữ đầy đủ các trường hợp bình thường/đạt yêu cầu để bảo đảm tính khách quan.",
+  gentle: "Văn phong nhẹ nhàng, mang tính nhắc nhở và xây dựng, tránh từ ngữ nặng nề hay quy kết — nhưng vẫn nêu đầy đủ, chính xác từng trường hợp đã ghi nhận."
+};
+
 async function aiConclude(prefix){
   const key = loadGeminiKey();
   const statusEl = document.getElementById(prefix+'_aiStatus');
@@ -1138,11 +1184,27 @@ async function aiConclude(prefix){
     return;
   }
   const draftFacts = buildConclusionText(facts);
+  const styleKey = document.getElementById(prefix+'_aiStyle').value;
+  const styleInstruction = AI_STYLE_TEMPLATES[styleKey] || AI_STYLE_TEMPLATES.default;
+  const customInstruction = (document.getElementById(prefix+'_aiCustom').value || '').trim();
+
   statusEl.textContent = 'Đang gọi AI để viết lại kết luận...';
   statusEl.className = 'status-msg';
   btn.disabled = true;
   try{
-    const prompt = `Bạn là trợ lý soạn thảo văn bản hành chính tiếng Việt cho Ban Kiểm soát nội bộ của một công ty cảng biển. Dựa CHÍNH XÁC vào dữ liệu kiểm tra dưới đây (không bịa thêm thông tin không có), hãy viết lại thành một đoạn kết luận biên bản kiểm tra: văn phong hành chính, chuyên nghiệp, súc tích, mạch lạc. Chỉ trả về đúng đoạn văn kết luận, không thêm tiêu đề hay lời giải thích nào khác.\n\nDữ liệu kiểm tra:\n${draftFacts}`;
+    const prompt = `Bạn là trợ lý soạn thảo văn bản hành chính tiếng Việt cho Ban Kiểm soát nội bộ của một công ty cảng biển.
+
+YÊU CẦU VĂN PHONG: ${styleInstruction}
+${customInstruction ? `YÊU CẦU BỔ SUNG TỪ NGƯỜI DÙNG: ${customInstruction}\n` : ''}
+QUY TẮC BẮT BUỘC — KHÔNG ĐƯỢC VI PHẠM:
+1. Phải giữ đầy đủ TẤT CẢ số liệu, tên người, tên vị trí/thiết bị/cầu bến, trạng thái đã liệt kê trong "DỮ LIỆU KIỂM TRA" bên dưới. Không được bỏ sót, không được tóm lược hay gộp chung các trường hợp riêng lẻ thành một câu chung chung.
+2. Không bịa thêm bất kỳ thông tin, số liệu, hay kết luận nào không có trong dữ liệu.
+3. Giữ nguyên cấu trúc 3 phần theo đúng thứ tự: "1. Về tuân thủ nội quy lao động", "2. Về tình hình sản xuất", "3. Về tình hình an ninh trật tự".
+4. Chỉ được thay đổi cách hành văn, câu chữ, cách trình bày theo yêu cầu văn phong ở trên — tuyệt đối không thay đổi nội dung sự việc, không thêm/bớt trường hợp nào.
+5. Chỉ trả về đúng đoạn văn kết luận hoàn chỉnh, không thêm tiêu đề, lời chào, hay giải thích nào khác ngoài đoạn kết luận.
+
+DỮ LIỆU KIỂM TRA (giữ nguyên toàn bộ nội dung sau, chỉ viết lại câu chữ):
+${draftFacts}`;
     const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
@@ -1153,7 +1215,7 @@ async function aiConclude(prefix){
     const text = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
     if(!text) throw new Error('Không nhận được nội dung trả về từ Gemini.');
     document.getElementById(prefix+'_ketluan').value = text.trim();
-    statusEl.textContent = 'Đã viết lại kết luận bằng AI.';
+    statusEl.textContent = 'Đã viết lại kết luận bằng AI. Vui lòng đọc lại để chắc chắn không thiếu số liệu/tên người trước khi xuất file.';
     statusEl.className = 'status-msg ok';
   }catch(err){
     console.error(err);
@@ -1324,16 +1386,31 @@ function posBlockParas(list, headingText, opts={}){
   const paras = [];
   if(headingText) paras.push(new Paragraph({spacing:{before:120,after:60}, indent:{left:200}, children:[new TextRun({text:headingText, bold:true})]}));
   list.forEach(pb=>{
-    const empText = pb.employees && pb.employees.length
-      ? pb.employees.map(e=>`${e.name || '……………………'} (${e.status})`).join('; ')
-      : '……………………… (Đang có mặt tại vị trí làm việc)';
-    const runs = [ new TextRun({text: pb.label || '…………', bold:true}) ];
-    if(opts.showCondition && pb.condition){
-      runs.push(new TextRun({text:` — Tình trạng thiết bị: ${pb.condition}; Nhân viên vận hành: ${empText}`}));
+    const employees = (pb.employees && pb.employees.length) ? pb.employees : [{name:'', status:'Đang có mặt tại vị trí làm việc'}];
+    const reasonText = (opts.showCondition && pb.condition === 'Ngừng hoạt động') ? `; Lý do: ${pb.reason || '……………………'}` : '';
+    if(opts.expand){
+      // Heading line for this vị trí/thiết bị, then one bullet line per employee below it
+      const headRuns = [ new TextRun({text: pb.label || '…………', bold:true}) ];
+      if(opts.showCondition && pb.condition){
+        headRuns.push(new TextRun({text:` — Tình trạng thiết bị: ${pb.condition}${reasonText};`}));
+      } else {
+        headRuns.push(new TextRun({text:':'}));
+      }
+      paras.push(new Paragraph({indent:{left:400}, spacing:{before:60,after:20}, children:headRuns}));
+      employees.forEach(e=>{
+        const prefix = opts.showCondition ? 'Nhân viên vận hành: ' : '';
+        paras.push(new Paragraph({indent:{left:600}, spacing:{after:20}, children:[
+          new TextRun({text:`- ${prefix}${e.name || '……………………'} - ${e.status}`})
+        ]}));
+      });
     } else {
-      runs.push(new TextRun({text:`: ${empText}`}));
+      const empText = employees.map(e=>`${e.name || '……………………'} - ${e.status}`).join('; ');
+      const condSuffix = (opts.showCondition && pb.condition) ? `  — Tình trạng thiết bị: ${pb.condition}${reasonText}` : '';
+      paras.push(new Paragraph({indent:{left:400}, spacing:{after:40}, children:[
+        new TextRun({text: pb.label || '…………', bold:true}),
+        new TextRun({text:`: ${empText}${condSuffix}`})
+      ]}));
     }
-    paras.push(new Paragraph({indent:{left:400}, spacing:{after:40}, children:runs}));
   });
   return paras;
 }
@@ -1345,13 +1422,11 @@ function berthParas(berths){
       new TextRun({text:`Cầu bến ${b.name || '……'}`, bold:true}),
       new TextRun({text:` — ${b.hoatdong || 'Đang hoạt động'}`})
     ]}));
-    paras.push(new Paragraph({indent:{left:400}, spacing:{after:40}, children:[
-      new TextRun({text:`Phương tiện cập bến: ${b.pt || '……………'}  |  Thực hiện làm hàng: ${b.lh || '……………'}  |  Thiết bị làm hàng: ${b.tb || '……………'}`})
-    ]}));
+    paras.push(new Paragraph({indent:{left:400}, spacing:{after:20}, children:[new TextRun({text:`- Phương tiện cập bến: ${b.pt || '……………………………'}`})]}));
+    paras.push(new Paragraph({indent:{left:400}, spacing:{after:20}, children:[new TextRun({text:`- Thực hiện làm hàng: ${b.lh || '……………………………'}`})]}));
+    paras.push(new Paragraph({indent:{left:400}, spacing:{after:40}, children:[new TextRun({text:`- Thiết bị làm hàng: ${b.tb || '……………………………'}`})]}));
     if(b.hoatdong === 'Tạm ngừng hoạt động'){
-      paras.push(new Paragraph({indent:{left:400}, spacing:{after:40}, children:[
-        new TextRun({text:`Lý do tạm ngừng: ${b.lydo || '……………………………………'}`})
-      ]}));
+      paras.push(new Paragraph({indent:{left:400}, spacing:{after:40}, children:[new TextRun({text:`- Lý do tạm ngừng: ${b.lydo || '……………………………………'}`})]}));
     }
   });
   return paras;
@@ -1360,8 +1435,8 @@ function berthParas(berths){
 function companyParas(companies){
   const paras = [];
   companies.forEach(c=>{
-    paras.push(new Paragraph({indent:{left:200}, spacing:{before:100, after:40}, children:[new TextRun({text:c.name || 'Công ty ……', bold:true})]}));
-    paras.push(...posBlockParas(c.devices, null, {showCondition:true}));
+    paras.push(new Paragraph({indent:{left:200}, spacing:{before:100, after:40}, children:[new TextRun({text:`* ${c.name || 'Công ty ……'}`, bold:true})]}));
+    paras.push(...posBlockParas(c.devices, null, {expand:true, showCondition:true}));
   });
   return paras;
 }
@@ -1445,8 +1520,8 @@ function exportGD1(){
     children.push(...berthParas(readBerths('gd1_berths')));
 
     children.push(headingArabic(2, "Ban Khai thác điều độ"));
-    children.push(...posBlockParas(readPositionBlocks('gd1_dieuDo'), "Bộ phận điều độ:"));
-    children.push(...posBlockParas(readPositionBlocks('gd1_coGioi'), "Bộ phận cơ giới:", {showCondition:true}));
+    children.push(...posBlockParas(readPositionBlocks('gd1_dieuDo'), "Bộ phận điều độ:", {expand:true}));
+    children.push(...posBlockParas(readPositionBlocks('gd1_coGioi'), "Bộ phận cơ giới:", {expand:true, showCondition:true}));
 
     children.push(headingArabic(3, "Ban Kế toán Tài vụ"));
     children.push(...posBlockParas(readPositionBlocks('gd1_ketoan'), null));
@@ -1515,8 +1590,8 @@ function exportLBT(){
     children.push(...berthParas(readBerths('lbt_berths')));
 
     children.push(headingArabic(2, "Ban Khai thác điều độ"));
-    children.push(...posBlockParas(readPositionBlocks('lbt_dieuDo'), "Bộ phận điều độ:"));
-    children.push(...posBlockParas(readPositionBlocks('lbt_coGioi'), "Bộ phận cơ giới:", {showCondition:true}));
+    children.push(...posBlockParas(readPositionBlocks('lbt_dieuDo'), "Bộ phận điều độ:", {expand:true}));
+    children.push(...posBlockParas(readPositionBlocks('lbt_coGioi'), "Bộ phận cơ giới:", {expand:true, showCondition:true}));
 
     children.push(headingArabic(3, "Ban Kế toán thương vụ"));
     children.push(...posBlockParas(readPositionBlocks('lbt_ketoan'), null));
