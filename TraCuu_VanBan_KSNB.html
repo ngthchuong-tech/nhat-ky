@@ -974,6 +974,18 @@ mark{background:#fff3cd;border-radius:2px;padding:0 2px}
 </div>
 
 <script>
+/* ============================================================
+   DỮ LIỆU ĐỘNG (kiến trúc mới): trang này KHÔNG còn chứa sẵn dữ
+   liệu văn bản/câu hỏi/mẫu biểu. Dữ liệu được tải từ file riêng
+   "ksnb_data.json" (do Apps Script ghi ra mỗi ngày) ngay khi
+   trang mở. Các tab tự hiển thị khi dữ liệu tải xong.
+   ============================================================ */
+let __ksnbDataReady = false;
+let __ksnbPendingInits = [];
+function __whenDataReady(fn){
+  if (__ksnbDataReady) fn(); else __ksnbPendingInits.push(fn);
+}
+
 // ================= TAB SWITCH =================
 function switchTab(tab){
   document.getElementById('tab-vb').classList.toggle('active', tab==='vb');
@@ -1313,18 +1325,6 @@ __whenDataReady(function(){ rFiltersMB(); goMB(); });
 </script>
 
 <script>
-/* ============================================================
-   DỮ LIỆU ĐỘNG (kiến trúc mới): trang này KHÔNG còn chứa sẵn dữ
-   liệu văn bản/câu hỏi/mẫu biểu. Dữ liệu được tải từ file riêng
-   "ksnb_data.json" (do Apps Script ghi ra mỗi ngày) ngay khi
-   trang mở. Các tab tự hiển thị khi dữ liệu tải xong.
-   ============================================================ */
-let __ksnbDataReady = false;
-let __ksnbPendingInits = [];
-function __whenDataReady(fn){
-  if (__ksnbDataReady) fn(); else __ksnbPendingInits.push(fn);
-}
-
 /* ============================================================
    TAB SWITCHING
    ============================================================ */
