@@ -783,6 +783,7 @@
   <div class="tab" data-tab="radekt" onclick="switchTab('radekt')">📝 Ra đề &amp; Chấm điểm</div>
   <div class="tab" data-tab="skkn" onclick="switchTab('skkn')">💡 Sáng kiến kinh nghiệm</div>
   <div class="tab" data-tab="phieubaitap" onclick="switchTab('phieubaitap')">✏️ Phiếu bài tập Toán</div>
+  <div class="tab" data-tab="huongdan" onclick="switchTab('huongdan')">📖 Hướng dẫn sử dụng</div>
 </div>
 
 <main>
@@ -1076,6 +1077,13 @@
 
   <div id="tab-phieubaitap" style="display:none;">
     <iframe src="PhieuBaiTapToan.html" style="width:100%;height:85vh;border:none;border-radius:12px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.06);"></iframe>
+  </div>
+
+  <div id="tab-huongdan" style="display:none;">
+    <div class="modal-actions" style="justify-content:flex-start;margin-bottom:14px;">
+      <button class="btn-export" onclick="exportHuongDanWord()">⬇ Tải Word</button>
+    </div>
+    <div id="huongDanContent"></div>
   </div>
 
   <div id="tab-giaoan" style="display:none;">
@@ -1603,6 +1611,7 @@ function switchTab(name){
   document.getElementById('tab-hanhchinh').style.display = name==='hanhchinh' ? '' : 'none';
   document.getElementById('tab-hocsinh').style.display = name==='hocsinh' ? '' : 'none';
   document.getElementById('tab-phieubaitap').style.display = name==='phieubaitap' ? '' : 'none';
+  document.getElementById('tab-huongdan').style.display = name==='huongdan' ? '' : 'none';
   document.getElementById('tab-giaoan').style.display = name==='giaoan' ? '' : 'none';
   document.getElementById('tab-radekt').style.display = name==='radekt' ? '' : 'none';
   document.getElementById('tab-skkn').style.display = name==='skkn' ? '' : 'none';
@@ -5260,6 +5269,84 @@ async function deleteMauNhanXetItem(id){
   }catch(err){
     alert('Lỗi xóa: ' + err.message);
   }
+}
+
+/* ---------- Hướng dẫn sử dụng ---------- */
+
+function huongDanSection(icon, title, purpose, steps){
+  return `<div class="dg-section-title">${icon} ${title}</div>
+    <p style="font-size:0.85rem;color:#333;margin-bottom:6px;">${purpose}</p>
+    <ul style="margin:0 0 10px 20px;padding:0;font-size:0.85rem;line-height:1.6;">
+      ${steps.map(s=>`<li>${s}</li>`).join('')}
+    </ul>`;
+}
+
+function buildHuongDanBodyHtml(){
+  return `
+    <p>Đây là app hỗ trợ công việc hàng ngày của giáo viên chủ nhiệm tiểu học — điểm danh, quản lý học sinh, liên lạc phụ huynh, đánh giá, soạn giáo án, ra đề, và nhiều việc khác. Toàn bộ dữ liệu lưu trên Google Sheet riêng, mở được trên cả điện thoại và máy tính.</p>
+    <p style="background:#FFF7E2;border-left:4px solid var(--chalk-yellow);padding:10px 14px;border-radius:6px;font-size:0.85rem;"><b>Lưu ý:</b> App là công cụ HỖ TRỢ, không thay thế học bạ và hồ sơ chính thức của nhà trường. Vẫn cần nhập đầy đủ vào hệ thống của trường (VnEdu/hồ sơ giấy) theo quy định.</p>
+
+    <div class="dg-section-title">Cài đặt lần đầu</div>
+    <ul style="margin:0 0 10px 20px;padding:0;font-size:0.85rem;line-height:1.6;">
+      <li>Bấm biểu tượng bánh răng ⚙ ở góc trên bên phải.</li>
+      <li>Dán Web App URL (được cấp sẵn) — chỉ cần làm 1 lần, các thiết bị sau tự đồng bộ.</li>
+      <li>Nhập Tên lớp và Năm học hiện tại — dữ liệu này dùng chung cho toàn bộ app.</li>
+      <li>Một số tính năng AI (soạn giáo án, ra đề, đánh giá...) cần dán Gemini API key — chỉ cần dán 1 lần, dùng chung cho mọi tính năng AI trong app.</li>
+    </ul>
+
+    ${huongDanSection('📅','Lịch công tác','Ghi việc cần làm và thời khóa biểu tuần (buổi Sáng/Chiều).',[
+      'Sub-tab Việc cần làm: thêm việc kèm ngày, tick hoàn thành, việc quá hạn tự hiện viền đỏ.',
+      'Sub-tab Thời khóa biểu: gõ trực tiếp vào từng ô theo buổi Sáng/Chiều, bấm Lưu.'
+    ])}
+    ${huongDanSection('📋','Điểm danh','Điểm danh hàng ngày và xem thống kê chuyên cần.',[
+      'Mặc định mọi học sinh là Có mặt — chỉ cần bấm vào em nào vắng/trễ, rồi bấm Lưu điểm danh.',
+      'Sub-tab Thống kê: chọn tháng để xem tổng hợp chuyên cần từng em, có thể tải Excel.'
+    ])}
+    ${huongDanSection('🧒','Học sinh','Danh sách học sinh và liên lạc phụ huynh — 2 sub-tab.',[
+      'Danh sách học sinh: xem/sửa thông tin từng em (ngày sinh, địa chỉ, phụ huynh, chức vụ, tổ...); có ô lọc để ẩn/hiện học sinh đã chuyển lớp.',
+      'Liên lạc phụ huynh: báo nghỉ học tự động (theo điểm danh), danh bạ phụ huynh nhắn Zalo nhanh, sổ liên lạc cá nhân từng em (có mẫu câu nhận xét soạn sẵn để dùng lại), và các mẫu thông báo họp phụ huynh/thu quỹ.'
+    ])}
+    ${huongDanSection('📊','Đánh giá học sinh','Đánh giá theo Thông tư 27, có 3 chế độ xem.',[
+      'Đánh giá theo kỳ: chọn học sinh + kỳ, tải phiếu đánh giá — bên phải luôn hiện bảng điểm và sổ theo dõi để tham khảo. Có nút AI tổng hợp từ Sổ theo dõi và gợi ý Mức theo điểm.',
+      'Sổ theo dõi nhận xét: ghi lại từng lần đánh giá thường xuyên trong kỳ.',
+      'Tổng hợp cuối kỳ/năm: gộp chuyên cần + điểm + đánh giá thành 1 phiếu, in/tải Word, có nút AI soạn thư gửi phụ huynh, và xuất Word cho CẢ LỚP theo đúng mẫu chuẩn.'
+    ])}
+    ${huongDanSection('🗂️','Sổ chủ nhiệm','Các thông tin theo quy định Thông tư 15/2026 về Sổ chủ nhiệm.',[
+      'Thông tin chung: tên trường, GVCN, GV bộ môn, đặc điểm tình hình lớp — có nút tải Word trang bìa.',
+      'Cán bộ lớp & Tổ: xem tổng hợp (gán chức vụ/tổ ngay trong tab Học sinh).',
+      'Ban CMHS: danh sách ban đại diện cha mẹ học sinh.',
+      'Khen thưởng - Kỷ luật: ghi nhận từng lần, có nút AI đề xuất khen thưởng cuối kỳ.'
+    ])}
+    ${huongDanSection('📘','Soạn giáo án','AI hỗ trợ soạn kế hoạch bài dạy.',[
+      'Nhập Môn/Lớp/Tên bài, bấm Soạn giáo án bằng AI — theo đúng cấu trúc 6 phần chuẩn. Đọc lại và chỉnh sửa trước khi dùng thật.',
+      'Sub-tab Phân phối chương trình: lập kế hoạch giảng dạy theo tuần, có nút bấm nhanh sang Soạn giáo án cho bài đó.'
+    ])}
+    ${huongDanSection('📝','Ra đề & Chấm điểm','Ra đề bằng AI, chấm điểm từ ảnh, quản lý bảng điểm.',[
+      'Ra đề: AI soạn đề trắc nghiệm/tự luận theo Môn/Lớp/Chủ đề.',
+      'Tổng hợp bài đã chấm: tải ảnh/PDF bài đã chấm điểm bằng tay lên — AI chỉ ĐỌC LẠI điểm và lời phê đã có (không tự chấm), sau đó lưu vào Bảng điểm và Sổ liên lạc.',
+      'Bảng điểm: xem theo học sinh (đủ các môn) hoặc theo môn học (cả lớp).',
+      'Kho bài kiểm tra: file ảnh/PDF đã lưu, tổ chức theo từng học sinh, có nút gửi Zalo cho phụ huynh.'
+    ])}
+    ${huongDanSection('💡','Sáng kiến kinh nghiệm','Soạn SKKN với AI và lưu trữ tài liệu.',[
+      'Tải tài liệu tham khảo lên, AI soạn dàn ý rồi soạn nội dung đầy đủ, có thể yêu cầu AI chỉnh sửa thêm.',
+      'Sub-tab Lưu trữ: tải bất kỳ file nào lên để lưu và lấy lại khi cần.'
+    ])}
+    ${huongDanSection('✏️','Phiếu bài tập Toán','App tạo phiếu bài tập Toán riêng, nhúng trong tab này.',[
+      'Hoạt động độc lập, cần dán Gemini API key riêng của app đó (không dùng chung với các tính năng AI khác).'
+    ])}
+
+    <div class="dg-section-title">Vài lưu ý khi dùng</div>
+    <ul style="margin:0 0 10px 20px;padding:0;font-size:0.85rem;line-height:1.6;">
+      <li>Sao lưu định kỳ: vào Google Sheet, chọn File &gt; Tạo bản sao (hoặc tải về Excel) — nhất là trước khi chốt điểm cuối kỳ.</li>
+      <li>Đầu năm học mới: vào tab Học sinh, đánh dấu học sinh cũ thành "Đã chuyển lớp" trước khi thêm danh sách mới, để tránh lẫn dữ liệu giữa các năm.</li>
+      <li>Các nội dung do AI soạn (giáo án, đề kiểm tra, đánh giá, thư gửi phụ huynh...) đều cần đọc lại và chỉnh sửa trước khi dùng chính thức — AI chỉ hỗ trợ soạn nháp.</li>
+    </ul>`;
+}
+
+document.getElementById('huongDanContent').innerHTML = buildHuongDanBodyHtml();
+
+function exportHuongDanWord(){
+  downloadWordDoc('HuongDanNhanh_SoTayGiaoVien', '<h1>Sổ Tay Giáo Viên — Hướng dẫn nhanh sử dụng</h1>' + buildHuongDanBodyHtml());
 }
 
 syncCaiDatFromServer();
