@@ -624,6 +624,10 @@ async function getPayments(ym){
 }
 function svcOf(sid){ return services[sid] || {anTruaMode:'off',anTruaTier:0,xeTier:0,hocThemTier:0}; }
 async function computeStudentFee(sid, ym){
+  const s = students.find(x=>x.id===sid);
+  if(s && s.joinDate && ym < s.joinDate.slice(0,7)){
+    return {presentDays:0, anTruaFee:0, xeFee:0, htFee:0, total:0, paid:0, remaining:0, status:'none', lastDate:'', lastNote:''};
+  }
   const att = await getAttendance(ym);
   const presentDays = Object.values(att[sid]||{}).filter(v=>v==='present').length;
   const sv = svcOf(sid);
@@ -706,7 +710,7 @@ function renderStudents(){
         <div class="name" onclick="openLedgerModal('${s.id}')">${escapeHtml(s.name)} <span id="debtBadge-${s.id}"></span></div>
         <div class="meta">${escapeHtml(s.className||'—')} · ${escapeHtml(s.school||'—')}</div>
         <div class="meta">👪 ${escapeHtml(s.parentName||'—')} · 📱 ${escapeHtml(s.parentPhone||'—')}</div>
-        <div class="meta">${escapeHtml(serviceDesc(s.id))}</div>
+        <div class="meta">${escapeHtml(serviceDesc(s.id))}${s.joinDate?` · Tham gia: ${s.joinDate}`:''}</div>
       </div>
       <div class="actions">
         <button class="iconbtn" onclick="contactZalo('${escapeHtml(s.parentPhone)}')" title="Liên hệ Zalo">💬</button>
@@ -767,6 +771,9 @@ function openStudentModal(id){
       </div>
       <div class="field"><label>Tên bố/mẹ</label><input type="text" id="mParent" value="${s?escapeHtml(s.parentName||''):''}" placeholder="Tên phụ huynh"></div>
       <div class="field"><label>Số điện thoại (Zalo)</label><input type="tel" id="mPhone" value="${s?escapeHtml(s.parentPhone||''):''}" placeholder="09xxxxxxxx"></div>
+      <div class="field"><label>Ngày tham gia bán trú</label><input type="date" id="mJoinDate" value="${s&&s.joinDate?s.joinDate:todayISO()}">
+        <div class="hint" style="margin-top:6px;">Chỉ tính phí dịch vụ từ tháng này trở đi — các tháng trước đó sẽ không bị tính phí dù có gán dịch vụ.</div>
+      </div>
       ${svcFieldsHtml(sv)}
       <button class="btn btn-primary" id="mSaveBtn" style="width:100%;justify-content:center;margin-top:14px;" onclick="saveStudent('${s?s.id:''}')">Lưu</button>
     </div>`;
@@ -780,6 +787,7 @@ async function saveStudent(id){
     school: document.getElementById('mSchool').value.trim(),
     parentName: document.getElementById('mParent').value.trim(),
     parentPhone: document.getElementById('mPhone').value.trim(),
+    joinDate: document.getElementById('mJoinDate').value || todayISO(),
   };
   const svc = {
     anTruaMode: document.getElementById('mAnTruaMode').value,
@@ -795,6 +803,7 @@ async function saveStudent(id){
     if(id){ Object.assign(students.find(x=>x.id===id), data); }
     else { students.push(Object.assign({}, data, {id: sid, status:'active'})); }
     services[sid] = svc;
+    invalidateDebtCache();
     document.querySelector('.modal-bg').remove();
     renderStudents();
     showToast('Đã lưu học sinh');
@@ -1413,8 +1422,8 @@ function downloadWorkbook(sheets, filename){
 }
 function exportStudentsExcel(){
   const active = students.filter(s=>s.status!=='withdrawn');
-  const rows = [['Tên học sinh','Lớp','Trường','Tên phụ huynh','SĐT/Zalo','Dịch vụ sử dụng']];
-  active.forEach(s=>rows.push([s.name, s.className||'', s.school||'', s.parentName||'', s.parentPhone||'', serviceDesc(s.id)]));
+  const rows = [['Tên học sinh','Lớp','Trường','Tên phụ huynh','SĐT/Zalo','Ngày tham gia bán trú','Dịch vụ sử dụng']];
+  active.forEach(s=>rows.push([s.name, s.className||'', s.school||'', s.parentName||'', s.parentPhone||'', s.joinDate||'', serviceDesc(s.id)]));
   downloadWorkbook([{name:'DanhSachHocSinh', rows}], 'DanhSachHocSinh.xlsx');
   showToast('Đã xuất file Excel');
 }
