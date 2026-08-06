@@ -1159,52 +1159,37 @@ async function sendUnpaidZaloMessage(sid, ym){
   const attDetail = sv.anTruaMode==='day' ? ` (có mặt ${f.presentDays} ngày)` : '';
   const otherOwedMonths = (ledger||[]).filter(m=>m.month!==ym && m.remaining>0).sort((a,b)=>a.month.localeCompare(b.month));
   const oldDebtTotal = otherOwedMonths.reduce((a,m)=>a+m.remaining,0);
+  const grandTotal = f.remaining + oldDebtTotal;
 
-  let lines;
-  if(f.paid<=0 && oldDebtTotal<=0){
-    lines = [
-      `Thông báo: học sinh ${s.name} (lớp ${s.className||''}) chưa đóng tiền bán trú ${monthLabel(ym).toLowerCase()}.`,
-      `Các khoản phí ${monthLabel(ym).toLowerCase()}:`,
-      `- Ăn trưa: ${fmtMoney(f.anTruaFee)}${attDetail}`,
-      `- Xe đưa đón: ${fmtMoney(f.xeFee)}`,
-      `- Học thêm: ${fmtMoney(f.htFee)}`,
-      `- Cộng tháng này: ${fmtMoney(f.total)}`,
-      ``,
-      `Tổng số tiền phải đóng: ${fmtMoney(f.total)}`,
-      ``,
-      `Mong phụ huynh sắp xếp đóng giúp. Cảm ơn!`,
-    ];
-  } else if(f.paid<=0 && oldDebtTotal>0){
-    lines = [
-      `Thông báo: học sinh ${s.name} (lớp ${s.className||''}) chưa đóng tiền bán trú ${monthLabel(ym).toLowerCase()}, và còn nợ từ các tháng trước.`,
-      `Các khoản phí ${monthLabel(ym).toLowerCase()}:`,
-      `- Ăn trưa: ${fmtMoney(f.anTruaFee)}${attDetail}`,
-      `- Xe đưa đón: ${fmtMoney(f.xeFee)}`,
-      `- Học thêm: ${fmtMoney(f.htFee)}`,
-      `- Cộng tháng này: ${fmtMoney(f.total)}`,
-      ``,
-      `Nợ lũy kế từ các tháng trước:`,
-      ...otherOwedMonths.map(m=>`- ${monthLabel(m.month)}: còn thiếu ${fmtMoney(m.remaining)}`),
-      ``,
-      `Tổng số tiền phải đóng (gồm cả nợ tháng trước): ${fmtMoney(f.total + oldDebtTotal)}`,
-      ``,
-      `Mong phụ huynh sắp xếp đóng giúp. Cảm ơn!`,
-    ];
-  } else {
-    const owedMonths = [{month:ym, total:f.total, paid:f.paid, remaining:f.remaining}]
-      .concat(otherOwedMonths.map(m=>({month:m.month, total:m.total, paid:m.paid, remaining:m.remaining})))
-      .sort((a,b)=>a.month.localeCompare(b.month));
-    let sumPaid=0, sumRemaining=0;
-    lines = [
-      `Thông báo: học sinh ${s.name} (lớp ${s.className||''}) đã đóng một phần tiền bán trú, còn thiếu.`,
-      `Chi tiết từng tháng còn nợ:`,
-    ];
-    owedMonths.forEach(m=>{
-      sumPaid += m.paid; sumRemaining += m.remaining;
-      lines.push(`- ${monthLabel(m.month)}: phải đóng ${fmtMoney(m.total)}, đã đóng ${fmtMoney(m.paid)}, còn thiếu ${fmtMoney(m.remaining)}`);
-    });
-    lines.push(``, `Tổng đã đóng: ${fmtMoney(sumPaid)}`, `Tổng còn phải đóng: ${fmtMoney(sumRemaining)}`, ``, `Mong phụ huynh sắp xếp đóng giúp. Cảm ơn!`);
+  // Dòng mở đầu tuỳ theo tình huống, nhưng phần chi tiết bên dưới LUÔN đầy đủ
+  // và thống nhất như nhau cho mọi trường hợp.
+  let opening;
+  if(f.paid<=0 && oldDebtTotal<=0) opening = `Thông báo: học sinh ${s.name} (lớp ${s.className||''}) chưa đóng tiền bán trú ${monthLabel(ym).toLowerCase()}.`;
+  else if(f.remaining<=0 && oldDebtTotal>0) opening = `Thông báo: học sinh ${s.name} (lớp ${s.className||''}) đã đóng đủ tiền bán trú ${monthLabel(ym).toLowerCase()}, nhưng còn nợ từ các tháng trước.`;
+  else opening = `Thông báo: học sinh ${s.name} (lớp ${s.className||''}) đã đóng một phần tiền bán trú ${monthLabel(ym).toLowerCase()}, còn thiếu.`;
+
+  const lines = [
+    opening,
+    ``,
+    `Chi tiết ${monthLabel(ym).toLowerCase()}:`,
+    `- Ăn trưa: ${fmtMoney(f.anTruaFee)}${attDetail}`,
+    `- Xe đưa đón: ${fmtMoney(f.xeFee)}`,
+    `- Học thêm: ${fmtMoney(f.htFee)}`,
+    `- Tổng phải đóng ${monthLabel(ym).toLowerCase()}: ${fmtMoney(f.total)}`,
+    `- Đã đóng ${monthLabel(ym).toLowerCase()}: ${fmtMoney(f.paid)}`,
+    `- Còn thiếu ${monthLabel(ym).toLowerCase()}: ${fmtMoney(f.remaining)}`,
+  ];
+  if(otherOwedMonths.length>0){
+    lines.push(``, `Nợ lũy kế các tháng trước:`);
+    otherOwedMonths.forEach(m=> lines.push(`- ${monthLabel(m.month)}: còn thiếu ${fmtMoney(m.remaining)}`));
+    lines.push(`- Tổng nợ lũy kế: ${fmtMoney(oldDebtTotal)}`);
   }
+  lines.push(
+    ``,
+    `Tổng số tiền phải đóng${otherOwedMonths.length>0?' (= còn thiếu tháng này + nợ lũy kế)':''}: ${fmtMoney(grandTotal)}`,
+    ``,
+    `Mong phụ huynh sắp xếp đóng giúp. Cảm ơn!`,
+  );
   zaloNotify(s.parentPhone, lines.join('\n'));
 }
 
