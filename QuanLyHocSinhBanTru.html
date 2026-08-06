@@ -124,6 +124,11 @@
   .num{text-align:right;font-variant-numeric:tabular-nums;}
   .tbl-wrap{overflow-x:auto;}
   .total-row td{font-weight:700;background:#FAF8F2;}
+  .tbl-wrap table td:first-child, .tbl-wrap table th:first-child{
+    position:sticky;left:0;z-index:2;background:var(--surface);
+    box-shadow:2px 0 4px rgba(32,41,31,0.06);
+  }
+  .tbl-wrap table th:first-child{z-index:3;background:var(--bg);}
 
   nav.tabbar{position:fixed;bottom:0;left:0;right:0;z-index:30;background:#fff;border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:6px 2px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -2px 12px rgba(0,0,0,0.05);}
   nav.tabbar .tab{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;color:var(--ink-soft);font-size:10px;font-weight:700;padding:6px 4px;border-radius:8px;flex:1;max-width:110px;}
@@ -876,16 +881,20 @@ async function renderFeeSummary(){
   for(const s of active){
     const f = await computeStudentFee(s.id, ym);
     sumTotal+=f.total; sumPaid+=f.paid;
-    const rowStyle = f.remaining>0 ? ' style="background:var(--danger-soft);"' : '';
-    const remainCellStyle = f.remaining>0 ? 'color:var(--danger);font-weight:800;' : '';
+    let rowBg='', remainCellStyle='', paidCellStyle='';
+    if(f.remaining>0 && f.paid<=0){ rowBg='var(--danger-soft)'; remainCellStyle='color:var(--danger);font-weight:800;'; }
+    else if(f.remaining>0 && f.paid>0){ rowBg='var(--warm-soft)'; remainCellStyle='color:var(--warm);font-weight:800;'; paidCellStyle='color:var(--success);font-weight:700;'; }
+    else if(f.total>0){ paidCellStyle='color:var(--success);font-weight:700;'; }
+    const rowStyle = rowBg ? ` style="background:${rowBg};"` : '';
+    const firstCellStyle = rowBg ? ` style="background:${rowBg};"` : '';
     rows.push(`<tr${rowStyle}>
-      <td>${escapeHtml(s.name)}<div style="color:var(--ink-soft);font-size:11px;">${escapeHtml(s.className||'')} · ${escapeHtml(s.school||'')}</div></td>
+      <td${firstCellStyle}>${escapeHtml(s.name)}<div style="color:var(--ink-soft);font-size:11px;">${escapeHtml(s.className||'')} · ${escapeHtml(s.school||'')}</div></td>
       <td class="num">${f.presentDays}</td>
       <td class="num">${fmtMoney(f.anTruaFee)}</td>
       <td class="num">${fmtMoney(f.xeFee)}</td>
       <td class="num">${fmtMoney(f.htFee)}</td>
       <td class="num money">${fmtMoney(f.total)}</td>
-      <td class="num">${fmtMoney(f.paid)}</td>
+      <td class="num" style="${paidCellStyle}">${fmtMoney(f.paid)}</td>
       <td class="num" style="${remainCellStyle}">${fmtMoney(f.remaining)}</td>
       <td>${f.lastDate||'—'}</td>
       <td>${escapeHtml(f.lastNote||'')}</td>
@@ -893,7 +902,7 @@ async function renderFeeSummary(){
     </tr>`);
   }
   tbl.innerHTML = `<thead><tr><th>Học sinh</th><th>Ngày ở bán trú</th><th>Tiền ăn</th><th>Tiền xe</th><th>Học thêm</th><th>Tổng phải đóng</th><th>Đã đóng</th><th>Chưa đóng</th><th>Ngày đóng</th><th>Ghi chú</th><th></th></tr></thead>
-    <tbody>${rows.join('')}<tr class="total-row"><td>Tổng cộng</td><td></td><td></td><td></td><td></td><td class="num">${fmtMoney(sumTotal)}</td><td class="num">${fmtMoney(sumPaid)}</td><td class="num">${fmtMoney(sumTotal-sumPaid)}</td><td></td><td></td><td></td></tr></tbody>`;
+    <tbody>${rows.join('')}<tr class="total-row"><td style="background:#FAF8F2;">Tổng cộng</td><td></td><td></td><td></td><td></td><td class="num">${fmtMoney(sumTotal)}</td><td class="num">${fmtMoney(sumPaid)}</td><td class="num">${fmtMoney(sumTotal-sumPaid)}</td><td></td><td></td><td></td></tr></tbody>`;
 }
 
 function openPaymentModal(sid, ym){
