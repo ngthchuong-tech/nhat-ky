@@ -324,6 +324,13 @@
           <div class="stat-card warm"><div class="label">Tổng số tiền còn nợ</div><div class="value" id="debtStuAmount">–</div></div>
         </div>
         <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="showTab('fees');showFeeSub('unpaid');">Xem danh sách chưa đóng →</button>
+        <div class="divider"></div>
+        <h3 style="margin:0 0 8px;font-size:14.5px;">Nợ phải thu — học sinh đã nghỉ học (nợ cũ dồn lại)</h3>
+        <div class="stat-grid" style="grid-template-columns:1fr 1fr;">
+          <div class="stat-card"><div class="label">Số học sinh còn nợ</div><div class="value" id="debtWithdrawnCount">–</div></div>
+          <div class="stat-card"><div class="label">Tổng số tiền còn nợ</div><div class="value" id="debtWithdrawnAmount">–</div></div>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="showTab('students');showStudentSub('withdrawn');">Xem danh sách học sinh đã nghỉ →</button>
       </div></div>
       <div class="card"><div class="pad">
         <div class="section-head" style="margin-bottom:10px;">
@@ -1021,15 +1028,26 @@ async function renderFeePaid(){
   const items = [];
   for(const s of active){ const f = await computeStudentFee(s.id, ym); if(f.status==='paid' && f.total>0) items.push({s,f}); }
   if(items.length===0){ list.innerHTML = `<div class="empty">Chưa có học sinh nào đóng đủ trong ${monthLabel(ym)}.</div>`; return; }
-  list.innerHTML = items.map(({s,f})=>`
-    <div class="stu-card"><div class="bar paid"></div>
+  list.innerHTML = items.map(({s,f})=>{
+    const msg = [
+      `Xác nhận: học sinh ${s.name} (lớp ${s.className||''}) đã đóng đủ học phí bán trú ${monthLabel(ym).toLowerCase()}.`,
+      `Chi tiết:`,
+      `- Ăn trưa: ${fmtMoney(f.anTruaFee)}`,
+      `- Xe đưa đón: ${fmtMoney(f.xeFee)}`,
+      `- Học thêm: ${fmtMoney(f.htFee)}`,
+      `- Tổng cộng: ${fmtMoney(f.total)}`,
+      ``,
+      `Cảm ơn phụ huynh!`,
+    ].join('\n');
+    return `<div class="stu-card"><div class="bar paid"></div>
       <div class="avatar">${initials(s.name)}</div>
       <div class="info">
         <div class="name">${escapeHtml(s.name)} <span class="pill paid">Đã đóng đủ</span></div>
         <div class="meta">Số tiền: ${fmtMoney(f.paid)} · Ngày đóng: ${f.lastDate||'—'}${f.lastNote?(' · '+escapeHtml(f.lastNote)):''}</div>
       </div>
-      <div class="actions"><button class="iconbtn" onclick='zaloNotify(${JSON.stringify(s.parentPhone)}, ${JSON.stringify('Xác nhận: học sinh '+s.name+' (lớp '+(s.className||'')+') đã đóng đủ học phí bán trú '+monthLabel(ym).toLowerCase()+'.\\nGồm: ăn trưa '+fmtMoney(f.anTruaFee)+', xe '+fmtMoney(f.xeFee)+', học thêm '+fmtMoney(f.htFee)+'.\\nTổng: '+fmtMoney(f.total)+'.\\nCảm ơn phụ huynh!')})" title="Nhắn Zalo">💬</button></div>
-    </div>`).join('');
+      <div class="actions"><button class="iconbtn" onclick='zaloNotify(${JSON.stringify(s.parentPhone)}, ${JSON.stringify(msg)})' title="Nhắn Zalo">💬</button></div>
+    </div>`;
+  }).join('');
 }
 async function renderFeeUnpaid(){
   const ym = document.getElementById('feeMonth').value || monthNow();
@@ -1041,13 +1059,22 @@ async function renderFeeUnpaid(){
   if(items.length===0){ list.innerHTML = `<div class="empty">🎉 Không còn học sinh nào chưa đóng trong ${monthLabel(ym)}.</div>`; return; }
   list.innerHTML = items.map(({s,f})=>{
     const sv = svcOf(s.id);
-    const detail = sv.anTruaMode==='day' ? `(có mặt ${f.presentDays} ngày trong tháng)` : '';
-    const msg = 'Thông báo: học sinh '+s.name+' (lớp '+(s.className||'')+') còn phải đóng học phí bán trú '+monthLabel(ym).toLowerCase()+'.\\nSố tiền còn thiếu: '+fmtMoney(f.remaining)+'.\\nGồm: ăn trưa '+fmtMoney(f.anTruaFee)+' '+detail+', xe '+fmtMoney(f.xeFee)+', học thêm '+fmtMoney(f.htFee)+'.\\nMong phụ huynh sắp xếp đóng giúp. Cảm ơn!';
+    const attDetail = sv.anTruaMode==='day' ? ` (có mặt ${f.presentDays} ngày trong tháng)` : '';
+    const msg = [
+      `Thông báo: học sinh ${s.name} (lớp ${s.className||''}) còn phải đóng học phí bán trú ${monthLabel(ym).toLowerCase()}.`,
+      `Chi tiết:`,
+      `- Ăn trưa: ${fmtMoney(f.anTruaFee)}${attDetail}`,
+      `- Xe đưa đón: ${fmtMoney(f.xeFee)}`,
+      `- Học thêm: ${fmtMoney(f.htFee)}`,
+      `- Số tiền còn thiếu: ${fmtMoney(f.remaining)}`,
+      ``,
+      `Mong phụ huynh sắp xếp đóng giúp. Cảm ơn!`,
+    ].join('\n');
     return `<div class="stu-card"><div class="bar ${f.status}"></div>
       <div class="avatar">${initials(s.name)}</div>
       <div class="info">
         <div class="name">${escapeHtml(s.name)} <span class="pill ${f.status}">${f.status==='partial'?'Đóng thiếu':'Chưa đóng'}</span></div>
-        <div class="meta">Còn thiếu: ${fmtMoney(f.remaining)} ${detail?('· '+detail):''}</div>
+        <div class="meta">Còn thiếu: ${fmtMoney(f.remaining)}${attDetail}</div>
       </div>
       <div class="actions"><button class="iconbtn" onclick='zaloNotify(${JSON.stringify(s.parentPhone)}, ${JSON.stringify(msg)})' title="Nhắn Zalo">💬</button></div>
     </div>`;
@@ -1191,6 +1218,18 @@ async function getDebts(){
   try{ debtsCache = await apiGet('getDebts'); }catch(e){ showToast('Lỗi tải nợ: '+e.message); debtsCache=[]; }
   return debtsCache;
 }
+async function getWithdrawnDebtTotal(){
+  const withdrawn = students.filter(s=>s.status==='withdrawn');
+  let count=0, amount=0;
+  for(const s of withdrawn){
+    try{
+      const ledger = await apiGet('getLedger', {studentId: s.id});
+      const owing = (ledger||[]).reduce((a,m)=>a+Math.max(0,m.remaining),0);
+      if(owing>0){ count++; amount+=owing; }
+    }catch(e){}
+  }
+  return {count, amount};
+}
 async function renderDebtTab(){
   const ym = monthNow();
   const active = students.filter(s=>s.status!=='withdrawn');
@@ -1198,6 +1237,13 @@ async function renderDebtTab(){
   for(const s of active){ const f = await computeStudentFee(s.id, ym); if((f.status==='unpaid'||f.status==='partial') && f.total>0){ count++; amount+=f.remaining; } }
   document.getElementById('debtStuCount').textContent = count;
   document.getElementById('debtStuAmount').textContent = fmtMoney(amount);
+
+  document.getElementById('debtWithdrawnCount').textContent = '…';
+  document.getElementById('debtWithdrawnAmount').textContent = '…';
+  getWithdrawnDebtTotal().then(w=>{
+    document.getElementById('debtWithdrawnCount').textContent = w.count;
+    document.getElementById('debtWithdrawnAmount').textContent = fmtMoney(w.amount);
+  });
 
   const list = document.getElementById('debtList');
   list.innerHTML = `<div class="loading-line">Đang tải…</div>`;
@@ -1277,6 +1323,7 @@ async function renderFinanceSummary(){
 
   let owingStu=0;
   for(const s of active){ const f = await computeStudentFee(s.id, ym); if((f.status==='unpaid'||f.status==='partial')) owingStu += f.remaining; }
+  const withdrawnDebt = await getWithdrawnDebtTotal();
   const debts = await getDebts();
   const owingDebt = debts.filter(d=>!d.paid).reduce((a,d)=>a+Number(d.amount||0),0);
 
@@ -1286,6 +1333,7 @@ async function renderFinanceSummary(){
     <tr class="total-row"><td>Tổng chi</td><td class="num">${fmtMoney(totalChi)}</td></tr>
     <tr class="total-row"><td>Lãi / Lỗ trong tháng</td><td class="num" style="color:${laiLo>=0?'var(--success)':'var(--danger)'};font-size:14px;">${fmtMoney(laiLo)}</td></tr>
     <tr><td>Nợ phải thu hiện tại (học sinh, tháng này)</td><td class="num" style="color:var(--warm);">${fmtMoney(owingStu)}</td></tr>
+    <tr><td>Nợ phải thu (học sinh đã nghỉ học, nợ cũ)</td><td class="num" style="color:var(--warm);">${fmtMoney(withdrawnDebt.amount)}</td></tr>
     <tr><td>Nợ phải trả hiện tại (mua hàng, tất cả)</td><td class="num" style="color:var(--danger);">${fmtMoney(owingDebt)}</td></tr>
   </table>`;
 }
@@ -1385,12 +1433,14 @@ async function exportSummaryExcel(){
   const totalChi = Object.values(byCat).reduce((a,b)=>a+b,0);
   const debts = await getDebts();
   const owingDebt = debts.filter(d=>!d.paid).reduce((a,d)=>a+Number(d.amount||0),0);
+  const withdrawnDebt = await getWithdrawnDebtTotal();
   const rows = [['Mục','Số tiền'],
     ['Tổng thu', totalThu],
     ...EXPENSE_CATEGORIES.map(c=>['Chi: '+c, byCat[c]]),
     ['Tổng chi', totalChi],
     ['Lãi/Lỗ trong tháng', totalThu-totalChi],
-    ['Nợ phải thu hiện tại (học sinh)', owingStu],
+    ['Nợ phải thu hiện tại (học sinh, tháng này)', owingStu],
+    ['Nợ phải thu (học sinh đã nghỉ học, nợ cũ)', withdrawnDebt.amount],
     ['Nợ phải trả hiện tại (mua hàng)', owingDebt],
   ];
   downloadWorkbook([{name:'TongHopThuChi_'+ym, rows}], 'TongHopThuChi_'+ym+'.xlsx');
