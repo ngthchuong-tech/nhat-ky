@@ -6,56 +6,27 @@
 <title>Quản lý Học sinh Bán trú</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
-    --bg:#F6F4EE;
-    --surface:#FFFFFF;
-    --ink:#20291F;
-    --ink-soft:#647065;
-    --accent:#2F6F5E;
-    --accent-dark:#234F42;
-    --accent-soft:#DCEAE4;
-    --warm:#C97A3D;
-    --warm-soft:#F5E3D2;
-    --success:#3D8361;
-    --success-soft:#DEEEE4;
-    --danger:#C25450;
-    --danger-soft:#F6DEDD;
-    --border:#E5E0D3;
-    --radius:14px;
-    --radius-sm:9px;
+    --bg:#F6F4EE; --surface:#FFFFFF; --ink:#20291F; --ink-soft:#647065;
+    --accent:#2F6F5E; --accent-dark:#234F42; --accent-soft:#DCEAE4;
+    --warm:#C97A3D; --warm-soft:#F5E3D2;
+    --success:#3D8361; --success-soft:#DEEEE4;
+    --danger:#C25450; --danger-soft:#F6DEDD;
+    --border:#E5E0D3; --radius:14px; --radius-sm:9px;
     --shadow:0 1px 2px rgba(32,41,31,0.05), 0 4px 14px rgba(32,41,31,0.05);
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
-  body{
-    background:var(--bg);
-    color:var(--ink);
-    font-family:'Be Vietnam Pro',sans-serif;
-    -webkit-font-smoothing:antialiased;
-    padding-bottom:78px;
-  }
-  h1,h2,h3,.display{font-family:'Sora',sans-serif;}
-  button{font-family:inherit;}
-  input,select{font-family:inherit;}
+  body{background:var(--bg);color:var(--ink);font-family:'Be Vietnam Pro',sans-serif;-webkit-font-smoothing:antialiased;padding-bottom:78px;}
+  h1,h2,h3{font-family:'Sora',sans-serif;}
+  button,input,select{font-family:inherit;}
 
-  .topbar{
-    position:sticky;top:0;z-index:20;
-    background:var(--accent-dark);
-    color:#fff;
-    padding:16px 18px 14px;
-    display:flex;align-items:center;gap:10px;
-    box-shadow:0 2px 10px rgba(35,79,66,0.25);
-  }
-  .topbar .mark{
-    width:34px;height:34px;border-radius:9px;
-    background:linear-gradient(135deg,var(--warm),#e0995c);
-    display:flex;align-items:center;justify-content:center;
-    font-family:'Sora',sans-serif;font-weight:800;font-size:15px;color:#2b1c0e;
-    flex-shrink:0;
-  }
+  .topbar{position:sticky;top:0;z-index:40;background:var(--accent-dark);color:#fff;padding:16px 18px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 10px rgba(35,79,66,0.25);}
+  .topbar .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--warm),#e0995c);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:800;font-size:15px;color:#2b1c0e;flex-shrink:0;}
   .topbar .titles{line-height:1.15;flex:1;min-width:0;}
-  .topbar .titles .t1{font-family:'Sora',sans-serif;font-weight:700;font-size:15px;letter-spacing:.2px;}
+  .topbar .titles .t1{font-family:'Sora',sans-serif;font-weight:700;font-size:15px;}
   .topbar .titles .t2{font-size:11.5px;color:#cfe3db;margin-top:1px;}
   .connbadge{font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:99px;flex-shrink:0;display:flex;align-items:center;gap:5px;}
   .connbadge.ok{background:rgba(61,131,97,0.25);color:#bfe8cf;}
@@ -75,24 +46,45 @@
   .card + .card{margin-top:12px;}
   .pad{padding:16px;}
 
-  .btn{border:none;cursor:pointer;border-radius:10px;padding:10px 16px;font-weight:600;font-size:13.5px;display:inline-flex;align-items:center;gap:6px;transition:transform .06s ease, opacity .15s ease;}
-  .btn:active{transform:scale(0.97);}
+  .btn{border:none;cursor:pointer;border-radius:10px;padding:10px 16px;font-weight:600;font-size:13.5px;display:inline-flex;align-items:center;gap:6px;transition:transform .06s ease,opacity .15s ease;}
+  .btn:active{transform:scale(.97);}
   .btn-primary{background:var(--accent);color:#fff;}
   .btn-primary:hover{background:var(--accent-dark);}
   .btn-ghost{background:transparent;color:var(--accent-dark);border:1px solid var(--border);}
   .btn-danger{background:var(--danger-soft);color:var(--danger);}
+  .btn-warm{background:var(--warm-soft);color:var(--warm);}
   .btn-sm{padding:6px 11px;font-size:12px;border-radius:8px;}
   .btn[disabled]{opacity:.45;cursor:not-allowed;}
+  .iconbtn{width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;}
+  .iconbtn:active{transform:scale(.94);}
 
   label{font-size:12.5px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:4px;}
-  input[type=text],input[type=tel],input[type=number],input[type=date],input[type=month],input[type=url],select{
+  input[type=text],input[type=tel],input[type=number],input[type=date],input[type=month],input[type=url],input[type=password],select{
     width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:9px;font-size:14px;background:#fdfcf9;color:var(--ink);
   }
   input:focus,select:focus{outline:2px solid var(--accent-soft);border-color:var(--accent);}
   .row{display:grid;gap:10px;}
   .row.g2{grid-template-columns:1fr 1fr;}
-  @media (max-width:520px){.row.g2{grid-template-columns:1fr;}}
+  .row.g3{grid-template-columns:1fr 1fr 1fr;}
+  @media (max-width:520px){.row.g2,.row.g3{grid-template-columns:1fr;}}
   .field{margin-bottom:10px;}
+  .searchbox{position:relative;margin-bottom:12px;}
+  .searchbox input{padding-left:34px;}
+  .searchbox .ic{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-soft);}
+
+  .segmented{display:flex;gap:4px;background:#EFEBDE;padding:4px;border-radius:12px;margin-bottom:14px;}
+  .segmented button{flex:1;border:none;background:transparent;padding:8px 6px;border-radius:9px;font-size:12px;font-weight:700;color:var(--ink-soft);cursor:pointer;}
+  .segmented button.active{background:#fff;color:var(--accent-dark);box-shadow:var(--shadow);}
+  .subview{display:none;}
+  .subview.active{display:block;}
+
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  @media(min-width:640px){.stat-grid{grid-template-columns:repeat(4,1fr);}}
+  .stat-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;}
+  .stat-card .label{font-size:11.5px;color:var(--ink-soft);font-weight:600;}
+  .stat-card .value{font-family:'Sora',sans-serif;font-weight:800;font-size:21px;margin-top:5px;}
+  .stat-card.warm .value{color:var(--warm);}
+  .stat-card.good .value{color:var(--success);}
 
   .stu-card{display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 12px;background:#fff;position:relative;overflow:hidden;}
   .stu-card .bar{position:absolute;left:0;top:0;bottom:0;width:5px;}
@@ -100,11 +92,11 @@
   .stu-card .bar.partial{background:var(--warm);}
   .stu-card .bar.unpaid{background:var(--danger);}
   .stu-card .bar.none{background:var(--border);}
-  .stu-card .avatar{width:38px;height:38px;border-radius:50%;background:var(--accent-soft);color:var(--accent-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Sora',sans-serif;font-size:14px;flex-shrink:0;margin-left:8px;}
+  .stu-card .avatar{width:38px;height:38px;border-radius:50%;background:var(--accent-soft);color:var(--accent-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Sora',sans-serif;font-size:14px;flex-shrink:0;margin-left:8px;cursor:pointer;}
   .stu-card .info{flex:1;min-width:0;}
-  .stu-card .name{font-weight:700;font-size:14.5px;}
+  .stu-card .name{font-weight:700;font-size:14.5px;cursor:pointer;}
   .stu-card .meta{font-size:12px;color:var(--ink-soft);margin-top:2px;}
-  .stu-card .actions{display:flex;gap:6px;flex-shrink:0;}
+  .stu-card .actions{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;}
   .stu-list{display:flex;flex-direction:column;gap:8px;}
 
   .pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;font-size:11.5px;font-weight:700;}
@@ -112,48 +104,39 @@
   .pill.partial{background:var(--warm-soft);color:var(--warm);}
   .pill.unpaid{background:var(--danger-soft);color:var(--danger);}
   .pill.none{background:#EEEBE0;color:var(--ink-soft);}
+  .pill.withdrawn{background:#EEEBE0;color:var(--ink-soft);}
 
   .empty{text-align:center;padding:34px 16px;color:var(--ink-soft);}
   .empty .big{font-size:30px;margin-bottom:6px;}
 
-  .att-row{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .att-row{display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
   .att-row:last-child{border-bottom:none;}
-  .att-row .nm{flex:1 1 140px;min-width:0;font-size:14px;font-weight:600;overflow-wrap:break-word;}
+  .att-row .nm{flex:1 1 120px;min-width:0;font-size:14px;font-weight:600;overflow-wrap:break-word;}
   .toggle-group{display:flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;flex-shrink:0;}
   .toggle-group button{border:none;padding:7px 12px;font-size:12.5px;font-weight:700;background:#fff;cursor:pointer;color:var(--ink-soft);white-space:nowrap;}
   .toggle-group button.on.present{background:var(--success);color:#fff;}
   .toggle-group button.on.absent{background:var(--danger);color:#fff;}
 
-  .svc-card{border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;background:#fff;}
-  .svc-card + .svc-card{margin-top:10px;}
-  .svc-card .nm{font-weight:700;font-size:14.5px;margin-bottom:8px;}
-  .chip-row{display:flex;flex-wrap:wrap;gap:6px;}
-  .chip{border:1px solid var(--border);border-radius:9px;padding:6px 11px;font-size:12.5px;font-weight:600;cursor:pointer;background:#fdfcf9;color:var(--ink-soft);}
-  .chip.on{background:var(--accent);color:#fff;border-color:var(--accent);}
-  .chip.warm.on{background:var(--warm);border-color:var(--warm);}
-
-  table{width:100%;border-collapse:collapse;font-size:13px;}
-  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--ink-soft);padding:8px 8px;border-bottom:1px solid var(--border);}
-  td{padding:9px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.3px;color:var(--ink-soft);padding:8px 7px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  td{padding:8px 7px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap;}
   tr:last-child td{border-bottom:none;}
   .num{text-align:right;font-variant-numeric:tabular-nums;}
   .tbl-wrap{overflow-x:auto;}
   .total-row td{font-weight:700;background:#FAF8F2;}
 
   nav.tabbar{position:fixed;bottom:0;left:0;right:0;z-index:30;background:#fff;border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:6px 2px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -2px 12px rgba(0,0,0,0.05);}
-  nav.tabbar .tab{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;color:var(--ink-soft);font-size:9.5px;font-weight:700;padding:5px 4px;border-radius:8px;flex:1;max-width:80px;}
-  nav.tabbar .tab .ic{font-size:17px;}
+  nav.tabbar .tab{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;color:var(--ink-soft);font-size:10px;font-weight:700;padding:6px 4px;border-radius:8px;flex:1;max-width:110px;}
+  nav.tabbar .tab .ic{font-size:18px;}
   nav.tabbar .tab.active{color:var(--accent-dark);}
-  nav.tabbar .tab.active .ic{transform:translateY(-1px);}
 
   @media (min-width:860px){
     body{padding-bottom:0;}
-    .shell{padding-left:210px;max-width:1100px;}
+    .shell{padding-left:210px;max-width:1100px;margin-top:66px;}
     nav.tabbar{top:0;bottom:0;left:0;right:auto;width:196px;flex-direction:column;justify-content:flex-start;border-top:none;border-right:1px solid var(--border);padding:88px 10px 10px;gap:3px;box-shadow:2px 0 12px rgba(0,0,0,0.03);}
     nav.tabbar .tab{flex-direction:row;justify-content:flex-start;gap:10px;font-size:13px;padding:9px 12px;max-width:none;}
     nav.tabbar .tab.active{background:var(--accent-soft);}
     .topbar{position:fixed;top:0;left:0;right:0;}
-    .shell{margin-top:66px;}
   }
 
   .money{font-weight:700;color:var(--accent-dark);}
@@ -161,13 +144,13 @@
   .divider{height:1px;background:var(--border);margin:14px 0;}
   select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6' fill='%23647065'/></svg>");background-repeat:no-repeat;background-position:right 12px center;padding-right:30px;}
   .flexbtns{display:flex;gap:8px;flex-wrap:wrap;}
-  .modal-bg{position:fixed;inset:0;background:rgba(32,41,31,0.45);z-index:50;display:flex;align-items:flex-end;justify-content:center;}
+  .modal-bg{position:fixed;inset:0;background:rgba(32,41,31,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center;}
   @media(min-width:640px){.modal-bg{align-items:center;}}
-  .modal{background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;padding:20px;}
+  .modal{background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;padding:20px;}
   @media(min-width:640px){.modal{border-radius:16px;}}
   .modal h3{margin:0 0 14px;font-size:17px;}
   .closebtn{float:right;background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink-soft);line-height:1;}
-  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--accent-dark);color:#fff;padding:10px 18px;border-radius:99px;font-size:13px;font-weight:600;z-index:60;box-shadow:0 6px 20px rgba(0,0,0,0.2);opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center;}
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--accent-dark);color:#fff;padding:10px 18px;border-radius:99px;font-size:13px;font-weight:600;z-index:70;box-shadow:0 6px 20px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center;}
   .toast.show{opacity:1;}
   @media(min-width:860px){.toast{bottom:24px;}}
 
@@ -177,6 +160,9 @@
   .setup-card p{font-size:13.5px;color:var(--ink-soft);line-height:1.6;}
   .setup-card ol{font-size:13px;color:var(--ink-soft);line-height:1.7;padding-left:20px;}
   .loading-line{display:flex;align-items:center;gap:8px;color:var(--ink-soft);font-size:13px;padding:20px;}
+  .pin-dots{display:flex;gap:10px;justify-content:center;margin:18px 0;}
+  .pin-dots .d{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);}
+  .pin-dots .d.filled{background:var(--accent);border-color:var(--accent);}
 </style>
 </head>
 <body>
@@ -184,141 +170,209 @@
 <div id="setupOverlay" class="setup-bg" style="display:none;">
   <div class="setup-card">
     <h2>Kết nối Google Sheet</h2>
-    <p>App này lưu toàn bộ dữ liệu trên Google Sheet của bạn thông qua một Apps Script Web App. Cần dán đường link Web App vào đây trước khi dùng.</p>
-    <div class="field"><label>Web App URL (Apps Script)</label>
-      <input type="url" id="setupUrl" placeholder="https://script.google.com/macros/s/.../exec">
-    </div>
+    <p>App lưu dữ liệu trên Google Sheet của bạn qua Apps Script Web App. Dán link Web App vào đây trước khi dùng.</p>
+    <div class="field"><label>Web App URL (Apps Script)</label><input type="url" id="setupUrl" placeholder="https://script.google.com/macros/s/.../exec"></div>
     <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="confirmSetupUrl()">Kết nối</button>
     <div class="hint" id="setupHint"></div>
     <div class="divider"></div>
     <p style="margin-bottom:6px;"><b>Chưa có link? Làm theo các bước:</b></p>
-    <ol>
-      <li>Tạo 1 Google Sheet trống.</li>
-      <li>Tiện ích mở rộng → Apps Script.</li>
-      <li>Dán nội dung file <b>Code.gs</b> đi kèm vào, bấm Lưu.</li>
-      <li>Triển khai → Lượt triển khai mới → Ứng dụng web → Quyền truy cập: Anyone.</li>
-      <li>Copy link "Web app URL" và dán vào ô trên.</li>
-    </ol>
+    <ol><li>Tạo 1 Google Sheet trống.</li><li>Tiện ích mở rộng → Apps Script.</li><li>Dán nội dung file Code.gs vào, Lưu.</li><li>Triển khai → Lượt triển khai mới → Ứng dụng web → Anyone.</li><li>Copy Web app URL dán vào ô trên.</li></ol>
+  </div>
+</div>
+
+<div id="pinOverlay" class="setup-bg" style="display:none;">
+  <div class="setup-card">
+    <h2>Nhập mã PIN</h2>
+    <p>Ứng dụng này được khoá bằng mã PIN. Nhập mã để tiếp tục.</p>
+    <div class="field"><input type="password" id="pinInput" inputmode="numeric" placeholder="Nhập mã PIN" onkeydown="if(event.key==='Enter')confirmPin()"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="confirmPin()">Mở khoá</button>
+    <div class="hint" id="pinHint"></div>
   </div>
 </div>
 
 <div class="topbar">
   <div class="mark">BT</div>
-  <div class="titles">
-    <div class="t1">Quản lý Học sinh Bán trú</div>
-    <div class="t2" id="topbarSub">Danh sách học sinh</div>
-  </div>
+  <div class="titles"><div class="t1">Quản lý Học sinh Bán trú</div><div class="t2" id="topbarSub">Tổng quan</div></div>
   <div class="connbadge" id="connBadge"><span class="dot"></span><span id="connText">Đang kết nối…</span></div>
 </div>
 
 <div class="shell">
 
+  <!-- TỔNG QUAN -->
+  <section class="panel" id="panel-dashboard">
+    <div class="section-head"><div><h2>Tổng quan</h2><div class="sub" id="dashDate"></div></div></div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="label">Học sinh đang học</div><div class="value" id="statTotal">–</div></div>
+      <div class="stat-card good"><div class="label">Có mặt hôm nay</div><div class="value" id="statPresent">–</div></div>
+      <div class="stat-card good"><div class="label">Đã thu tháng này</div><div class="value" id="statCollected">–</div></div>
+      <div class="stat-card warm"><div class="label">Còn nợ tháng này</div><div class="value" id="statOwing">–</div></div>
+    </div>
+    <div class="card" style="margin-top:14px;"><div class="pad">
+      <h3 style="margin:0 0 10px;font-size:14.5px;">Học sinh chưa đóng phí tháng này (<span id="unpaidCount">0</span>)</h3>
+      <div class="stu-list" id="dashUnpaidList"></div>
+    </div></div>
+  </section>
+
+  <!-- HỌC SINH -->
   <section class="panel" id="panel-students">
-    <div class="section-head">
-      <div><h2>Danh sách học sinh</h2><div class="sub" id="stuCount">0 học sinh</div></div>
-      <button class="btn btn-primary" onclick="openStudentModal()">+ Thêm học sinh</button>
+    <div class="segmented">
+      <button data-sub="list" onclick="showStudentSub('list')">Danh sách</button>
+      <button data-sub="attendance" onclick="showStudentSub('attendance')">Điểm danh</button>
+      <button data-sub="withdrawn" onclick="showStudentSub('withdrawn')">Đã nghỉ</button>
     </div>
-    <div class="stu-list" id="studentList"></div>
+
+    <div class="subview" id="sub-list">
+      <div class="section-head">
+        <div><h2>Danh sách học sinh</h2><div class="sub" id="stuCount">0 học sinh</div></div>
+        <div class="flexbtns">
+          <button class="btn btn-ghost btn-sm" onclick="exportStudentsExcel()">⬇ Excel</button>
+          <button class="btn btn-primary" onclick="openStudentModal()">+ Thêm học sinh</button>
+        </div>
+      </div>
+      <div class="searchbox"><span class="ic">🔎</span><input type="text" id="stuSearch" placeholder="Tìm theo tên, lớp, trường…" oninput="renderStudents()"></div>
+      <div class="stu-list" id="studentList"></div>
+    </div>
+
+    <div class="subview" id="sub-attendance">
+      <div class="section-head">
+        <div><h2>Điểm danh</h2><div class="sub">Chọn ngày rồi đánh dấu có mặt / vắng</div></div>
+        <input type="date" id="attDate" style="width:auto" onchange="renderAttendance()">
+      </div>
+      <div class="flexbtns" style="margin-bottom:12px;">
+        <button class="btn btn-primary btn-sm" onclick="bulkMarkPresent()">✓ Đánh dấu tất cả có mặt</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportAttendanceDayExcel()">⬇ Excel ngày này</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportAttendanceMonthExcel()">⬇ Excel cả tháng</button>
+      </div>
+      <div class="card"><div class="pad" id="attendanceList"></div></div>
+    </div>
+
+    <div class="subview" id="sub-withdrawn">
+      <div class="section-head"><div><h2>Học sinh đã nghỉ</h2><div class="sub">Học sinh còn nợ phí vẫn hiển thị ở đây cho đến khi đóng đủ</div></div></div>
+      <div class="stu-list" id="withdrawnList"></div>
+    </div>
   </section>
 
-  <section class="panel" id="panel-attendance">
-    <div class="section-head">
-      <div><h2>Điểm danh</h2><div class="sub">Chọn ngày rồi đánh dấu có mặt / vắng</div></div>
-      <input type="date" id="attDate" style="width:auto" onchange="renderAttendance()">
-    </div>
-    <div class="card"><div class="pad" id="attendanceList"></div></div>
-  </section>
-
-  <section class="panel" id="panel-services">
-    <div class="section-head">
-      <div><h2>Dịch vụ sử dụng</h2><div class="sub">Chọn dịch vụ áp dụng cho từng học sinh</div></div>
-    </div>
-    <div id="servicesList"></div>
-  </section>
-
+  <!-- THU PHÍ -->
   <section class="panel" id="panel-fees">
-    <div class="section-head">
-      <div><h2>Học phí theo tháng</h2><div class="sub">Tổng hợp phí dịch vụ mỗi học sinh trong tháng</div></div>
-      <input type="month" id="feeMonth" style="width:auto" onchange="renderFees()">
+    <div class="segmented">
+      <button data-sub="summary" onclick="showFeeSub('summary')">Tổng hợp</button>
+      <button data-sub="paid" onclick="showFeeSub('paid')">Đã đóng</button>
+      <button data-sub="unpaid" onclick="showFeeSub('unpaid')">Chưa đóng</button>
     </div>
-    <div class="card"><div class="pad tbl-wrap" id="feeTableWrap"><table id="feeTable"></table></div></div>
-  </section>
 
-  <section class="panel" id="panel-collect">
-    <div class="section-head">
-      <div><h2>Thu phí</h2><div class="sub">Ghi nhận số tiền đã thu của học sinh</div></div>
-    </div>
-    <div class="card"><div class="pad">
-      <div class="row g2">
-        <div class="field"><label>Học sinh</label><select id="colStudent"></select></div>
-        <div class="field"><label>Thu cho tháng</label><input type="month" id="colMonth"></div>
+    <div class="subview" id="fee-summary">
+      <div class="section-head">
+        <div><h2>Học phí theo tháng</h2><div class="sub">Tổng hợp phí dịch vụ mỗi học sinh trong tháng</div></div>
+        <div class="flexbtns"><input type="month" id="feeMonth" style="width:auto" onchange="onFeeMonthChange()"><button class="btn btn-ghost btn-sm" onclick="exportFeeSummaryExcel()">⬇ Excel</button></div>
       </div>
-      <div class="row g2">
-        <div class="field"><label>Số tiền thu (đ)</label><input type="number" id="colAmount" placeholder="VD: 500000"></div>
-        <div class="field"><label>Ngày thu</label><input type="date" id="colDate"></div>
+      <div class="card"><div class="pad tbl-wrap"><table id="feeTable"></table></div></div>
+    </div>
+
+    <div class="subview" id="fee-paid">
+      <div class="section-head">
+        <div><h2>Đã đóng tiền</h2><div class="sub">Học sinh đã đóng đủ học phí trong tháng</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="exportPaidExcel()">⬇ Excel</button>
       </div>
-      <button class="btn btn-primary" id="colSubmitBtn" onclick="submitPayment()">Ghi nhận đã thu</button>
-      <div class="hint" id="colHint"></div>
-    </div></div>
-    <div class="card"><div class="pad">
-      <h3 style="margin:0 0 10px;font-size:14.5px;">Lịch sử thu trong tháng</h3>
-      <div id="paymentHistory"></div>
-    </div></div>
+      <div class="stu-list" id="paidList"></div>
+    </div>
+
+    <div class="subview" id="fee-unpaid">
+      <div class="section-head">
+        <div><h2>Chưa đóng tiền</h2><div class="sub">Học sinh còn thiếu học phí trong tháng</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="exportUnpaidExcel()">⬇ Excel</button>
+      </div>
+      <div class="stu-list" id="unpaidList"></div>
+    </div>
   </section>
 
-  <section class="panel" id="panel-check">
-    <div class="section-head">
-      <div><h2>Kiểm tra thu phí</h2><div class="sub">Học sinh đã đóng / chưa đóng trong tháng</div></div>
-      <input type="month" id="checkMonth" style="width:auto" onchange="renderCheck()">
+  <!-- TÀI CHÍNH -->
+  <section class="panel" id="panel-finance">
+    <div class="segmented">
+      <button data-sub="expense" onclick="showFinanceSub('expense')">Các khoản chi</button>
+      <button data-sub="income" onclick="showFinanceSub('income')">Các khoản thu</button>
+      <button data-sub="debt" onclick="showFinanceSub('debt')">Quản lý nợ</button>
+      <button data-sub="summary" onclick="showFinanceSub('summary')">Tổng hợp</button>
     </div>
-    <div class="flexbtns" style="margin-bottom:12px;">
-      <button class="btn btn-sm btn-ghost" id="fltAll" onclick="setCheckFilter('all')">Tất cả</button>
-      <button class="btn btn-sm btn-ghost" id="fltUnpaid" onclick="setCheckFilter('unpaid')">Chưa đóng</button>
-      <button class="btn btn-sm btn-ghost" id="fltPartial" onclick="setCheckFilter('partial')">Đóng thiếu</button>
-      <button class="btn btn-sm btn-ghost" id="fltPaid" onclick="setCheckFilter('paid')">Đã đóng đủ</button>
+
+    <div class="subview" id="fin-expense">
+      <div class="section-head">
+        <div><h2>Các khoản chi</h2><div class="sub">Chi phí vận hành bán trú theo tháng</div></div>
+        <div class="flexbtns"><input type="month" id="expMonth" style="width:auto" onchange="renderExpenses()"><button class="btn btn-ghost btn-sm" onclick="exportExpensesExcel()">⬇ Excel</button><button class="btn btn-primary btn-sm" onclick="openExpenseModal()">+ Thêm khoản chi</button></div>
+      </div>
+      <div class="card"><div class="pad" id="expenseList"></div></div>
     </div>
-    <div class="stu-list" id="checkList"></div>
+
+    <div class="subview" id="fin-income">
+      <div class="section-head">
+        <div><h2>Các khoản thu</h2><div class="sub">Tự động tổng hợp từ Thu phí — không nhập tay</div></div>
+        <div class="flexbtns"><input type="month" id="incMonth" style="width:auto" onchange="renderIncome()"><button class="btn btn-ghost btn-sm" onclick="exportIncomeExcel()">⬇ Excel</button></div>
+      </div>
+      <div class="card"><div class="pad tbl-wrap" id="incomeBody"></div></div>
+    </div>
+
+    <div class="subview" id="fin-debt">
+      <div class="section-head"><div><h2>Quản lý nợ</h2><div class="sub">Nợ phải thu (học sinh) và nợ phải trả (mua hàng)</div></div></div>
+      <div class="card"><div class="pad">
+        <h3 style="margin:0 0 8px;font-size:14.5px;">Nợ phải thu — học sinh chưa đóng phí (tháng này)</h3>
+        <div class="stat-grid" style="grid-template-columns:1fr 1fr;">
+          <div class="stat-card warm"><div class="label">Số học sinh chưa đóng</div><div class="value" id="debtStuCount">–</div></div>
+          <div class="stat-card warm"><div class="label">Tổng số tiền còn nợ</div><div class="value" id="debtStuAmount">–</div></div>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="showTab('fees');showFeeSub('unpaid');">Xem danh sách chưa đóng →</button>
+      </div></div>
+      <div class="card"><div class="pad">
+        <div class="section-head" style="margin-bottom:10px;">
+          <h3 style="margin:0;font-size:14.5px;">Nợ phải trả — mua hàng</h3>
+          <div class="flexbtns"><button class="btn btn-ghost btn-sm" onclick="exportDebtsExcel()">⬇ Excel</button><button class="btn btn-primary btn-sm" onclick="openDebtModal()">+ Thêm khoản nợ</button></div>
+        </div>
+        <div class="stu-list" id="debtList"></div>
+      </div></div>
+    </div>
+
+    <div class="subview" id="fin-summary">
+      <div class="section-head">
+        <div><h2>Tổng hợp thu – chi</h2><div class="sub">Bảng cân đối theo tháng</div></div>
+        <div class="flexbtns"><input type="month" id="sumMonth" style="width:auto" onchange="renderFinanceSummary()"><button class="btn btn-ghost btn-sm" onclick="exportSummaryExcel()">⬇ Excel</button></div>
+      </div>
+      <div class="card"><div class="pad tbl-wrap" id="summaryBody"></div></div>
+    </div>
   </section>
 
+  <!-- CÀI ĐẶT -->
   <section class="panel" id="panel-settings">
     <div class="section-head"><div><h2>Cài đặt mức phí</h2><div class="sub">Áp dụng cho toàn bộ tính toán học phí</div></div></div>
     <div class="card"><div class="pad">
-      <h3 style="margin-top:0;font-size:14px;">Tiền ăn trưa + nghỉ trưa (1 ngày)</h3>
-      <div class="field"><input type="number" id="setAnTrua" placeholder="VD: 30000"></div>
-
+      <h3 style="margin-top:0;font-size:14px;">Ăn trưa + nghỉ trưa — tính theo ngày</h3>
+      <div class="field"><label>Giá 1 ngày (đ)</label><input type="number" id="setAnTruaDay" placeholder="VD: 30000"></div>
       <div class="divider"></div>
-      <h3 style="font-size:14px;">Tiền xe đưa rước (1 tháng) — 3 mức</h3>
-      <div class="row g2">
-        <div class="field"><label>Tên mức 1</label><input type="text" id="xeLbl1" placeholder="VD: Gần"></div>
-        <div class="field"><label>Phí mức 1 (đ)</label><input type="number" id="xeFee1"></div>
-      </div>
-      <div class="row g2">
-        <div class="field"><label>Tên mức 2</label><input type="text" id="xeLbl2" placeholder="VD: Trung bình"></div>
-        <div class="field"><label>Phí mức 2 (đ)</label><input type="number" id="xeFee2"></div>
-      </div>
-      <div class="row g2">
-        <div class="field"><label>Tên mức 3</label><input type="text" id="xeLbl3" placeholder="VD: Xa"></div>
-        <div class="field"><label>Phí mức 3 (đ)</label><input type="number" id="xeFee3"></div>
-      </div>
-
+      <h3 style="font-size:14px;">Ăn trưa + nghỉ trưa — tính theo tháng (3 mức)</h3>
+      <div class="row g2"><div class="field"><label>Tên mức 1</label><input type="text" id="anTruaMLbl1"></div><div class="field"><label>Phí (đ)</label><input type="number" id="anTruaMFee1"></div></div>
+      <div class="row g2"><div class="field"><label>Tên mức 2</label><input type="text" id="anTruaMLbl2"></div><div class="field"><label>Phí (đ)</label><input type="number" id="anTruaMFee2"></div></div>
+      <div class="row g2"><div class="field"><label>Tên mức 3</label><input type="text" id="anTruaMLbl3"></div><div class="field"><label>Phí (đ)</label><input type="number" id="anTruaMFee3"></div></div>
       <div class="divider"></div>
-      <h3 style="font-size:14px;">Tiền đưa đón học thêm (1 tháng) — 3 mức</h3>
-      <div class="row g2">
-        <div class="field"><label>Tên mức 1</label><input type="text" id="htLbl1"></div>
-        <div class="field"><label>Phí mức 1 (đ)</label><input type="number" id="htFee1"></div>
-      </div>
-      <div class="row g2">
-        <div class="field"><label>Tên mức 2</label><input type="text" id="htLbl2"></div>
-        <div class="field"><label>Phí mức 2 (đ)</label><input type="number" id="htFee2"></div>
-      </div>
-      <div class="row g2">
-        <div class="field"><label>Tên mức 3</label><input type="text" id="htLbl3"></div>
-        <div class="field"><label>Phí mức 3 (đ)</label><input type="number" id="htFee3"></div>
-      </div>
-      <button class="btn btn-primary" onclick="saveSettings()">Lưu cài đặt</button>
-
+      <h3 style="font-size:14px;">Xe đưa đón (theo tháng) — 2 mức</h3>
+      <div class="row g2"><div class="field"><label>Tên mức 1</label><input type="text" id="xeLbl1"></div><div class="field"><label>Phí (đ)</label><input type="number" id="xeFee1"></div></div>
+      <div class="row g2"><div class="field"><label>Tên mức 2</label><input type="text" id="xeLbl2"></div><div class="field"><label>Phí (đ)</label><input type="number" id="xeFee2"></div></div>
       <div class="divider"></div>
-      <h3 style="font-size:14px;">Kết nối dữ liệu</h3>
+      <h3 style="font-size:14px;">Đưa đón học thêm (theo tháng) — 3 mức</h3>
+      <div class="row g2"><div class="field"><label>Tên mức 1</label><input type="text" id="htLbl1"></div><div class="field"><label>Phí (đ)</label><input type="number" id="htFee1"></div></div>
+      <div class="row g2"><div class="field"><label>Tên mức 2</label><input type="text" id="htLbl2"></div><div class="field"><label>Phí (đ)</label><input type="number" id="htFee2"></div></div>
+      <div class="row g2"><div class="field"><label>Tên mức 3</label><input type="text" id="htLbl3"></div><div class="field"><label>Phí (đ)</label><input type="number" id="htFee3"></div></div>
+      <button class="btn btn-primary" onclick="saveSettings()">Lưu cài đặt mức phí</button>
+    </div></div>
+
+    <div class="card"><div class="pad">
+      <h3 style="margin-top:0;font-size:14px;">Khoá mã PIN</h3>
+      <p class="hint" style="margin-top:0;">Để trống cả 2 ô rồi bấm Cập nhật = tắt khoá PIN.</p>
+      <div class="row g2">
+        <div class="field"><label>PIN mới</label><input type="password" id="newPin1" inputmode="numeric"></div>
+        <div class="field"><label>Nhập lại PIN mới</label><input type="password" id="newPin2" inputmode="numeric"></div>
+      </div>
+      <button class="btn btn-primary" onclick="changePin()">Cập nhật PIN</button>
+    </div></div>
+
+    <div class="card"><div class="pad">
+      <h3 style="margin-top:0;font-size:14px;">Kết nối dữ liệu</h3>
       <div class="field"><label>Web App URL đang dùng</label><input type="url" id="curApiUrl" readonly></div>
       <button class="btn btn-ghost btn-sm" onclick="changeApiUrl()">Đổi Google Sheet khác</button>
     </div></div>
@@ -327,12 +381,10 @@
 </div>
 
 <nav class="tabbar">
+  <button class="tab" data-tab="dashboard" onclick="showTab('dashboard')"><span class="ic">📊</span><span>Tổng quan</span></button>
   <button class="tab" data-tab="students" onclick="showTab('students')"><span class="ic">👤</span><span>Học sinh</span></button>
-  <button class="tab" data-tab="attendance" onclick="showTab('attendance')"><span class="ic">✅</span><span>Điểm danh</span></button>
-  <button class="tab" data-tab="services" onclick="showTab('services')"><span class="ic">🧾</span><span>Dịch vụ</span></button>
-  <button class="tab" data-tab="fees" onclick="showTab('fees')"><span class="ic">💰</span><span>Học phí</span></button>
-  <button class="tab" data-tab="collect" onclick="showTab('collect')"><span class="ic">🧮</span><span>Thu phí</span></button>
-  <button class="tab" data-tab="check" onclick="showTab('check')"><span class="ic">📋</span><span>Kiểm tra</span></button>
+  <button class="tab" data-tab="fees" onclick="showTab('fees')"><span class="ic">💰</span><span>Thu phí</span></button>
+  <button class="tab" data-tab="finance" onclick="showTab('finance')"><span class="ic">💵</span><span>Tài chính</span></button>
   <button class="tab" data-tab="settings" onclick="showTab('settings')"><span class="ic">⚙️</span><span>Cài đặt</span></button>
 </nav>
 
@@ -340,47 +392,63 @@
 
 <script>
 /* =====================================================================
-   CẤU HÌNH KẾT NỐI GOOGLE SHEET
-   Dán link "Web app URL" (từ Apps Script, file Code.gs) vào giữa 2 dấu
-   nháy bên dưới. Nếu để trống, app sẽ hỏi ngay khi mở lần đầu.
+   CẤU HÌNH KẾT NỐI — dán link Web App Apps Script vào giữa 2 dấu nháy.
    ===================================================================== */
 let API_URL = "";
 
 /* ========================= STATE ========================= */
 let students = [];
-let settings = {anTrua:0, xeLbl:["Mức 1","Mức 2","Mức 3"], xeFee:[0,0,0], htLbl:["Mức 1","Mức 2","Mức 3"], htFee:[0,0,0]};
+let settings = {anTruaDay:0, anTruaMLbl:["Mức 1","Mức 2","Mức 3"], anTruaMFee:[0,0,0], xeLbl:["Mức 1","Mức 2"], xeFee:[0,0], htLbl:["Mức 1","Mức 2","Mức 3"], htFee:[0,0,0]};
 let services = {};
 let attendanceCache = {};
 let paymentsCache = {};
-let checkFilter = 'all';
+let sessionPin = '';
 let dataReady = false;
+let curStuSub = 'list';
+let curFeeSub = 'summary';
 
-const TABS = ['students','attendance','services','fees','collect','check','settings'];
-const TAB_TITLES = {students:'Danh sách học sinh',attendance:'Điểm danh hàng ngày',services:'Dịch vụ sử dụng',fees:'Học phí theo tháng',collect:'Thu phí',check:'Kiểm tra thu phí',settings:'Cài đặt mức phí'};
+const TABS = ['dashboard','students','fees','finance','settings'];
+const TAB_TITLES = {dashboard:'Tổng quan',students:'Học sinh',fees:'Thu phí',finance:'Quản lý tài chính',settings:'Cài đặt mức phí'};
+const EXPENSE_CATEGORIES = ['Tiền chợ','Xe đưa rước','Điện','Nước','Chi khác'];
+let expensesCache = {};
+let debtsCache = null;
+let curFinSub = 'expense';
 
 function todayISO(){return new Date().toISOString().slice(0,10);}
 function monthNow(){return new Date().toISOString().slice(0,7);}
 function fmtMoney(n){return (Math.round(n)||0).toLocaleString('vi-VN')+'đ';}
 function initials(name){const p=(name||'?').trim().split(/\s+/);return (p[p.length-1]||'?').charAt(0).toUpperCase();}
-function escapeHtml(str){ return String(str==null?'':str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeHtml(str){return String(str==null?'':str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function monthLabel(ym){const [y,m]=ym.split('-');return 'Tháng '+m+'/'+y;}
 
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
   clearTimeout(window.__toastT);
-  window.__toastT=setTimeout(()=>t.classList.remove('show'),2400);
+  window.__toastT=setTimeout(()=>t.classList.remove('show'),2600);
 }
 function setConn(ok, text){
-  const b = document.getElementById('connBadge');
-  b.className = 'connbadge ' + (ok?'ok':'bad');
-  document.getElementById('connText').textContent = text;
+  const b=document.getElementById('connBadge');
+  b.className='connbadge '+(ok?'ok':'bad');
+  document.getElementById('connText').textContent=text;
 }
 
-/* ========================= GOI API (GOOGLE SHEET) ========================= */
+/* ========================= ZALO ========================= */
+function zaloPhone(phone){ let p=String(phone||'').replace(/[^0-9]/g,''); if(p.startsWith('0')) p='84'+p.slice(1); return p; }
+function contactZalo(phone){ const p=zaloPhone(phone); if(!p){showToast('Chưa có số điện thoại Zalo');return;} window.open('https://zalo.me/'+p,'_blank'); }
+async function copyText(text){ try{ await navigator.clipboard.writeText(text); return true; }catch(e){ return false; } }
+async function zaloNotify(phone, message){
+  const ok = await copyText(message);
+  contactZalo(phone);
+  showToast(ok?'Đã sao chép nội dung — dán vào khung chat Zalo vừa mở':'Đã mở Zalo — vui lòng soạn tin nhắn thủ công');
+}
+
+/* ========================= GOI API ========================= */
 async function apiGet(action, params){
-  params = params || {};
+  params = params||{};
   const url = new URL(API_URL);
   url.searchParams.set('action', action);
+  url.searchParams.set('authPin', sessionPin);
   Object.keys(params).forEach(k=>url.searchParams.set(k, params[k]));
   const res = await fetch(url.toString());
   const data = await res.json();
@@ -389,16 +457,15 @@ async function apiGet(action, params){
 }
 async function apiPost(action, payload){
   const res = await fetch(API_URL, {
-    method:'POST',
-    headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify({action, payload: payload||{}})
+    method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({action, authPin: sessionPin, payload: payload||{}})
   });
   const data = await res.json();
   if(data && data.error) throw new Error(data.error);
   return data;
 }
 
-/* ========================= SETUP / KẾT NỐI ========================= */
+/* ========================= SETUP / PIN / KẾT NỐI ========================= */
 function isValidUrl(u){ return typeof u==='string' && /^https:\/\/script\.google(usercontent)?\.com\//.test(u.trim()); }
 
 async function tryConnect(){
@@ -409,19 +476,32 @@ async function tryConnect(){
   }
   setConn(false,'Đang kết nối…');
   try{
+    const pinStatus = await apiGet('getPinStatus');
+    if(pinStatus.hasPin && !sessionPin){
+      document.getElementById('setupOverlay').style.display='none';
+      document.getElementById('pinOverlay').style.display='flex';
+      setConn(false,'Chờ mã PIN');
+      return false;
+    }
     const data = await apiGet('getAllData');
-    students = data.students || [];
-    settings = Object.assign(settings, data.settings || {});
-    services = data.services || {};
+    students = data.students||[];
+    settings = Object.assign(settings, data.settings||{});
+    services = data.services||{};
     setConn(true,'Đã kết nối');
     document.getElementById('setupOverlay').style.display='none';
+    document.getElementById('pinOverlay').style.display='none';
     dataReady = true;
     return true;
   }catch(e){
     setConn(false,'Lỗi kết nối');
-    showToast('Không kết nối được Google Sheet: '+e.message);
-    document.getElementById('setupOverlay').style.display='flex';
-    document.getElementById('setupHint').textContent = 'Lỗi: '+e.message+'. Kiểm tra lại link hoặc quyền truy cập (Anyone) của Web App.';
+    if(String(e.message).includes('PIN')){
+      document.getElementById('pinOverlay').style.display='flex';
+      document.getElementById('pinHint').textContent='Mã PIN không đúng, thử lại.';
+    } else {
+      showToast('Không kết nối được: '+e.message);
+      document.getElementById('setupOverlay').style.display='flex';
+      document.getElementById('setupHint').textContent='Lỗi: '+e.message;
+    }
     return false;
   }
 }
@@ -431,7 +511,13 @@ async function confirmSetupUrl(){
   API_URL = v;
   document.getElementById('setupHint').textContent='Đang kết nối…';
   const ok = await tryConnect();
-  if(ok){ showToast('Kết nối thành công'); showTab('students'); }
+  if(ok){ showToast('Kết nối thành công'); showTab('dashboard'); }
+}
+async function confirmPin(){
+  sessionPin = document.getElementById('pinInput').value.trim();
+  document.getElementById('pinHint').textContent='Đang kiểm tra…';
+  const ok = await tryConnect();
+  if(ok){ showToast('Mở khoá thành công'); showTab('dashboard'); }
 }
 function changeApiUrl(){
   document.getElementById('setupUrl').value = API_URL;
@@ -444,42 +530,170 @@ function showTab(tab){
   document.querySelectorAll('nav.tabbar .tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
   document.getElementById('topbarSub').textContent = TAB_TITLES[tab];
   if(!dataReady) return;
-  if(tab==='attendance') renderAttendance();
-  if(tab==='services') renderServices();
-  if(tab==='fees') renderFees();
-  if(tab==='collect') renderCollectTab();
-  if(tab==='check') renderCheck();
+  if(tab==='dashboard') renderDashboard();
+  if(tab==='students') showStudentSub(curStuSub);
+  if(tab==='fees') showFeeSub(curFeeSub);
+  if(tab==='finance') showFinanceSub(curFinSub);
   if(tab==='settings') fillSettingsForm();
-  if(tab==='students') renderStudents();
+}
+function showStudentSub(sub){
+  curStuSub = sub;
+  document.querySelectorAll('#panel-students .segmented button').forEach(b=>b.classList.toggle('active', b.dataset.sub===sub));
+  ['list','attendance','withdrawn'].forEach(s=>document.getElementById('sub-'+s).classList.toggle('active', s===sub));
+  if(!dataReady) return;
+  if(sub==='list') renderStudents();
+  if(sub==='attendance') renderAttendance();
+  if(sub==='withdrawn') renderWithdrawn();
+}
+function showFeeSub(sub){
+  curFeeSub = sub;
+  document.querySelectorAll('#panel-fees .segmented button').forEach(b=>b.classList.toggle('active', b.dataset.sub===sub));
+  ['summary','paid','unpaid'].forEach(s=>document.getElementById('fee-'+s).classList.toggle('active', s===sub));
+  if(!dataReady) return;
+  if(sub==='summary') renderFeeSummary();
+  if(sub==='paid') renderFeePaid();
+  if(sub==='unpaid') renderFeeUnpaid();
+}
+function onFeeMonthChange(){ showFeeSub(curFeeSub); }
+
+function showFinanceSub(sub){
+  curFinSub = sub;
+  document.querySelectorAll('#panel-finance .segmented button').forEach(b=>b.classList.toggle('active', b.dataset.sub===sub));
+  ['expense','income','debt','summary'].forEach(s=>document.getElementById('fin-'+s).classList.toggle('active', s===sub));
+  if(!dataReady) return;
+  ['expMonth','incMonth','sumMonth'].forEach(id=>{ const el=document.getElementById(id); if(!el.value) el.value = monthNow(); });
+  if(sub==='expense') renderExpenses();
+  if(sub==='income') renderIncome();
+  if(sub==='debt') renderDebtTab();
+  if(sub==='summary') renderFinanceSummary();
 }
 
-/* ========================= HỌC SINH ========================= */
-function renderStudents(){
-  const list = document.getElementById('studentList');
-  document.getElementById('stuCount').textContent = students.length+' học sinh';
-  if(students.length===0){
-    list.innerHTML = `<div class="empty"><div class="big">🎒</div>Chưa có học sinh nào.<br>Bấm "+ Thêm học sinh" để bắt đầu.</div>`;
-    return;
+/* ========================= TÍNH PHÍ ========================= */
+async function getAttendance(ym){
+  if(attendanceCache[ym]) return attendanceCache[ym];
+  try{ attendanceCache[ym] = await apiGet('getAttendance',{month:ym}); }
+  catch(e){ showToast('Lỗi tải điểm danh: '+e.message); attendanceCache[ym]={}; }
+  return attendanceCache[ym];
+}
+async function getPayments(ym){
+  if(paymentsCache[ym]) return paymentsCache[ym];
+  try{ paymentsCache[ym] = await apiGet('getPayments',{month:ym}); }
+  catch(e){ showToast('Lỗi tải thu phí: '+e.message); paymentsCache[ym]={}; }
+  return paymentsCache[ym];
+}
+function svcOf(sid){ return services[sid] || {anTruaMode:'off',anTruaTier:0,xeTier:0,hocThemTier:0}; }
+async function computeStudentFee(sid, ym){
+  const att = await getAttendance(ym);
+  const presentDays = Object.values(att[sid]||{}).filter(v=>v==='present').length;
+  const sv = svcOf(sid);
+  let anTruaFee=0;
+  if(sv.anTruaMode==='day') anTruaFee = presentDays*(settings.anTruaDay||0);
+  else if(sv.anTruaMode==='month' && sv.anTruaTier>0) anTruaFee = settings.anTruaMFee[sv.anTruaTier-1]||0;
+  const xeFee = sv.xeTier>0 ? (settings.xeFee[sv.xeTier-1]||0) : 0;
+  const htFee = sv.hocThemTier>0 ? (settings.htFee[sv.hocThemTier-1]||0) : 0;
+  const total = anTruaFee+xeFee+htFee;
+  const pays = await getPayments(ym);
+  const list = pays[sid]||[];
+  const paid = list.reduce((a,p)=>a+Number(p.amount||0),0);
+  const sorted = list.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const last = sorted[0];
+  let status='none';
+  if(total>0){ if(paid<=0) status='unpaid'; else if(paid<total) status='partial'; else status='paid'; }
+  else if(paid>0){ status='paid'; }
+  return {presentDays, anTruaFee, xeFee, htFee, total, paid, remaining: total-paid, status, lastDate: last?last.date:'', lastNote: last?last.note:''};
+}
+function serviceDesc(sid){
+  const sv = svcOf(sid);
+  const parts = [];
+  if(sv.anTruaMode==='day') parts.push('Ăn trưa (theo ngày)');
+  else if(sv.anTruaMode==='month' && sv.anTruaTier>0) parts.push('Ăn trưa: '+(settings.anTruaMLbl[sv.anTruaTier-1]||''));
+  if(sv.xeTier>0) parts.push('Xe: '+(settings.xeLbl[sv.xeTier-1]||''));
+  if(sv.hocThemTier>0) parts.push('Học thêm: '+(settings.htLbl[sv.hocThemTier-1]||''));
+  return parts.length? parts.join(' · ') : 'Không dùng dịch vụ';
+}
+
+/* ========================= TỔNG QUAN ========================= */
+async function renderDashboard(){
+  document.getElementById('dashDate').textContent = monthLabel(monthNow())+' · '+new Date().toLocaleDateString('vi-VN');
+  const active = students.filter(s=>s.status!=='withdrawn');
+  document.getElementById('statTotal').textContent = active.length;
+  const ym = monthNow();
+  const att = await getAttendance(ym);
+  const today = todayISO().slice(8,10);
+  let presentToday=0;
+  active.forEach(s=>{ if((att[s.id]||{})[today]==='present') presentToday++; });
+  document.getElementById('statPresent').textContent = presentToday;
+
+  let collected=0, owing=0; const unpaidItems=[];
+  for(const s of active){
+    const f = await computeStudentFee(s.id, ym);
+    collected += f.paid;
+    if(f.status==='unpaid' || f.status==='partial'){ owing += f.remaining; unpaidItems.push({s,f}); }
   }
-  list.innerHTML = students.map(s=>`
+  document.getElementById('statCollected').textContent = fmtMoney(collected);
+  document.getElementById('statOwing').textContent = fmtMoney(owing);
+  document.getElementById('unpaidCount').textContent = unpaidItems.length;
+  const list = document.getElementById('dashUnpaidList');
+  if(unpaidItems.length===0){ list.innerHTML = `<div class="empty">🎉 Tất cả học sinh đã đóng đủ phí tháng này.</div>`; return; }
+  list.innerHTML = unpaidItems.slice(0,8).map(({s,f})=>`
+    <div class="stu-card"><div class="bar ${f.status}"></div>
+      <div class="avatar">${initials(s.name)}</div>
+      <div class="info"><div class="name">${escapeHtml(s.name)}</div><div class="meta">Còn thiếu ${fmtMoney(f.remaining)}</div></div>
+      <div class="actions"><button class="iconbtn" onclick="contactZalo('${escapeHtml(s.parentPhone)}')" title="Liên hệ Zalo">💬</button></div>
+    </div>`).join('');
+}
+
+/* ========================= HỌC SINH: DANH SÁCH ========================= */
+function renderStudents(){
+  const q = (document.getElementById('stuSearch').value||'').toLowerCase().trim();
+  const active = students.filter(s=>s.status!=='withdrawn');
+  const filtered = active.filter(s=> !q || (s.name+' '+s.className+' '+s.school).toLowerCase().includes(q));
+  document.getElementById('stuCount').textContent = active.length+' học sinh'+(q?` (hiện ${filtered.length})`:'');
+  const list = document.getElementById('studentList');
+  if(active.length===0){ list.innerHTML = `<div class="empty"><div class="big">🎒</div>Chưa có học sinh nào.<br>Bấm "+ Thêm học sinh" để bắt đầu.</div>`; return; }
+  if(filtered.length===0){ list.innerHTML = `<div class="empty">Không tìm thấy học sinh phù hợp.</div>`; return; }
+  list.innerHTML = filtered.map(s=>`
     <div class="stu-card">
       <div class="bar none"></div>
-      <div class="avatar">${initials(s.name)}</div>
+      <div class="avatar" onclick="openLedgerModal('${s.id}')">${initials(s.name)}</div>
       <div class="info">
-        <div class="name">${escapeHtml(s.name)}</div>
+        <div class="name" onclick="openLedgerModal('${s.id}')">${escapeHtml(s.name)}</div>
         <div class="meta">${escapeHtml(s.className||'—')} · ${escapeHtml(s.school||'—')}</div>
         <div class="meta">👪 ${escapeHtml(s.parentName||'—')} · 📱 ${escapeHtml(s.parentPhone||'—')}</div>
+        <div class="meta">${escapeHtml(serviceDesc(s.id))}</div>
       </div>
       <div class="actions">
+        <button class="iconbtn" onclick="contactZalo('${escapeHtml(s.parentPhone)}')" title="Liên hệ Zalo">💬</button>
         <button class="btn btn-sm btn-ghost" onclick="openStudentModal('${s.id}')">Sửa</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteStudent('${s.id}')">Xóa</button>
+        <button class="btn btn-sm btn-warm" onclick="doWithdraw('${s.id}',true)">Nghỉ học</button>
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
+/* Modal thêm/sửa học sinh (gồm cả chọn dịch vụ) */
+function svcFieldsHtml(sv){
+  sv = sv || {anTruaMode:'off',anTruaTier:0,xeTier:0,hocThemTier:0};
+  const anTruaMonthOpts = settings.anTruaMLbl.map((lbl,i)=>`<option value="${i+1}" ${sv.anTruaTier===i+1?'selected':''}>${escapeHtml(lbl)} (${fmtMoney(settings.anTruaMFee[i])})</option>`).join('');
+  const xeOpts = `<option value="0" ${sv.xeTier===0?'selected':''}>Không dùng</option>` + settings.xeLbl.map((lbl,i)=>`<option value="${i+1}" ${sv.xeTier===i+1?'selected':''}>${escapeHtml(lbl)} (${fmtMoney(settings.xeFee[i])})</option>`).join('');
+  const htOpts = `<option value="0" ${sv.hocThemTier===0?'selected':''}>Không dùng</option>` + settings.htLbl.map((lbl,i)=>`<option value="${i+1}" ${sv.hocThemTier===i+1?'selected':''}>${escapeHtml(lbl)} (${fmtMoney(settings.htFee[i])})</option>`).join('');
+  return `
+    <div class="divider"></div>
+    <h3 style="font-size:14px;margin:0 0 8px;">Dịch vụ sử dụng</h3>
+    <div class="field"><label>Ăn trưa + nghỉ trưa</label>
+      <select id="mAnTruaMode" onchange="document.getElementById('mAnTruaTierWrap').style.display=(this.value==='month')?'block':'none'">
+        <option value="off" ${sv.anTruaMode==='off'?'selected':''}>Không dùng</option>
+        <option value="day" ${sv.anTruaMode==='day'?'selected':''}>Theo ngày (${fmtMoney(settings.anTruaDay)}/ngày)</option>
+        <option value="month" ${sv.anTruaMode==='month'?'selected':''}>Theo tháng (chọn mức)</option>
+      </select>
+    </div>
+    <div class="field" id="mAnTruaTierWrap" style="display:${sv.anTruaMode==='month'?'block':'none'}"><label>Mức ăn trưa theo tháng</label><select id="mAnTruaTier">${anTruaMonthOpts}</select></div>
+    <div class="field"><label>Xe đưa đón</label><select id="mXeTier">${xeOpts}</select></div>
+    <div class="field"><label>Đưa đón học thêm</label><select id="mHocThemTier">${htOpts}</select></div>
+  `;
+}
 function openStudentModal(id){
   const s = id ? students.find(x=>x.id===id) : null;
+  const sv = id ? svcOf(id) : null;
   const bg = document.createElement('div');
   bg.className='modal-bg';
   bg.innerHTML = `
@@ -493,68 +707,77 @@ function openStudentModal(id){
       </div>
       <div class="field"><label>Tên bố/mẹ</label><input type="text" id="mParent" value="${s?escapeHtml(s.parentName||''):''}" placeholder="Tên phụ huynh"></div>
       <div class="field"><label>Số điện thoại (Zalo)</label><input type="tel" id="mPhone" value="${s?escapeHtml(s.parentPhone||''):''}" placeholder="09xxxxxxxx"></div>
-      <button class="btn btn-primary" id="mSaveBtn" style="width:100%;justify-content:center;margin-top:6px;" onclick="saveStudent('${s?s.id:''}')">Lưu</button>
+      ${svcFieldsHtml(sv)}
+      <button class="btn btn-primary" id="mSaveBtn" style="width:100%;justify-content:center;margin-top:14px;" onclick="saveStudent('${s?s.id:''}')">Lưu</button>
     </div>`;
   document.body.appendChild(bg);
 }
 async function saveStudent(id){
   const name = document.getElementById('mName').value.trim();
   if(!name){ showToast('Vui lòng nhập tên học sinh'); return; }
-  const data = {
-    id: id||undefined,
-    name,
+  const data = { id: id||undefined, name,
     className: document.getElementById('mClass').value.trim(),
     school: document.getElementById('mSchool').value.trim(),
     parentName: document.getElementById('mParent').value.trim(),
     parentPhone: document.getElementById('mPhone').value.trim(),
   };
+  const svc = {
+    anTruaMode: document.getElementById('mAnTruaMode').value,
+    anTruaTier: Number(document.getElementById('mAnTruaTier').value)||0,
+    xeTier: Number(document.getElementById('mXeTier').value)||0,
+    hocThemTier: Number(document.getElementById('mHocThemTier').value)||0,
+  };
   const btn = document.getElementById('mSaveBtn'); btn.disabled=true; btn.textContent='Đang lưu…';
   try{
     const res = await apiPost('saveStudent', data);
-    if(id){
-      const s = students.find(x=>x.id===id); Object.assign(s, data);
-    } else {
-      students.push(Object.assign({}, data, {id: res.id}));
-    }
+    const sid = id || res.id;
+    await apiPost('saveService', Object.assign({studentId: sid}, svc));
+    if(id){ Object.assign(students.find(x=>x.id===id), data); }
+    else { students.push(Object.assign({}, data, {id: sid, status:'active'})); }
+    services[sid] = svc;
     document.querySelector('.modal-bg').remove();
     renderStudents();
     showToast('Đã lưu học sinh');
   }catch(e){ showToast('Lỗi lưu: '+e.message); btn.disabled=false; btn.textContent='Lưu'; }
 }
-async function deleteStudent(id){
-  if(!confirm('Xóa học sinh này? Dữ liệu điểm danh/thu phí liên quan trong Sheet vẫn giữ nguyên.')) return;
+async function doWithdraw(id, withdrawn){
+  const msg = withdrawn ? 'Đánh dấu học sinh này đã nghỉ học?' : 'Khôi phục học sinh này về danh sách đang học?';
+  if(!confirm(msg)) return;
+  try{
+    await apiPost('withdrawStudent', {id, withdrawn, date: todayISO()});
+    const s = students.find(x=>x.id===id);
+    if(s){ s.status = withdrawn?'withdrawn':'active'; s.withdrawnDate = withdrawn?todayISO():''; }
+    showToast(withdrawn?'Đã chuyển sang danh sách nghỉ học':'Đã khôi phục học sinh');
+    if(curStuSub==='list') renderStudents(); else renderWithdrawn();
+  }catch(e){ showToast('Lỗi: '+e.message); }
+}
+async function permanentDelete(id){
+  if(!confirm('Xoá vĩnh viễn học sinh này? Không thể hoàn tác.')) return;
   try{
     await apiPost('deleteStudent', {id});
     students = students.filter(x=>x.id!==id);
     delete services[id];
-    renderStudents();
-    showToast('Đã xóa học sinh');
-  }catch(e){ showToast('Lỗi xóa: '+e.message); }
+    renderWithdrawn();
+    showToast('Đã xoá vĩnh viễn');
+  }catch(e){ showToast('Lỗi xoá: '+e.message); }
 }
 
-/* ========================= ĐIỂM DANH ========================= */
-async function getAttendance(ym){
-  if(attendanceCache[ym]) return attendanceCache[ym];
-  try{
-    attendanceCache[ym] = await apiGet('getAttendance', {month: ym});
-  }catch(e){ showToast('Lỗi tải điểm danh: '+e.message); attendanceCache[ym] = {}; }
-  return attendanceCache[ym];
-}
+/* ========================= HỌC SINH: ĐIỂM DANH ========================= */
 async function renderAttendance(){
   const dateEl = document.getElementById('attDate');
   if(!dateEl.value) dateEl.value = todayISO();
-  const date = dateEl.value;
-  const ym = date.slice(0,7);
-  const day = date.slice(8,10);
+  const date = dateEl.value; const ym = date.slice(0,7); const day = date.slice(8,10);
   const list = document.getElementById('attendanceList');
   list.innerHTML = `<div class="loading-line">Đang tải điểm danh…</div>`;
   const att = await getAttendance(ym);
-  if(students.length===0){ list.innerHTML = `<div class="empty">Chưa có học sinh để điểm danh.</div>`; return; }
-  list.innerHTML = students.map(s=>{
+  const active = students.filter(s=>s.status!=='withdrawn');
+  if(active.length===0){ list.innerHTML = `<div class="empty">Chưa có học sinh để điểm danh.</div>`; return; }
+  list.innerHTML = active.map(s=>{
     const st = (att[s.id]||{})[day] || '';
     return `
     <div class="att-row">
       <div class="nm">${escapeHtml(s.name)} <span style="color:var(--ink-soft);font-weight:400;">(${escapeHtml(s.className||'')})</span></div>
+      <button class="iconbtn" onclick="contactZalo('${escapeHtml(s.parentPhone)}')" title="Liên hệ Zalo">💬</button>
       <div class="toggle-group">
         <button class="${st==='present'?'on present':''}" onclick="markAttendance('${s.id}','present')">Có mặt</button>
         <button class="${st==='absent'?'on absent':''}" onclick="markAttendance('${s.id}','absent')">Vắng</button>
@@ -568,284 +791,545 @@ async function markAttendance(sid, status){
   const att = await getAttendance(ym);
   att[sid] = att[sid] || {};
   const newStatus = (att[sid][day]===status) ? '' : status;
-  if(newStatus) att[sid][day] = newStatus; else delete att[sid][day];
+  if(newStatus) att[sid][day]=newStatus; else delete att[sid][day];
+  renderAttendance();
+  try{ await apiPost('markAttendance', {studentId: sid, date, status: newStatus}); }
+  catch(e){ showToast('Lỗi lưu điểm danh: '+e.message); }
+}
+async function bulkMarkPresent(){
+  const date = document.getElementById('attDate').value;
+  const active = students.filter(s=>s.status!=='withdrawn');
+  if(active.length===0) return;
+  const ym = date.slice(0,7); const day = date.slice(8,10);
+  const att = await getAttendance(ym);
+  active.forEach(s=>{ att[s.id]=att[s.id]||{}; att[s.id][day]='present'; });
   renderAttendance();
   try{
-    await apiPost('markAttendance', {studentId: sid, date: date, status: newStatus});
-  }catch(e){ showToast('Lỗi lưu điểm danh: '+e.message); }
+    await apiPost('bulkMarkAttendance', {date, status:'present', studentIds: active.map(s=>s.id)});
+    showToast('Đã đánh dấu tất cả có mặt');
+  }catch(e){ showToast('Lỗi lưu điểm danh hàng loạt: '+e.message); }
 }
 
-/* ========================= DỊCH VỤ ========================= */
-function renderServices(){
-  const wrap = document.getElementById('servicesList');
-  if(students.length===0){ wrap.innerHTML = `<div class="card"><div class="pad empty">Chưa có học sinh.</div></div>`; return; }
-  wrap.innerHTML = students.map(s=>{
-    const sv = services[s.id] || {anTrua:false, xe:0, hocThem:0};
-    return `
-    <div class="svc-card">
-      <div class="nm">${escapeHtml(s.name)} <span style="font-weight:400;color:var(--ink-soft);font-size:12px;">(${escapeHtml(s.className||'')})</span></div>
-      <div class="hint" style="margin:0 0 6px;">Ăn trưa + nghỉ trưa</div>
-      <div class="chip-row" style="margin-bottom:10px;">
-        <button class="chip ${sv.anTrua?'on':''}" onclick="toggleSvc('${s.id}','anTrua')">${sv.anTrua?'✓ Đang dùng':'Không dùng'}</button>
+/* ========================= HỌC SINH: ĐÃ NGHỈ ========================= */
+async function renderWithdrawn(){
+  const list = document.getElementById('withdrawnList');
+  const withdrawn = students.filter(s=>s.status==='withdrawn');
+  if(withdrawn.length===0){ list.innerHTML = `<div class="empty">Chưa có học sinh nào nghỉ học.</div>`; return; }
+  list.innerHTML = `<div class="loading-line">Đang kiểm tra công nợ…</div>`;
+  const items = [];
+  for(const s of withdrawn){
+    let owing = 0;
+    try{ const ledger = await apiGet('getLedger', {studentId: s.id}); owing = ledger.reduce((a,m)=>a+Math.max(0,m.remaining),0); }
+    catch(e){}
+    items.push({s, owing});
+  }
+  list.innerHTML = items.map(({s,owing})=>`
+    <div class="stu-card">
+      <div class="bar ${owing>0?'unpaid':'none'}"></div>
+      <div class="avatar" onclick="openLedgerModal('${s.id}')">${initials(s.name)}</div>
+      <div class="info">
+        <div class="name">${escapeHtml(s.name)} <span class="pill withdrawn">Đã nghỉ ${s.withdrawnDate?('· '+s.withdrawnDate):''}</span></div>
+        <div class="meta">${escapeHtml(s.className||'—')} · ${escapeHtml(s.school||'—')}</div>
+        ${owing>0? `<div class="meta" style="color:var(--danger);font-weight:700;">Còn nợ: ${fmtMoney(owing)}</div>` : `<div class="meta" style="color:var(--success);">Không còn nợ phí</div>`}
       </div>
-      <div class="hint" style="margin:0 0 6px;">Xe đưa rước (theo tháng)</div>
-      <div class="chip-row" style="margin-bottom:10px;">
-        <button class="chip ${sv.xe===0?'on warm':''}" onclick="setSvcLevel('${s.id}','xe',0)">Không dùng</button>
-        ${[1,2,3].map(i=>`<button class="chip warm ${sv.xe===i?'on':''}" onclick="setSvcLevel('${s.id}','xe',${i})">${escapeHtml(settings.xeLbl[i-1]||'Mức '+i)} (${fmtMoney(settings.xeFee[i-1])})</button>`).join('')}
+      <div class="actions">
+        <button class="btn btn-sm btn-ghost" onclick="doWithdraw('${s.id}',false)">Khôi phục</button>
+        ${owing<=0? `<button class="btn btn-sm btn-danger" onclick="permanentDelete('${s.id}')">Xoá vĩnh viễn</button>` : ''}
       </div>
-      <div class="hint" style="margin:0 0 6px;">Đưa đón học thêm (theo tháng)</div>
-      <div class="chip-row">
-        <button class="chip ${sv.hocThem===0?'on warm':''}" onclick="setSvcLevel('${s.id}','hocThem',0)">Không dùng</button>
-        ${[1,2,3].map(i=>`<button class="chip warm ${sv.hocThem===i?'on':''}" onclick="setSvcLevel('${s.id}','hocThem',${i})">${escapeHtml(settings.htLbl[i-1]||'Mức '+i)} (${fmtMoney(settings.htFee[i-1])})</button>`).join('')}
-      </div>
-    </div>`;
-  }).join('');
-}
-async function persistService(sid){
-  const sv = services[sid];
-  try{ await apiPost('saveService', {studentId: sid, anTrua: sv.anTrua, xe: sv.xe, hocThem: sv.hocThem}); }
-  catch(e){ showToast('Lỗi lưu dịch vụ: '+e.message); }
-}
-async function toggleSvc(sid, key){
-  services[sid] = services[sid] || {anTrua:false, xe:0, hocThem:0};
-  services[sid][key] = !services[sid][key];
-  renderServices();
-  await persistService(sid);
-}
-async function setSvcLevel(sid, key, level){
-  services[sid] = services[sid] || {anTrua:false, xe:0, hocThem:0};
-  services[sid][key] = level;
-  renderServices();
-  await persistService(sid);
+    </div>`).join('');
 }
 
-/* ========================= TÍNH PHÍ ========================= */
-async function computeStudentFee(sid, ym){
-  const att = await getAttendance(ym);
-  const presentDays = Object.values(att[sid]||{}).filter(v=>v==='present').length;
-  const sv = services[sid] || {anTrua:false, xe:0, hocThem:0};
-  const anTruaFee = sv.anTrua ? presentDays*(settings.anTrua||0) : 0;
-  const xeFee = sv.xe>0 ? (settings.xeFee[sv.xe-1]||0) : 0;
-  const htFee = sv.hocThem>0 ? (settings.htFee[sv.hocThem-1]||0) : 0;
-  const total = anTruaFee+xeFee+htFee;
-  const pays = await getPayments(ym);
-  const paid = (pays[sid]||[]).reduce((a,p)=>a+Number(p.amount||0),0);
-  let status = 'none';
-  if(total>0){
-    if(paid<=0) status='unpaid'; else if(paid<total) status='partial'; else status='paid';
-  } else if(paid>0){ status='paid'; }
-  return {presentDays, anTruaFee, xeFee, htFee, total, paid, remaining: total-paid, status};
+/* ========================= SỔ NỢ LŨY KẾ ========================= */
+async function openLedgerModal(sid){
+  const s = students.find(x=>x.id===sid);
+  if(!s) return;
+  const bg = document.createElement('div');
+  bg.className='modal-bg';
+  bg.innerHTML = `<div class="modal"><button class="closebtn" onclick="this.closest('.modal-bg').remove()">✕</button>
+    <h3>Sổ nợ — ${escapeHtml(s.name)}</h3>
+    <div id="ledgerBody" class="loading-line">Đang tải…</div></div>`;
+  document.body.appendChild(bg);
+  try{
+    const ledger = await apiGet('getLedger', {studentId: sid});
+    const body = document.getElementById('ledgerBody');
+    if(!ledger || ledger.length===0){ body.innerHTML = `<div class="empty">Chưa có dữ liệu điểm danh/thu phí.</div>`; return; }
+    let totalOwing = 0;
+    const rows = ledger.map(m=>{
+      totalOwing += Math.max(0, m.remaining);
+      const st = m.total<=0 ? 'none' : (m.paid<=0?'unpaid':(m.paid<m.total?'partial':'paid'));
+      return `<tr><td>${monthLabel(m.month)}</td><td class="num">${fmtMoney(m.total)}</td><td class="num">${fmtMoney(m.paid)}</td><td class="num" style="color:${m.remaining>0?'var(--danger)':'inherit'}">${fmtMoney(m.remaining)}</td><td><span class="pill ${st}">${{paid:'Đã đóng đủ',partial:'Đóng thiếu',unpaid:'Chưa đóng',none:'—'}[st]}</span></td></tr>`;
+    }).join('');
+    body.innerHTML = `<div class="tbl-wrap"><table><thead><tr><th>Tháng</th><th>Tổng phí</th><th>Đã đóng</th><th>Còn nợ</th><th>TT</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="hint" style="font-weight:700;font-size:13px;margin-top:10px;">Tổng nợ hiện tại: ${fmtMoney(totalOwing)}</div>`;
+  }catch(e){ document.getElementById('ledgerBody').innerHTML = `<div class="empty">Lỗi tải sổ nợ: ${escapeHtml(e.message)}</div>`; }
 }
 
-/* ========================= HỌC PHÍ THÁNG ========================= */
-async function renderFees(){
+/* ========================= THU PHÍ: TỔNG HỢP ========================= */
+async function renderFeeSummary(){
   const monthEl = document.getElementById('feeMonth');
   if(!monthEl.value) monthEl.value = monthNow();
   const ym = monthEl.value;
   const tbl = document.getElementById('feeTable');
   tbl.innerHTML = `<tr><td class="empty">Đang tải…</td></tr>`;
-  if(students.length===0){ tbl.innerHTML = `<tr><td class="empty">Chưa có học sinh.</td></tr>`; return; }
-  let rows = []; let sumTotal=0, sumPaid=0;
-  for(const s of students){
+  const active = students.filter(s=>s.status!=='withdrawn');
+  if(active.length===0){ tbl.innerHTML = `<tr><td class="empty">Chưa có học sinh.</td></tr>`; return; }
+  let rows=[]; let sumTotal=0,sumPaid=0;
+  for(const s of active){
     const f = await computeStudentFee(s.id, ym);
-    sumTotal += f.total; sumPaid += f.paid;
-    rows.push(`
-      <tr>
-        <td>${escapeHtml(s.name)}<div style="color:var(--ink-soft);font-size:11.5px;">${escapeHtml(s.className||'')}</div></td>
-        <td class="num">${f.presentDays}</td>
-        <td class="num">${fmtMoney(f.anTruaFee)}</td>
-        <td class="num">${fmtMoney(f.xeFee)}</td>
-        <td class="num">${fmtMoney(f.htFee)}</td>
-        <td class="num money">${fmtMoney(f.total)}</td>
-        <td class="num">${fmtMoney(f.paid)}</td>
-        <td><span class="pill ${f.status}">${statusLabel(f.status)}</span></td>
-        <td><button class="btn btn-sm btn-ghost" onclick="exportReceipt('${s.id}','${ym}')">Xuất phiếu</button></td>
-      </tr>`);
+    sumTotal+=f.total; sumPaid+=f.paid;
+    rows.push(`<tr>
+      <td>${escapeHtml(s.name)}<div style="color:var(--ink-soft);font-size:11px;">${escapeHtml(s.className||'')} · ${escapeHtml(s.school||'')}</div></td>
+      <td class="num">${f.presentDays}</td>
+      <td class="num">${fmtMoney(f.anTruaFee)}</td>
+      <td class="num">${fmtMoney(f.xeFee)}</td>
+      <td class="num">${fmtMoney(f.htFee)}</td>
+      <td class="num money">${fmtMoney(f.total)}</td>
+      <td class="num">${fmtMoney(f.paid)}</td>
+      <td class="num">${fmtMoney(f.remaining)}</td>
+      <td>${f.lastDate||'—'}</td>
+      <td>${escapeHtml(f.lastNote||'')}</td>
+      <td><button class="btn btn-sm btn-primary" onclick="openPaymentModal('${s.id}','${ym}')">Nộp tiền</button></td>
+    </tr>`);
   }
-  tbl.innerHTML = `
-    <thead><tr>
-      <th>Học sinh</th><th>Ngày có mặt</th><th>Tiền ăn</th><th>Tiền xe</th><th>Học thêm</th><th>Tổng phí</th><th>Đã thu</th><th>Trạng thái</th><th></th>
-    </tr></thead>
-    <tbody>${rows.join('')}
-      <tr class="total-row"><td>Tổng cộng</td><td></td><td></td><td></td><td></td><td class="num">${fmtMoney(sumTotal)}</td><td class="num">${fmtMoney(sumPaid)}</td><td></td><td></td></tr>
-    </tbody>`;
+  tbl.innerHTML = `<thead><tr><th>Học sinh</th><th>Ngày ở bán trú</th><th>Tiền ăn</th><th>Tiền xe</th><th>Học thêm</th><th>Tổng phải đóng</th><th>Đã đóng</th><th>Chưa đóng</th><th>Ngày đóng</th><th>Ghi chú</th><th></th></tr></thead>
+    <tbody>${rows.join('')}<tr class="total-row"><td>Tổng cộng</td><td></td><td></td><td></td><td></td><td class="num">${fmtMoney(sumTotal)}</td><td class="num">${fmtMoney(sumPaid)}</td><td class="num">${fmtMoney(sumTotal-sumPaid)}</td><td></td><td></td><td></td></tr></tbody>`;
 }
-function statusLabel(st){ return {paid:'Đã đóng đủ', partial:'Đóng thiếu', unpaid:'Chưa đóng', none:'—'}[st]; }
 
-/* ========================= XUẤT PHIẾU (Word) ========================= */
-async function exportReceipt(sid, ym){
+function openPaymentModal(sid, ym){
   const s = students.find(x=>x.id===sid);
-  const f = await computeStudentFee(sid, ym);
-  const [y,m] = ym.split('-');
-  const html = `
-  <html><head><meta charset="utf-8"><style>
-    body{font-family:'Times New Roman',serif;font-size:14px;color:#111;padding:24px;}
-    h2{text-align:center;margin-bottom:2px;}
-    .sub{text-align:center;margin-bottom:20px;color:#333;}
-    table{width:100%;border-collapse:collapse;margin-top:14px;}
-    td,th{border:1px solid #999;padding:7px 10px;font-size:13.5px;}
-    th{background:#f0f0f0;text-align:left;}
-    .num{text-align:right;}
-    .tot{font-weight:bold;background:#fafafa;}
-    .info p{margin:3px 0;}
-    .sign{margin-top:40px;display:flex;justify-content:space-between;text-align:center;}
-    .sign div{width:45%;}
-  </style></head><body>
-    <h2>PHIẾU THU HỌC PHÍ BÁN TRÚ</h2>
-    <div class="sub">Tháng ${m}/${y}</div>
-    <div class="info">
-      <p><b>Học sinh:</b> ${escapeHtml(s.name)}</p>
-      <p><b>Lớp:</b> ${escapeHtml(s.className||'—')} &nbsp;&nbsp; <b>Trường:</b> ${escapeHtml(s.school||'—')}</p>
-      <p><b>Phụ huynh:</b> ${escapeHtml(s.parentName||'—')} &nbsp;&nbsp; <b>SĐT/Zalo:</b> ${escapeHtml(s.parentPhone||'—')}</p>
+  const bg = document.createElement('div');
+  bg.className='modal-bg';
+  bg.innerHTML = `<div class="modal"><button class="closebtn" onclick="this.closest('.modal-bg').remove()">✕</button>
+    <h3>Nộp tiền — ${escapeHtml(s.name)} — ${monthLabel(ym)}</h3>
+    <div id="payInfo" class="loading-line">Đang tải…</div>
+    <div class="field"><label>Ngày thu</label><input type="date" id="payDate" value="${todayISO()}"></div>
+    <div class="field"><label>Ghi chú (không bắt buộc)</label><input type="text" id="payNote" placeholder="VD: đóng tiền mặt"></div>
+    <button class="btn btn-primary" id="payFullBtn" style="width:100%;justify-content:center;">Xác nhận đã đóng đủ</button>
+    <div style="text-align:center;margin-top:10px;"><a href="javascript:void(0)" onclick="toggleCustomAmount()" style="font-size:12.5px;color:var(--accent-dark);">Nhập số tiền khác</a></div>
+    <div class="field" id="customAmountWrap" style="display:none;margin-top:10px;">
+      <label>Số tiền thu (đ)</label><input type="number" id="payCustomAmount">
+      <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:8px;" onclick="submitPayment('${sid}','${ym}',false)">Ghi nhận số tiền này</button>
     </div>
-    <table>
-      <tr><th>Khoản mục</th><th>Chi tiết</th><th>Số tiền</th></tr>
-      <tr><td>Tiền ăn trưa + nghỉ trưa</td><td>${f.presentDays} ngày x ${fmtMoney(settings.anTrua)}</td><td class="num">${fmtMoney(f.anTruaFee)}</td></tr>
-      <tr><td>Tiền xe đưa rước</td><td>Trọn tháng</td><td class="num">${fmtMoney(f.xeFee)}</td></tr>
-      <tr><td>Tiền đưa đón học thêm</td><td>Trọn tháng</td><td class="num">${fmtMoney(f.htFee)}</td></tr>
-      <tr class="tot"><td colspan="2">Tổng phí tháng</td><td class="num">${fmtMoney(f.total)}</td></tr>
-      <tr><td colspan="2">Đã thu</td><td class="num">${fmtMoney(f.paid)}</td></tr>
-      <tr class="tot"><td colspan="2">Còn lại</td><td class="num">${fmtMoney(f.remaining)}</td></tr>
-    </table>
-    <div class="sign">
-      <div>Phụ huynh<br><br><br>____________________</div>
-      <div>Người thu<br><br><br>____________________</div>
-    </div>
-  </body></html>`;
-  const blob = new Blob(['\ufeff', html], {type:'application/msword'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `PhieuThu_${s.name.replace(/\s+/g,'_')}_${ym}.doc`;
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
-  showToast('Đã tạo phiếu thu — gửi file qua Zalo');
+  </div>`;
+  document.body.appendChild(bg);
+  computeStudentFee(sid, ym).then(f=>{
+    document.getElementById('payInfo').innerHTML = `<div class="hint" style="font-size:13.5px;">Tổng phí: <b>${fmtMoney(f.total)}</b> · Đã đóng: <b>${fmtMoney(f.paid)}</b> · <span style="color:var(--danger);font-weight:700;">Còn lại: ${fmtMoney(f.remaining)}</span></div>`;
+    document.getElementById('payFullBtn').onclick = ()=>submitPayment(sid, ym, true, f.remaining);
+  });
 }
-
-/* ========================= THU PHÍ ========================= */
-function renderCollectTab(){
-  const sel = document.getElementById('colStudent');
-  sel.innerHTML = students.map(s=>`<option value="${s.id}">${escapeHtml(s.name)} (${escapeHtml(s.className||'')})</option>`).join('') || `<option value="">Chưa có học sinh</option>`;
-  if(!document.getElementById('colMonth').value) document.getElementById('colMonth').value = monthNow();
-  if(!document.getElementById('colDate').value) document.getElementById('colDate').value = todayISO();
-  renderPaymentHistory();
+function toggleCustomAmount(){
+  const w = document.getElementById('customAmountWrap');
+  w.style.display = w.style.display==='none' ? 'block' : 'none';
 }
-async function getPayments(ym){
-  if(paymentsCache[ym]) return paymentsCache[ym];
+async function submitPayment(sid, ym, isFull, fullAmount){
+  const date = document.getElementById('payDate').value || todayISO();
+  const note = document.getElementById('payNote').value.trim();
+  const amount = isFull ? fullAmount : Number(document.getElementById('payCustomAmount').value);
+  if(!amount || amount<=0){ showToast('Số tiền không hợp lệ'); return; }
   try{
-    paymentsCache[ym] = await apiGet('getPayments', {month: ym});
-  }catch(e){ showToast('Lỗi tải thu phí: '+e.message); paymentsCache[ym] = {}; }
-  return paymentsCache[ym];
-}
-async function submitPayment(){
-  const sid = document.getElementById('colStudent').value;
-  const ym = document.getElementById('colMonth').value;
-  const amount = Number(document.getElementById('colAmount').value);
-  const date = document.getElementById('colDate').value;
-  if(!sid){ showToast('Chưa có học sinh'); return; }
-  if(!ym){ showToast('Chọn tháng thu phí'); return; }
-  if(!amount || amount<=0){ showToast('Nhập số tiền hợp lệ'); return; }
-  const btn = document.getElementById('colSubmitBtn'); btn.disabled=true; btn.textContent='Đang lưu…';
-  try{
-    await apiPost('addPayment', {studentId: sid, month: ym, amount: amount, date: date||todayISO()});
+    await apiPost('addPayment', {studentId: sid, month: ym, amount, date, note});
     delete paymentsCache[ym];
-    document.getElementById('colAmount').value='';
-    const f = await computeStudentFee(sid, ym);
-    document.getElementById('colHint').textContent = `Đã thu ${fmtMoney(f.paid)} / tổng phí ${fmtMoney(f.total)} — còn lại ${fmtMoney(f.remaining)}.`;
+    document.querySelector('.modal-bg').remove();
     showToast('Đã ghi nhận thu phí');
-    renderPaymentHistory();
+    showFeeSub(curFeeSub);
   }catch(e){ showToast('Lỗi lưu thu phí: '+e.message); }
-  finally{ btn.disabled=false; btn.textContent='Ghi nhận đã thu'; }
 }
-async function renderPaymentHistory(){
-  const ym = document.getElementById('colMonth').value || monthNow();
-  const wrap = document.getElementById('paymentHistory');
-  wrap.innerHTML = `<div class="loading-line">Đang tải…</div>`;
-  const pays = await getPayments(ym);
-  let rows = [];
-  for(const sid in pays){
-    const s = students.find(x=>x.id===sid);
-    if(!s) continue;
-    (pays[sid]||[]).forEach(p=>rows.push({name:s.name, className:s.className, amount:p.amount, date:p.date}));
-  }
-  rows.sort((a,b)=> (b.date||'').localeCompare(a.date||''));
-  if(rows.length===0){ wrap.innerHTML = `<div class="empty" style="padding:16px;">Chưa có khoản thu nào trong tháng ${ym}.</div>`; return; }
-  wrap.innerHTML = rows.map(r=>`
-    <div class="att-row">
-      <div class="nm">${escapeHtml(r.name)} <span style="color:var(--ink-soft);font-weight:400;">(${escapeHtml(r.className||'')})</span></div>
-      <div style="color:var(--ink-soft);font-size:12.5px;margin-right:8px;">${r.date}</div>
-      <div class="money">${fmtMoney(r.amount)}</div>
-    </div>`).join('');
-}
-document.addEventListener('change', e=>{ if(e.target.id==='colMonth') renderPaymentHistory(); });
 
-/* ========================= KIỂM TRA THU PHÍ ========================= */
-function setCheckFilter(f){ checkFilter=f; renderCheck(); }
-async function renderCheck(){
-  const monthEl = document.getElementById('checkMonth');
-  if(!monthEl.value) monthEl.value = monthNow();
-  const ym = monthEl.value;
-  ['fltAll','fltUnpaid','fltPartial','fltPaid'].forEach(id=>document.getElementById(id).classList.remove('btn-primary'));
-  const map = {all:'fltAll',unpaid:'fltUnpaid',partial:'fltPartial',paid:'fltPaid'};
-  document.getElementById(map[checkFilter]).classList.add('btn-primary');
-
-  const list = document.getElementById('checkList');
+/* ========================= THU PHÍ: ĐÃ ĐÓNG / CHƯA ĐÓNG ========================= */
+async function renderFeePaid(){
+  const ym = document.getElementById('feeMonth').value || monthNow();
+  const list = document.getElementById('paidList');
   list.innerHTML = `<div class="loading-line">Đang tải…</div>`;
-  if(students.length===0){ list.innerHTML = `<div class="empty">Chưa có học sinh.</div>`; return; }
-  let items = [];
-  for(const s of students){
-    const f = await computeStudentFee(s.id, ym);
-    if(checkFilter!=='all' && f.status!==checkFilter) continue;
-    items.push({s,f});
-  }
-  if(items.length===0){ list.innerHTML = `<div class="empty">Không có học sinh nào phù hợp bộ lọc.</div>`; return; }
+  const active = students.filter(s=>s.status!=='withdrawn');
+  const items = [];
+  for(const s of active){ const f = await computeStudentFee(s.id, ym); if(f.status==='paid' && f.total>0) items.push({s,f}); }
+  if(items.length===0){ list.innerHTML = `<div class="empty">Chưa có học sinh nào đóng đủ trong ${monthLabel(ym)}.</div>`; return; }
   list.innerHTML = items.map(({s,f})=>`
-    <div class="stu-card">
-      <div class="bar ${f.status}"></div>
+    <div class="stu-card"><div class="bar paid"></div>
       <div class="avatar">${initials(s.name)}</div>
       <div class="info">
-        <div class="name">${escapeHtml(s.name)} <span class="pill ${f.status}">${statusLabel(f.status)}</span></div>
-        <div class="meta">Tổng phí ${fmtMoney(f.total)} · Đã thu ${fmtMoney(f.paid)} · Còn lại ${fmtMoney(f.remaining)}</div>
-        <div class="meta">📱 ${escapeHtml(s.parentPhone||'—')}</div>
+        <div class="name">${escapeHtml(s.name)} <span class="pill paid">Đã đóng đủ</span></div>
+        <div class="meta">Số tiền: ${fmtMoney(f.paid)} · Ngày đóng: ${f.lastDate||'—'}${f.lastNote?(' · '+escapeHtml(f.lastNote)):''}</div>
       </div>
+      <div class="actions"><button class="iconbtn" onclick='zaloNotify(${JSON.stringify(s.parentPhone)}, ${JSON.stringify('Xác nhận: học sinh '+s.name+' (lớp '+(s.className||'')+') đã đóng đủ học phí bán trú '+monthLabel(ym).toLowerCase()+'.\\nGồm: ăn trưa '+fmtMoney(f.anTruaFee)+', xe '+fmtMoney(f.xeFee)+', học thêm '+fmtMoney(f.htFee)+'.\\nTổng: '+fmtMoney(f.total)+'.\\nCảm ơn phụ huynh!')})" title="Nhắn Zalo">💬</button></div>
     </div>`).join('');
+}
+async function renderFeeUnpaid(){
+  const ym = document.getElementById('feeMonth').value || monthNow();
+  const list = document.getElementById('unpaidList');
+  list.innerHTML = `<div class="loading-line">Đang tải…</div>`;
+  const active = students.filter(s=>s.status!=='withdrawn');
+  const items = [];
+  for(const s of active){ const f = await computeStudentFee(s.id, ym); if((f.status==='unpaid'||f.status==='partial') && f.total>0) items.push({s,f}); }
+  if(items.length===0){ list.innerHTML = `<div class="empty">🎉 Không còn học sinh nào chưa đóng trong ${monthLabel(ym)}.</div>`; return; }
+  list.innerHTML = items.map(({s,f})=>{
+    const sv = svcOf(s.id);
+    const detail = sv.anTruaMode==='day' ? `(có mặt ${f.presentDays} ngày trong tháng)` : '';
+    const msg = 'Thông báo: học sinh '+s.name+' (lớp '+(s.className||'')+') còn phải đóng học phí bán trú '+monthLabel(ym).toLowerCase()+'.\\nSố tiền còn thiếu: '+fmtMoney(f.remaining)+'.\\nGồm: ăn trưa '+fmtMoney(f.anTruaFee)+' '+detail+', xe '+fmtMoney(f.xeFee)+', học thêm '+fmtMoney(f.htFee)+'.\\nMong phụ huynh sắp xếp đóng giúp. Cảm ơn!';
+    return `<div class="stu-card"><div class="bar ${f.status}"></div>
+      <div class="avatar">${initials(s.name)}</div>
+      <div class="info">
+        <div class="name">${escapeHtml(s.name)} <span class="pill ${f.status}">${f.status==='partial'?'Đóng thiếu':'Chưa đóng'}</span></div>
+        <div class="meta">Còn thiếu: ${fmtMoney(f.remaining)} ${detail?('· '+detail):''}</div>
+      </div>
+      <div class="actions"><button class="iconbtn" onclick='zaloNotify(${JSON.stringify(s.parentPhone)}, ${JSON.stringify(msg)})' title="Nhắn Zalo">💬</button></div>
+    </div>`;
+  }).join('');
 }
 
 /* ========================= CÀI ĐẶT ========================= */
 function fillSettingsForm(){
-  document.getElementById('setAnTrua').value = settings.anTrua||'';
-  document.getElementById('xeLbl1').value = settings.xeLbl[0]||''; document.getElementById('xeFee1').value = settings.xeFee[0]||'';
-  document.getElementById('xeLbl2').value = settings.xeLbl[1]||''; document.getElementById('xeFee2').value = settings.xeFee[1]||'';
-  document.getElementById('xeLbl3').value = settings.xeLbl[2]||''; document.getElementById('xeFee3').value = settings.xeFee[2]||'';
-  document.getElementById('htLbl1').value = settings.htLbl[0]||''; document.getElementById('htFee1').value = settings.htFee[0]||'';
-  document.getElementById('htLbl2').value = settings.htLbl[1]||''; document.getElementById('htFee2').value = settings.htFee[1]||'';
-  document.getElementById('htLbl3').value = settings.htLbl[2]||''; document.getElementById('htFee3').value = settings.htFee[2]||'';
+  document.getElementById('setAnTruaDay').value = settings.anTruaDay||'';
+  document.getElementById('anTruaMLbl1').value=settings.anTruaMLbl[0]||''; document.getElementById('anTruaMFee1').value=settings.anTruaMFee[0]||'';
+  document.getElementById('anTruaMLbl2').value=settings.anTruaMLbl[1]||''; document.getElementById('anTruaMFee2').value=settings.anTruaMFee[1]||'';
+  document.getElementById('anTruaMLbl3').value=settings.anTruaMLbl[2]||''; document.getElementById('anTruaMFee3').value=settings.anTruaMFee[2]||'';
+  document.getElementById('xeLbl1').value=settings.xeLbl[0]||''; document.getElementById('xeFee1').value=settings.xeFee[0]||'';
+  document.getElementById('xeLbl2').value=settings.xeLbl[1]||''; document.getElementById('xeFee2').value=settings.xeFee[1]||'';
+  document.getElementById('htLbl1').value=settings.htLbl[0]||''; document.getElementById('htFee1').value=settings.htFee[0]||'';
+  document.getElementById('htLbl2').value=settings.htLbl[1]||''; document.getElementById('htFee2').value=settings.htFee[1]||'';
+  document.getElementById('htLbl3').value=settings.htLbl[2]||''; document.getElementById('htFee3').value=settings.htFee[2]||'';
   document.getElementById('curApiUrl').value = API_URL;
 }
-async function saveSettings(){
-  const newSettings = {
-    anTrua: Number(document.getElementById('setAnTrua').value)||0,
-    xeLbl: [document.getElementById('xeLbl1').value.trim()||'Mức 1', document.getElementById('xeLbl2').value.trim()||'Mức 2', document.getElementById('xeLbl3').value.trim()||'Mức 3'],
-    xeFee: [Number(document.getElementById('xeFee1').value)||0, Number(document.getElementById('xeFee2').value)||0, Number(document.getElementById('xeFee3').value)||0],
+function collectSettingsPayload(){
+  return {
+    anTruaDay: Number(document.getElementById('setAnTruaDay').value)||0,
+    anTruaMLbl: [document.getElementById('anTruaMLbl1').value.trim()||'Mức 1', document.getElementById('anTruaMLbl2').value.trim()||'Mức 2', document.getElementById('anTruaMLbl3').value.trim()||'Mức 3'],
+    anTruaMFee: [Number(document.getElementById('anTruaMFee1').value)||0, Number(document.getElementById('anTruaMFee2').value)||0, Number(document.getElementById('anTruaMFee3').value)||0],
+    xeLbl: [document.getElementById('xeLbl1').value.trim()||'Mức 1', document.getElementById('xeLbl2').value.trim()||'Mức 2'],
+    xeFee: [Number(document.getElementById('xeFee1').value)||0, Number(document.getElementById('xeFee2').value)||0],
     htLbl: [document.getElementById('htLbl1').value.trim()||'Mức 1', document.getElementById('htLbl2').value.trim()||'Mức 2', document.getElementById('htLbl3').value.trim()||'Mức 3'],
     htFee: [Number(document.getElementById('htFee1').value)||0, Number(document.getElementById('htFee2').value)||0, Number(document.getElementById('htFee3').value)||0],
   };
+}
+async function saveSettings(){
+  const newSettings = collectSettingsPayload();
+  try{ await apiPost('saveSettings', newSettings); settings = newSettings; showToast('Đã lưu cài đặt mức phí'); }
+  catch(e){ showToast('Lỗi lưu cài đặt: '+e.message); }
+}
+async function changePin(){
+  const p1 = document.getElementById('newPin1').value.trim();
+  const p2 = document.getElementById('newPin2').value.trim();
+  if(p1!==p2){ showToast('PIN nhập lại không khớp'); return; }
+  const payload = Object.assign(collectSettingsPayload(), {newPin: p1});
   try{
-    await apiPost('saveSettings', newSettings);
-    settings = newSettings;
-    showToast('Đã lưu cài đặt mức phí');
-  }catch(e){ showToast('Lỗi lưu cài đặt: '+e.message); }
+    await apiPost('saveSettings', payload);
+    sessionPin = p1;
+    document.getElementById('newPin1').value=''; document.getElementById('newPin2').value='';
+    showToast(p1? 'Đã đặt mã PIN mới' : 'Đã tắt khoá PIN');
+  }catch(e){ showToast('Lỗi đổi PIN: '+e.message); }
+}
+
+/* ========================= TÀI CHÍNH: CHI ========================= */
+async function getExpenses(ym){
+  if(expensesCache[ym]) return expensesCache[ym];
+  try{ expensesCache[ym] = await apiGet('getExpenses', {month: ym}); }
+  catch(e){ showToast('Lỗi tải khoản chi: '+e.message); expensesCache[ym]=[]; }
+  return expensesCache[ym];
+}
+async function renderExpenses(){
+  const monthEl = document.getElementById('expMonth');
+  if(!monthEl.value) monthEl.value = monthNow();
+  const ym = monthEl.value;
+  const list = document.getElementById('expenseList');
+  list.innerHTML = `<div class="loading-line">Đang tải…</div>`;
+  const items = await getExpenses(ym);
+  if(items.length===0){ list.innerHTML = `<div class="empty">Chưa có khoản chi nào trong ${monthLabel(ym)}.</div>`; return; }
+  let total=0;
+  const rows = items.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(e=>{
+    total += Number(e.amount||0);
+    return `<div class="att-row">
+      <div class="nm">${escapeHtml(e.category)} <span style="color:var(--ink-soft);font-weight:400;">${e.date||''}${e.note?(' · '+escapeHtml(e.note)):''}</span></div>
+      <div class="money">${fmtMoney(e.amount)}</div>
+      <button class="iconbtn" onclick="openExpenseModal('${e.id}')" title="Sửa">✎</button>
+      <button class="iconbtn" onclick="deleteExpense('${e.id}')" title="Xoá">🗑</button>
+    </div>`;
+  }).join('');
+  list.innerHTML = rows + `<div class="hint" style="font-weight:700;font-size:13.5px;margin-top:10px;">Tổng chi ${monthLabel(ym)}: ${fmtMoney(total)}</div>`;
+}
+function openExpenseModal(id){
+  const ym = document.getElementById('expMonth').value || monthNow();
+  const e = id ? (expensesCache[ym]||[]).find(x=>x.id===id) : null;
+  const bg = document.createElement('div'); bg.className='modal-bg';
+  bg.innerHTML = `<div class="modal"><button class="closebtn" onclick="this.closest('.modal-bg').remove()">✕</button>
+    <h3>${e?'Sửa khoản chi':'Thêm khoản chi'}</h3>
+    <div class="field"><label>Mục chi</label><select id="expCategory">${EXPENSE_CATEGORIES.map(c=>`<option value="${c}" ${e&&e.category===c?'selected':''}>${c}</option>`).join('')}</select></div>
+    <div class="row g2">
+      <div class="field"><label>Số tiền (đ)</label><input type="number" id="expAmount" value="${e?e.amount:''}"></div>
+      <div class="field"><label>Ngày chi</label><input type="date" id="expDate" value="${e?e.date:todayISO()}"></div>
+    </div>
+    <div class="field"><label>Ghi chú</label><input type="text" id="expNote" value="${e?escapeHtml(e.note||''):''}"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="saveExpense('${id||''}')">Lưu</button>
+  </div>`;
+  document.body.appendChild(bg);
+}
+async function saveExpense(id){
+  const category = document.getElementById('expCategory').value;
+  const amount = Number(document.getElementById('expAmount').value);
+  const date = document.getElementById('expDate').value;
+  const note = document.getElementById('expNote').value.trim();
+  if(!amount || amount<=0){ showToast('Số tiền không hợp lệ'); return; }
+  if(!date){ showToast('Chọn ngày chi'); return; }
+  try{
+    if(id) await apiPost('updateExpense', {id, category, amount, date, note});
+    else await apiPost('addExpense', {category, amount, date, note});
+    expensesCache = {};
+    document.querySelector('.modal-bg').remove();
+    showToast('Đã lưu khoản chi');
+    renderExpenses();
+  }catch(e){ showToast('Lỗi lưu: '+e.message); }
+}
+async function deleteExpense(id){
+  if(!confirm('Xoá khoản chi này?')) return;
+  try{ await apiPost('deleteExpense', {id}); expensesCache={}; renderExpenses(); showToast('Đã xoá'); }
+  catch(e){ showToast('Lỗi xoá: '+e.message); }
+}
+
+/* ========================= TÀI CHÍNH: THU (tự động) ========================= */
+async function renderIncome(){
+  const monthEl = document.getElementById('incMonth');
+  if(!monthEl.value) monthEl.value = monthNow();
+  const ym = monthEl.value;
+  const body = document.getElementById('incomeBody');
+  body.innerHTML = `<div class="loading-line">Đang tổng hợp…</div>`;
+  const active = students.filter(s=>s.status!=='withdrawn');
+  let anTrua=0, xe=0, ht=0, paid=0, total=0;
+  for(const s of active){
+    const f = await computeStudentFee(s.id, ym);
+    anTrua+=f.anTruaFee; xe+=f.xeFee; ht+=f.htFee; paid+=f.paid; total+=f.total;
+  }
+  body.innerHTML = `<table>
+    <tr><td>Tiền ăn trưa + nghỉ trưa (phải thu)</td><td class="num money">${fmtMoney(anTrua)}</td></tr>
+    <tr><td>Tiền xe đưa đón (phải thu)</td><td class="num money">${fmtMoney(xe)}</td></tr>
+    <tr><td>Tiền đưa đón học thêm (phải thu)</td><td class="num money">${fmtMoney(ht)}</td></tr>
+    <tr class="total-row"><td>Tổng phải thu</td><td class="num">${fmtMoney(total)}</td></tr>
+    <tr><td>Đã thu thực tế (từ Thu phí)</td><td class="num" style="color:var(--success);font-weight:700;">${fmtMoney(paid)}</td></tr>
+    <tr><td>Còn phải thu</td><td class="num" style="color:var(--danger);font-weight:700;">${fmtMoney(total-paid)}</td></tr>
+  </table>
+  <div class="hint">Số "đã thu" là tổng gộp mỗi lần đóng tiền (không tách theo từng mục), vì mỗi phiếu thu ghi 1 khoản chung cho học sinh.</div>`;
+}
+
+/* ========================= TÀI CHÍNH: NỢ ========================= */
+async function getDebts(){
+  if(debtsCache) return debtsCache;
+  try{ debtsCache = await apiGet('getDebts'); }catch(e){ showToast('Lỗi tải nợ: '+e.message); debtsCache=[]; }
+  return debtsCache;
+}
+async function renderDebtTab(){
+  const ym = monthNow();
+  const active = students.filter(s=>s.status!=='withdrawn');
+  let count=0, amount=0;
+  for(const s of active){ const f = await computeStudentFee(s.id, ym); if((f.status==='unpaid'||f.status==='partial') && f.total>0){ count++; amount+=f.remaining; } }
+  document.getElementById('debtStuCount').textContent = count;
+  document.getElementById('debtStuAmount').textContent = fmtMoney(amount);
+
+  const list = document.getElementById('debtList');
+  list.innerHTML = `<div class="loading-line">Đang tải…</div>`;
+  const debts = await getDebts();
+  if(debts.length===0){ list.innerHTML = `<div class="empty">Chưa có khoản nợ mua hàng nào.</div>`; return; }
+  const sorted = debts.slice().sort((a,b)=>{ const pa=a.paid?1:0, pb=b.paid?1:0; if(pa!==pb) return pa-pb; return (b.date||'').localeCompare(a.date||''); });
+  let totalUnpaid = 0;
+  list.innerHTML = sorted.map(d=>{
+    const isPaid = !!d.paid;
+    if(!isPaid) totalUnpaid += Number(d.amount||0);
+    return `<div class="stu-card"><div class="bar ${isPaid?'paid':'unpaid'}"></div>
+      <div class="info">
+        <div class="name">${fmtMoney(d.amount)} ${isPaid?'<span class="pill paid">Đã trả</span>':'<span class="pill unpaid">Chưa trả</span>'}</div>
+        <div class="meta">Ngày: ${d.date||'—'}${d.note?(' · '+escapeHtml(d.note)):''}</div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-sm btn-ghost" onclick="toggleDebtPaid('${d.id}',${!isPaid})">${isPaid?'Bỏ đánh dấu':'Đánh dấu đã trả'}</button>
+        <button class="iconbtn" onclick="openDebtModal('${d.id}')" title="Sửa">✎</button>
+        <button class="iconbtn" onclick="deleteDebt('${d.id}')" title="Xoá">🗑</button>
+      </div>
+    </div>`;
+  }).join('') + `<div class="hint" style="font-weight:700;font-size:13.5px;">Tổng nợ chưa trả: ${fmtMoney(totalUnpaid)}</div>`;
+}
+function openDebtModal(id){
+  const d = id ? (debtsCache||[]).find(x=>x.id===id) : null;
+  const bg = document.createElement('div'); bg.className='modal-bg';
+  bg.innerHTML = `<div class="modal"><button class="closebtn" onclick="this.closest('.modal-bg').remove()">✕</button>
+    <h3>${d?'Sửa khoản nợ':'Thêm khoản nợ mua hàng'}</h3>
+    <div class="row g2">
+      <div class="field"><label>Số tiền (đ)</label><input type="number" id="debtAmount" value="${d?d.amount:''}"></div>
+      <div class="field"><label>Ngày</label><input type="date" id="debtDate" value="${d?d.date:todayISO()}"></div>
+    </div>
+    <div class="field"><label>Ghi chú</label><input type="text" id="debtNote" value="${d?escapeHtml(d.note||''):''}" placeholder="VD: nợ tiền rau, thịt tháng này"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="saveDebt('${id||''}')">Lưu</button>
+  </div>`;
+  document.body.appendChild(bg);
+}
+async function saveDebt(id){
+  const amount = Number(document.getElementById('debtAmount').value);
+  const date = document.getElementById('debtDate').value;
+  const note = document.getElementById('debtNote').value.trim();
+  if(!amount || amount<=0){ showToast('Số tiền không hợp lệ'); return; }
+  try{
+    if(id) await apiPost('updateDebt', {id, amount, date, note});
+    else await apiPost('addDebt', {amount, date, note});
+    debtsCache = null;
+    document.querySelector('.modal-bg').remove();
+    showToast('Đã lưu khoản nợ');
+    renderDebtTab();
+  }catch(e){ showToast('Lỗi lưu: '+e.message); }
+}
+async function toggleDebtPaid(id, paid){
+  try{ await apiPost('markDebtPaid', {id, paid, paidDate: paid?todayISO():''}); debtsCache=null; renderDebtTab(); showToast(paid?'Đã đánh dấu đã trả':'Đã bỏ đánh dấu'); }
+  catch(e){ showToast('Lỗi: '+e.message); }
+}
+async function deleteDebt(id){
+  if(!confirm('Xoá khoản nợ này?')) return;
+  try{ await apiPost('deleteDebt', {id}); debtsCache=null; renderDebtTab(); showToast('Đã xoá'); }
+  catch(e){ showToast('Lỗi xoá: '+e.message); }
+}
+
+/* ========================= TÀI CHÍNH: TỔNG HỢP ========================= */
+async function renderFinanceSummary(){
+  const monthEl = document.getElementById('sumMonth');
+  if(!monthEl.value) monthEl.value = monthNow();
+  const ym = monthEl.value;
+  const body = document.getElementById('summaryBody');
+  body.innerHTML = `<div class="loading-line">Đang tính toán…</div>`;
+  const active = students.filter(s=>s.status!=='withdrawn');
+  let totalThu=0;
+  for(const s of active){ const f = await computeStudentFee(s.id, ym); totalThu += f.paid; }
+  const exp = await getExpenses(ym);
+  const byCat = {}; EXPENSE_CATEGORIES.forEach(c=>byCat[c]=0);
+  exp.forEach(e=>{ byCat[e.category] = (byCat[e.category]||0) + Number(e.amount||0); });
+  const totalChi = Object.values(byCat).reduce((a,b)=>a+b,0);
+  const laiLo = totalThu - totalChi;
+
+  let owingStu=0;
+  for(const s of active){ const f = await computeStudentFee(s.id, ym); if((f.status==='unpaid'||f.status==='partial')) owingStu += f.remaining; }
+  const debts = await getDebts();
+  const owingDebt = debts.filter(d=>!d.paid).reduce((a,d)=>a+Number(d.amount||0),0);
+
+  body.innerHTML = `<table>
+    <tr class="total-row"><td>Tổng thu (đã thu từ học sinh)</td><td class="num">${fmtMoney(totalThu)}</td></tr>
+    ${EXPENSE_CATEGORIES.map(c=>`<tr><td style="padding-left:20px;color:var(--ink-soft);">— Chi: ${c}</td><td class="num">${fmtMoney(byCat[c])}</td></tr>`).join('')}
+    <tr class="total-row"><td>Tổng chi</td><td class="num">${fmtMoney(totalChi)}</td></tr>
+    <tr class="total-row"><td>Lãi / Lỗ trong tháng</td><td class="num" style="color:${laiLo>=0?'var(--success)':'var(--danger)'};font-size:14px;">${fmtMoney(laiLo)}</td></tr>
+    <tr><td>Nợ phải thu hiện tại (học sinh, tháng này)</td><td class="num" style="color:var(--warm);">${fmtMoney(owingStu)}</td></tr>
+    <tr><td>Nợ phải trả hiện tại (mua hàng, tất cả)</td><td class="num" style="color:var(--danger);">${fmtMoney(owingDebt)}</td></tr>
+  </table>`;
+}
+
+/* ========================= XUẤT EXCEL ========================= */
+function downloadWorkbook(sheets, filename){
+  const wb = XLSX.utils.book_new();
+  sheets.forEach(sh=>{ const ws = XLSX.utils.aoa_to_sheet(sh.rows); XLSX.utils.book_append_sheet(wb, ws, sh.name); });
+  XLSX.writeFile(wb, filename);
+}
+function exportStudentsExcel(){
+  const active = students.filter(s=>s.status!=='withdrawn');
+  const rows = [['Tên học sinh','Lớp','Trường','Tên phụ huynh','SĐT/Zalo','Dịch vụ sử dụng']];
+  active.forEach(s=>rows.push([s.name, s.className||'', s.school||'', s.parentName||'', s.parentPhone||'', serviceDesc(s.id)]));
+  downloadWorkbook([{name:'DanhSachHocSinh', rows}], 'DanhSachHocSinh.xlsx');
+  showToast('Đã xuất file Excel');
+}
+async function exportAttendanceDayExcel(){
+  const date = document.getElementById('attDate').value;
+  const ym = date.slice(0,7); const day = date.slice(8,10);
+  const att = await getAttendance(ym);
+  const active = students.filter(s=>s.status!=='withdrawn');
+  const rows = [['Tên học sinh','Lớp','Trạng thái']];
+  active.forEach(s=>rows.push([s.name, s.className||'', ((att[s.id]||{})[day]==='present')?'Có mặt':(((att[s.id]||{})[day]==='absent')?'Vắng':'Chưa điểm danh')]));
+  downloadWorkbook([{name:'DiemDanh_'+date, rows}], 'DiemDanh_'+date+'.xlsx');
+  showToast('Đã xuất file Excel');
+}
+async function exportAttendanceMonthExcel(){
+  const date = document.getElementById('attDate').value;
+  const ym = date.slice(0,7);
+  const att = await getAttendance(ym);
+  const active = students.filter(s=>s.status!=='withdrawn');
+  const rows = [['Tên học sinh','Lớp','Số ngày có mặt','Số ngày vắng']];
+  active.forEach(s=>{
+    const vals = Object.values(att[s.id]||{});
+    rows.push([s.name, s.className||'', vals.filter(v=>v==='present').length, vals.filter(v=>v==='absent').length]);
+  });
+  downloadWorkbook([{name:'DiemDanhThang_'+ym, rows}], 'DiemDanh_'+ym+'.xlsx');
+  showToast('Đã xuất file Excel');
+}
+async function exportFeeSummaryExcel(){
+  const ym = document.getElementById('feeMonth').value || monthNow();
+  const active = students.filter(s=>s.status!=='withdrawn');
+  const rows = [['Tên học sinh','Lớp','Trường','Ngày ở bán trú','Tiền ăn','Tiền xe','Tiền học thêm','Tổng phải đóng','Đã đóng','Chưa đóng','Ngày đóng','Ghi chú']];
+  for(const s of active){ const f = await computeStudentFee(s.id, ym); rows.push([s.name, s.className||'', s.school||'', f.presentDays, f.anTruaFee, f.xeFee, f.htFee, f.total, f.paid, f.remaining, f.lastDate||'', f.lastNote||'']); }
+  downloadWorkbook([{name:'HocPhi_'+ym, rows}], 'HocPhi_'+ym+'.xlsx');
+  showToast('Đã xuất file Excel');
+}
+async function exportPaidExcel(){
+  const ym = document.getElementById('feeMonth').value || monthNow();
+  const active = students.filter(s=>s.status!=='withdrawn');
+  const rows = [['Tên học sinh','Lớp','Số tiền đã đóng','Ngày đóng','Ghi chú']];
+  for(const s of active){ const f = await computeStudentFee(s.id, ym); if(f.status==='paid' && f.total>0) rows.push([s.name, s.className||'', f.paid, f.lastDate||'', f.lastNote||'']); }
+  downloadWorkbook([{name:'DaDong_'+ym, rows}], 'DaDongTien_'+ym+'.xlsx');
+  showToast('Đã xuất file Excel');
+}
+async function exportUnpaidExcel(){
+  const ym = document.getElementById('feeMonth').value || monthNow();
+  const active = students.filter(s=>s.status!=='withdrawn');
+  const rows = [['Tên học sinh','Lớp','Số tiền còn thiếu','Số ngày có mặt']];
+  for(const s of active){ const f = await computeStudentFee(s.id, ym); if((f.status==='unpaid'||f.status==='partial') && f.total>0) rows.push([s.name, s.className||'', f.remaining, f.presentDays]); }
+  downloadWorkbook([{name:'ChuaDong_'+ym, rows}], 'ChuaDongTien_'+ym+'.xlsx');
+  showToast('Đã xuất file Excel');
+}
+
+async function exportExpensesExcel(){
+  const ym = document.getElementById('expMonth').value || monthNow();
+  const items = await getExpenses(ym);
+  const rows = [['Mục chi','Số tiền','Ngày','Ghi chú']];
+  items.forEach(e=>rows.push([e.category, e.amount, e.date, e.note||'']));
+  downloadWorkbook([{name:'CacKhoanChi_'+ym, rows}], 'CacKhoanChi_'+ym+'.xlsx');
+  showToast('Đã xuất file Excel');
+}
+async function exportIncomeExcel(){
+  const ym = document.getElementById('incMonth').value || monthNow();
+  const active = students.filter(s=>s.status!=='withdrawn');
+  const rows = [['Học sinh','Lớp','Tiền ăn (phải thu)','Tiền xe (phải thu)','Tiền học thêm (phải thu)','Tổng phải thu','Đã thu']];
+  for(const s of active){ const f = await computeStudentFee(s.id, ym); rows.push([s.name, s.className||'', f.anTruaFee, f.xeFee, f.htFee, f.total, f.paid]); }
+  downloadWorkbook([{name:'CacKhoanThu_'+ym, rows}], 'CacKhoanThu_'+ym+'.xlsx');
+  showToast('Đã xuất file Excel');
+}
+async function exportDebtsExcel(){
+  const debts = await getDebts();
+  const rows = [['Số tiền','Ngày','Ghi chú','Trạng thái','Ngày trả']];
+  debts.forEach(d=>rows.push([d.amount, d.date, d.note||'', d.paid?'Đã trả':'Chưa trả', d.paidDate||'']));
+  downloadWorkbook([{name:'NoPhaiTra', rows}], 'NoPhaiTraMuaHang.xlsx');
+  showToast('Đã xuất file Excel');
+}
+async function exportSummaryExcel(){
+  const ym = document.getElementById('sumMonth').value || monthNow();
+  const active = students.filter(s=>s.status!=='withdrawn');
+  let totalThu=0, owingStu=0;
+  for(const s of active){ const f = await computeStudentFee(s.id, ym); totalThu+=f.paid; if(f.status==='unpaid'||f.status==='partial') owingStu+=f.remaining; }
+  const exp = await getExpenses(ym);
+  const byCat = {}; EXPENSE_CATEGORIES.forEach(c=>byCat[c]=0);
+  exp.forEach(e=>{ byCat[e.category]=(byCat[e.category]||0)+Number(e.amount||0); });
+  const totalChi = Object.values(byCat).reduce((a,b)=>a+b,0);
+  const debts = await getDebts();
+  const owingDebt = debts.filter(d=>!d.paid).reduce((a,d)=>a+Number(d.amount||0),0);
+  const rows = [['Mục','Số tiền'],
+    ['Tổng thu', totalThu],
+    ...EXPENSE_CATEGORIES.map(c=>['Chi: '+c, byCat[c]]),
+    ['Tổng chi', totalChi],
+    ['Lãi/Lỗ trong tháng', totalThu-totalChi],
+    ['Nợ phải thu hiện tại (học sinh)', owingStu],
+    ['Nợ phải trả hiện tại (mua hàng)', owingDebt],
+  ];
+  downloadWorkbook([{name:'TongHopThuChi_'+ym, rows}], 'TongHopThuChi_'+ym+'.xlsx');
+  showToast('Đã xuất file Excel');
 }
 
 /* ========================= INIT ========================= */
 (async function init(){
   document.getElementById('attDate').value = todayISO();
   document.getElementById('feeMonth').value = monthNow();
-  document.getElementById('checkMonth').value = monthNow();
-  document.getElementById('colMonth').value = monthNow();
-  document.getElementById('colDate').value = todayISO();
-  showTab('students');
+  document.getElementById('expMonth').value = monthNow();
+  document.getElementById('incMonth').value = monthNow();
+  document.getElementById('sumMonth').value = monthNow();
+  showTab('dashboard');
   const ok = await tryConnect();
-  if(ok) showTab('students');
+  if(ok) showTab('dashboard');
 })();
 </script>
 </body>
