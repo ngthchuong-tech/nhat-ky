@@ -210,10 +210,10 @@
       <div class="stat-card"><div class="label">Học sinh đang học</div><div class="value" id="statTotal">–</div></div>
       <div class="stat-card good"><div class="label">Có mặt hôm nay</div><div class="value" id="statPresent">–</div></div>
       <div class="stat-card good"><div class="label">Đã thu tháng này</div><div class="value" id="statCollected">–</div></div>
-      <div class="stat-card warm"><div class="label">Còn nợ tháng này</div><div class="value" id="statOwing">–</div></div>
+      <div class="stat-card warm"><div class="label">Còn nợ tháng này</div><div class="value" id="statOwing">–</div><div class="label" style="margin-top:4px;">Nợ lũy kế: <span id="statOwingLifetime">–</span></div></div>
     </div>
     <div class="card" style="margin-top:14px;"><div class="pad">
-      <h3 style="margin:0 0 10px;font-size:14.5px;">Học sinh chưa đóng phí tháng này (<span id="unpaidCount">0</span>)</h3>
+      <h3 style="margin:0 0 10px;font-size:14.5px;">Học sinh còn nợ — tháng này hoặc nợ cũ (<span id="unpaidCount">0</span>)</h3>
       <div class="stu-list" id="dashUnpaidList"></div>
     </div></div>
   </section>
@@ -318,10 +318,12 @@
     <div class="subview" id="fin-debt">
       <div class="section-head"><div><h2>Quản lý nợ</h2><div class="sub">Nợ phải thu (học sinh) và nợ phải trả (mua hàng)</div></div></div>
       <div class="card"><div class="pad">
-        <h3 style="margin:0 0 8px;font-size:14.5px;">Nợ phải thu — học sinh chưa đóng phí (tháng này)</h3>
+        <h3 style="margin:0 0 8px;font-size:14.5px;">Nợ phải thu — học sinh đang học</h3>
         <div class="stat-grid" style="grid-template-columns:1fr 1fr;">
-          <div class="stat-card warm"><div class="label">Số học sinh chưa đóng</div><div class="value" id="debtStuCount">–</div></div>
-          <div class="stat-card warm"><div class="label">Tổng số tiền còn nợ</div><div class="value" id="debtStuAmount">–</div></div>
+          <div class="stat-card warm"><div class="label">Chưa đóng tháng này</div><div class="value" id="debtStuCount">–</div></div>
+          <div class="stat-card warm"><div class="label">Số tiền còn thiếu (tháng này)</div><div class="value" id="debtStuAmount">–</div></div>
+          <div class="stat-card warm"><div class="label">Số HS còn nợ (mọi tháng)</div><div class="value" id="debtStuLifetimeCount">–</div></div>
+          <div class="stat-card warm"><div class="label">Tổng nợ lũy kế (mọi tháng)</div><div class="value" id="debtStuLifetimeAmount">–</div></div>
         </div>
         <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="showTab('fees');showFeeSub('unpaid');">Xem danh sách chưa đóng →</button>
         <div class="divider"></div>
@@ -415,6 +417,26 @@ let settings = {anTruaDay:0, anTruaMLbl:["Mức 1","Mức 2","Mức 3"], anTruaM
 let services = {};
 let attendanceCache = {};
 let paymentsCache = {};
+let debtCache = {}; // studentId -> {totalDebt, oweMonths, ledger}
+function invalidateDebtCache(){ debtCache = {}; }
+async function getStudentLedgerInfo(sid){
+  if(debtCache[sid]) return debtCache[sid];
+  let info;
+  try{
+    const ledger = await apiGet('getLedger', {studentId: sid});
+    const totalDebt = (ledger||[]).reduce((a,m)=>a+Math.max(0,m.remaining),0);
+    const oweMonths = (ledger||[]).filter(m=>m.remaining>0).length;
+    info = {ledger: ledger||[], totalDebt, oweMonths};
+  }catch(e){ info = {ledger:[], totalDebt:0, oweMonths:0}; }
+  debtCache[sid] = info;
+  return info;
+}
+async function computeActiveDebtSummary(){
+  const active = students.filter(s=>s.status!=='withdrawn');
+  let count=0, amount=0;
+  for(const s of active){ const d = await getStudentLedgerInfo(s.id); if(d.totalDebt>0){ count++; amount+=d.totalDebt; } }
+  return {count, amount};
+}
 let sessionPin = '';
 let dataReady = false;
 let curStuSub = 'list';
@@ -639,18 +661,23 @@ async function renderDashboard(){
   let collected=0, owing=0; const unpaidItems=[];
   for(const s of active){
     const f = await computeStudentFee(s.id, ym);
+    const d = await getStudentLedgerInfo(s.id);
     collected += f.paid;
-    if(f.status==='unpaid' || f.status==='partial'){ owing += f.remaining; unpaidItems.push({s,f}); }
+    if(f.remaining>0) owing += f.remaining;
+    if(f.remaining>0 || d.totalDebt>0) unpaidItems.push({s,f,d});
   }
+  const lifetimeTotal = unpaidItems.reduce((a,{d})=>a+d.totalDebt,0);
   document.getElementById('statCollected').textContent = fmtMoney(collected);
   document.getElementById('statOwing').textContent = fmtMoney(owing);
+  document.getElementById('statOwingLifetime').textContent = fmtMoney(lifetimeTotal);
   document.getElementById('unpaidCount').textContent = unpaidItems.length;
+  unpaidItems.sort((a,b)=> b.d.totalDebt - a.d.totalDebt);
   const list = document.getElementById('dashUnpaidList');
-  if(unpaidItems.length===0){ list.innerHTML = `<div class="empty">🎉 Tất cả học sinh đã đóng đủ phí tháng này.</div>`; return; }
-  list.innerHTML = unpaidItems.slice(0,8).map(({s,f})=>`
-    <div class="stu-card"><div class="bar ${f.status}"></div>
-      <div class="avatar">${initials(s.name)}</div>
-      <div class="info"><div class="name">${escapeHtml(s.name)}</div><div class="meta">Còn thiếu ${fmtMoney(f.remaining)}</div></div>
+  if(unpaidItems.length===0){ list.innerHTML = `<div class="empty">🎉 Tất cả học sinh đã đóng đủ phí, không còn nợ tháng nào.</div>`; return; }
+  list.innerHTML = unpaidItems.slice(0,8).map(({s,f,d})=>`
+    <div class="stu-card"><div class="bar unpaid"></div>
+      <div class="avatar" onclick="openLedgerModal('${s.id}')">${initials(s.name)}</div>
+      <div class="info"><div class="name">${escapeHtml(s.name)}</div><div class="meta">${f.remaining>0?`Còn thiếu tháng này ${fmtMoney(f.remaining)} · `:''}Nợ lũy kế ${fmtMoney(d.totalDebt)}</div></div>
       <div class="actions"><button class="iconbtn" onclick="contactZalo('${escapeHtml(s.parentPhone)}')" title="Liên hệ Zalo">💬</button></div>
     </div>`).join('');
 }
@@ -665,11 +692,11 @@ function renderStudents(){
   if(active.length===0){ list.innerHTML = `<div class="empty"><div class="big">🎒</div>Chưa có học sinh nào.<br>Bấm "+ Thêm học sinh" để bắt đầu.</div>`; return; }
   if(filtered.length===0){ list.innerHTML = `<div class="empty">Không tìm thấy học sinh phù hợp.</div>`; return; }
   list.innerHTML = filtered.map(s=>`
-    <div class="stu-card">
-      <div class="bar none"></div>
+    <div class="stu-card" id="stucard-${s.id}">
+      <div class="bar none" id="stubar-${s.id}"></div>
       <div class="avatar" onclick="openLedgerModal('${s.id}')">${initials(s.name)}</div>
       <div class="info">
-        <div class="name" onclick="openLedgerModal('${s.id}')">${escapeHtml(s.name)}</div>
+        <div class="name" onclick="openLedgerModal('${s.id}')">${escapeHtml(s.name)} <span id="debtBadge-${s.id}"></span></div>
         <div class="meta">${escapeHtml(s.className||'—')} · ${escapeHtml(s.school||'—')}</div>
         <div class="meta">👪 ${escapeHtml(s.parentName||'—')} · 📱 ${escapeHtml(s.parentPhone||'—')}</div>
         <div class="meta">${escapeHtml(serviceDesc(s.id))}</div>
@@ -680,6 +707,20 @@ function renderStudents(){
         <button class="btn btn-sm btn-warm" onclick="doWithdraw('${s.id}',true)">Nghỉ học</button>
       </div>
     </div>`).join('');
+  annotateStudentDebts(filtered);
+}
+async function annotateStudentDebts(list){
+  // Chạy ngầm sau khi danh sách đã hiển thị, không chặn render ban đầu.
+  for(const s of list){
+    const d = await getStudentLedgerInfo(s.id);
+    const badge = document.getElementById('debtBadge-'+s.id);
+    if(!badge) continue; // người dùng đã rời trang/lọc lại danh sách
+    if(d.totalDebt>0){
+      badge.innerHTML = `<span class="pill unpaid" title="Nợ lũy kế ${d.oweMonths} tháng">Nợ ${fmtMoney(d.totalDebt)}</span>`;
+      const bar = document.getElementById('stubar-'+s.id);
+      if(bar) bar.classList.add('unpaid');
+    }
+  }
 }
 
 /* Modal thêm/sửa học sinh (gồm cả chọn dịch vụ) */
@@ -805,6 +846,7 @@ async function markAttendance(sid, status){
   const newStatus = (att[sid][day]===status) ? '' : status;
   if(newStatus) att[sid][day]=newStatus; else delete att[sid][day];
   renderAttendance();
+  invalidateDebtCache();
   try{ await apiPost('markAttendance', {studentId: sid, date, status: newStatus}); }
   catch(e){ showToast('Lỗi lưu điểm danh: '+e.message); }
 }
@@ -816,6 +858,7 @@ async function bulkMarkPresent(){
   const att = await getAttendance(ym);
   active.forEach(s=>{ att[s.id]=att[s.id]||{}; att[s.id][day]='present'; });
   renderAttendance();
+  invalidateDebtCache();
   try{
     await apiPost('bulkMarkAttendance', {date, status:'present', studentIds: active.map(s=>s.id)});
     showToast('Đã đánh dấu tất cả có mặt');
@@ -983,7 +1026,7 @@ async function saveEditedPayment(sid, ym, pid){
   if(!amount || amount<=0){ showToast('Số tiền không hợp lệ'); return; }
   try{
     await apiPost('updatePayment', {id: pid, amount, date, note});
-    delete paymentsCache[ym];
+    delete paymentsCache[ym]; invalidateDebtCache();
     document.querySelectorAll('.modal-bg').forEach((m,i)=>{ if(i===document.querySelectorAll('.modal-bg').length-1) m.remove(); });
     showToast('Đã cập nhật phiếu thu');
     renderPayHistory(sid, ym);
@@ -994,7 +1037,7 @@ async function undoPaymentEntry(sid, ym, pid){
   if(!confirm('Hoàn lại (xoá) khoản thu này? Dùng khi xác nhận nhầm học sinh hoặc nhầm số tiền.')) return;
   try{
     await apiPost('deletePayment', {id: pid});
-    delete paymentsCache[ym];
+    delete paymentsCache[ym]; invalidateDebtCache();
     showToast('Đã hoàn lại khoản thu');
     renderPayHistory(sid, ym);
     showFeeSub(curFeeSub);
@@ -1011,7 +1054,7 @@ async function submitPayment(sid, ym, isFull, fullAmount){
   if(!amount || amount<=0){ showToast('Số tiền không hợp lệ hoặc chưa tải xong, thử lại sau 1 giây'); return; }
   try{
     await apiPost('addPayment', {studentId: sid, month: ym, amount, date, note});
-    delete paymentsCache[ym];
+    delete paymentsCache[ym]; invalidateDebtCache();
     showToast('Đã ghi nhận thu phí');
     const modal = document.querySelector('.modal-bg');
     if(modal) modal.remove();
@@ -1030,7 +1073,7 @@ async function renderFeePaid(){
   if(items.length===0){ list.innerHTML = `<div class="empty">Chưa có học sinh nào đóng đủ trong ${monthLabel(ym)}.</div>`; return; }
   list.innerHTML = items.map(({s,f})=>{
     const msg = [
-      `Xác nhận: học sinh ${s.name} (lớp ${s.className||''}) đã đóng đủ học phí bán trú ${monthLabel(ym).toLowerCase()}.`,
+      `Xác nhận: học sinh ${s.name} (lớp ${s.className||''}) đã đóng đủ tiền bán trú ${monthLabel(ym).toLowerCase()}.`,
       `Chi tiết:`,
       `- Ăn trưa: ${fmtMoney(f.anTruaFee)}`,
       `- Xe đưa đón: ${fmtMoney(f.xeFee)}`,
@@ -1052,29 +1095,44 @@ async function renderFeePaid(){
 async function renderFeeUnpaid(){
   const ym = document.getElementById('feeMonth').value || monthNow();
   const list = document.getElementById('unpaidList');
-  list.innerHTML = `<div class="loading-line">Đang tải…</div>`;
+  list.innerHTML = `<div class="loading-line">Đang tải… (đang kiểm tra cả nợ tháng trước)</div>`;
   const active = students.filter(s=>s.status!=='withdrawn');
   const items = [];
-  for(const s of active){ const f = await computeStudentFee(s.id, ym); if((f.status==='unpaid'||f.status==='partial') && f.total>0) items.push({s,f}); }
-  if(items.length===0){ list.innerHTML = `<div class="empty">🎉 Không còn học sinh nào chưa đóng trong ${monthLabel(ym)}.</div>`; return; }
-  list.innerHTML = items.map(({s,f})=>{
+  for(const s of active){
+    const f = await computeStudentFee(s.id, ym);
+    const d = await getStudentLedgerInfo(s.id);
+    if(f.remaining>0 || d.totalDebt>0) items.push({s,f,d});
+  }
+  if(items.length===0){ list.innerHTML = `<div class="empty">🎉 Không còn học sinh nào chưa đóng, kể cả nợ tháng trước.</div>`; return; }
+  // học sinh nợ nhiều nhất lên đầu
+  items.sort((a,b)=> b.d.totalDebt - a.d.totalDebt);
+  list.innerHTML = items.map(({s,f,d})=>{
     const sv = svcOf(s.id);
     const attDetail = sv.anTruaMode==='day' ? ` (có mặt ${f.presentDays} ngày trong tháng)` : '';
-    const msg = [
-      `Thông báo: học sinh ${s.name} (lớp ${s.className||''}) còn phải đóng học phí bán trú ${monthLabel(ym).toLowerCase()}.`,
+    const hasOldDebt = d.totalDebt > f.remaining + 0.01;
+    const onlyOldDebt = f.remaining<=0 && d.totalDebt>0;
+    const badge = onlyOldDebt ? '<span class="pill unpaid">Nợ tháng trước</span>' : `<span class="pill ${f.status==='partial'?'partial':'unpaid'}">${f.status==='partial'?'Đóng thiếu':'Chưa đóng'}</span>`;
+    const msgLines = [
+      `Thông báo: học sinh ${s.name} (lớp ${s.className||''}) `+(onlyOldDebt? `còn nợ tiền bán trú từ tháng trước.` : `còn phải đóng tiền bán trú ${monthLabel(ym).toLowerCase()}.`),
       `Chi tiết:`,
-      `- Ăn trưa: ${fmtMoney(f.anTruaFee)}${attDetail}`,
-      `- Xe đưa đón: ${fmtMoney(f.xeFee)}`,
-      `- Học thêm: ${fmtMoney(f.htFee)}`,
-      `- Số tiền còn thiếu: ${fmtMoney(f.remaining)}`,
-      ``,
-      `Mong phụ huynh sắp xếp đóng giúp. Cảm ơn!`,
-    ].join('\n');
-    return `<div class="stu-card"><div class="bar ${f.status}"></div>
-      <div class="avatar">${initials(s.name)}</div>
+    ];
+    if(!onlyOldDebt){
+      msgLines.push(`- Ăn trưa: ${fmtMoney(f.anTruaFee)}${attDetail}`);
+      msgLines.push(`- Xe đưa đón: ${fmtMoney(f.xeFee)}`);
+      msgLines.push(`- Học thêm: ${fmtMoney(f.htFee)}`);
+      msgLines.push(`- Số tiền phải đóng ${monthLabel(ym).toLowerCase()}: ${fmtMoney(f.remaining)}`);
+    }
+    if(hasOldDebt || onlyOldDebt){
+      msgLines.push(`- Tổng nợ lũy kế (gồm cả tháng trước, ${d.oweMonths} tháng): ${fmtMoney(d.totalDebt)}`);
+    }
+    msgLines.push(``, `Mong phụ huynh sắp xếp đóng giúp. Cảm ơn!`);
+    const msg = msgLines.join('\n');
+    return `<div class="stu-card"><div class="bar unpaid"></div>
+      <div class="avatar" onclick="openLedgerModal('${s.id}')">${initials(s.name)}</div>
       <div class="info">
-        <div class="name">${escapeHtml(s.name)} <span class="pill ${f.status}">${f.status==='partial'?'Đóng thiếu':'Chưa đóng'}</span></div>
-        <div class="meta">Còn thiếu: ${fmtMoney(f.remaining)}${attDetail}</div>
+        <div class="name" onclick="openLedgerModal('${s.id}')">${escapeHtml(s.name)} ${badge}</div>
+        <div class="meta">${onlyOldDebt?'':`Còn thiếu ${monthLabel(ym).toLowerCase()}: ${fmtMoney(f.remaining)}${attDetail}`}</div>
+        ${hasOldDebt || onlyOldDebt ? `<div class="meta" style="color:var(--danger);font-weight:700;">Tổng nợ lũy kế (${d.oweMonths} tháng): ${fmtMoney(d.totalDebt)}</div>` : ''}
       </div>
       <div class="actions"><button class="iconbtn" onclick='zaloNotify(${JSON.stringify(s.parentPhone)}, ${JSON.stringify(msg)})' title="Nhắn Zalo">💬</button></div>
     </div>`;
@@ -1237,6 +1295,13 @@ async function renderDebtTab(){
   for(const s of active){ const f = await computeStudentFee(s.id, ym); if((f.status==='unpaid'||f.status==='partial') && f.total>0){ count++; amount+=f.remaining; } }
   document.getElementById('debtStuCount').textContent = count;
   document.getElementById('debtStuAmount').textContent = fmtMoney(amount);
+
+  document.getElementById('debtStuLifetimeCount').textContent = '…';
+  document.getElementById('debtStuLifetimeAmount').textContent = '…';
+  computeActiveDebtSummary().then(r=>{
+    document.getElementById('debtStuLifetimeCount').textContent = r.count;
+    document.getElementById('debtStuLifetimeAmount').textContent = fmtMoney(r.amount);
+  });
 
   document.getElementById('debtWithdrawnCount').textContent = '…';
   document.getElementById('debtWithdrawnAmount').textContent = '…';
