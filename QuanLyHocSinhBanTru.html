@@ -879,7 +879,9 @@ async function renderFeeSummary(){
   for(const s of active){
     const f = await computeStudentFee(s.id, ym);
     sumTotal+=f.total; sumPaid+=f.paid;
-    rows.push(`<tr>
+    const rowStyle = f.remaining>0 ? ' style="background:var(--danger-soft);"' : '';
+    const remainCellStyle = f.remaining>0 ? 'color:var(--danger);font-weight:800;' : '';
+    rows.push(`<tr${rowStyle}>
       <td>${escapeHtml(s.name)}<div style="color:var(--ink-soft);font-size:11px;">${escapeHtml(s.className||'')} · ${escapeHtml(s.school||'')}</div></td>
       <td class="num">${f.presentDays}</td>
       <td class="num">${fmtMoney(f.anTruaFee)}</td>
@@ -887,7 +889,7 @@ async function renderFeeSummary(){
       <td class="num">${fmtMoney(f.htFee)}</td>
       <td class="num money">${fmtMoney(f.total)}</td>
       <td class="num">${fmtMoney(f.paid)}</td>
-      <td class="num">${fmtMoney(f.remaining)}</td>
+      <td class="num" style="${remainCellStyle}">${fmtMoney(f.remaining)}</td>
       <td>${f.lastDate||'—'}</td>
       <td>${escapeHtml(f.lastNote||'')}</td>
       <td><button class="btn btn-sm btn-primary" onclick="openPaymentModal('${s.id}','${ym}')">Nộp tiền</button></td>
@@ -906,7 +908,7 @@ function openPaymentModal(sid, ym){
     <div id="payInfo" class="loading-line">Đang tải…</div>
     <div class="field"><label>Ngày thu</label><input type="date" id="payDate" value="${todayISO()}"></div>
     <div class="field"><label>Ghi chú (không bắt buộc)</label><input type="text" id="payNote" placeholder="VD: đóng tiền mặt"></div>
-    <button class="btn btn-primary" id="payFullBtn" style="width:100%;justify-content:center;">Xác nhận đã đóng đủ</button>
+    <button class="btn btn-primary" id="payFullBtn" disabled style="width:100%;justify-content:center;">Đang tải số tiền…</button>
     <div style="text-align:center;margin-top:10px;"><a href="javascript:void(0)" onclick="toggleCustomAmount()" style="font-size:12.5px;color:var(--accent-dark);">Nhập số tiền khác</a></div>
     <div class="field" id="customAmountWrap" style="display:none;margin-top:10px;">
       <label>Số tiền thu (đ)</label><input type="number" id="payCustomAmount">
@@ -914,9 +916,16 @@ function openPaymentModal(sid, ym){
     </div>
   </div>`;
   document.body.appendChild(bg);
+  let remainingAmount = 0;
+  const fullBtn = document.getElementById('payFullBtn');
+  fullBtn.onclick = ()=>submitPayment(sid, ym, true, remainingAmount);
   computeStudentFee(sid, ym).then(f=>{
+    remainingAmount = f.remaining;
     document.getElementById('payInfo').innerHTML = `<div class="hint" style="font-size:13.5px;">Tổng phí: <b>${fmtMoney(f.total)}</b> · Đã đóng: <b>${fmtMoney(f.paid)}</b> · <span style="color:var(--danger);font-weight:700;">Còn lại: ${fmtMoney(f.remaining)}</span></div>`;
-    document.getElementById('payFullBtn').onclick = ()=>submitPayment(sid, ym, true, f.remaining);
+    fullBtn.disabled = false;
+    fullBtn.textContent = 'Xác nhận đã đóng đủ ('+fmtMoney(f.remaining)+')';
+  }).catch(e=>{
+    document.getElementById('payInfo').innerHTML = `<div class="hint" style="color:var(--danger);">Lỗi tải số tiền: ${escapeHtml(e.message)}</div>`;
   });
 }
 function toggleCustomAmount(){
@@ -927,7 +936,7 @@ async function submitPayment(sid, ym, isFull, fullAmount){
   const date = document.getElementById('payDate').value || todayISO();
   const note = document.getElementById('payNote').value.trim();
   const amount = isFull ? fullAmount : Number(document.getElementById('payCustomAmount').value);
-  if(!amount || amount<=0){ showToast('Số tiền không hợp lệ'); return; }
+  if(!amount || amount<=0){ showToast('Số tiền không hợp lệ hoặc chưa tải xong, thử lại sau 1 giây'); return; }
   try{
     await apiPost('addPayment', {studentId: sid, month: ym, amount, date, note});
     delete paymentsCache[ym];
