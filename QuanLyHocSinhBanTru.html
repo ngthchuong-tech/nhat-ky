@@ -455,8 +455,9 @@ async function apiGet(action, params){
   const url = new URL(API_URL);
   url.searchParams.set('action', action);
   url.searchParams.set('authPin', sessionPin);
+  url.searchParams.set('_t', Date.now()); // chống trình duyệt lưu cache request cũ
   Object.keys(params).forEach(k=>url.searchParams.set(k, params[k]));
-  const res = await fetch(url.toString());
+  const res = await fetch(url.toString(), {cache:'no-store'});
   const data = await res.json();
   if(data && data.error) throw new Error(data.error);
   return data;
