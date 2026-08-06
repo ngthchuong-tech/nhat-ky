@@ -395,6 +395,7 @@
    CẤU HÌNH KẾT NỐI — dán link Web App Apps Script vào giữa 2 dấu nháy.
    ===================================================================== */
 let API_URL = "";
+try{ API_URL = localStorage.getItem('banTru_apiUrl') || API_URL; }catch(e){}
 
 /* ========================= STATE ========================= */
 let students = [];
@@ -509,6 +510,7 @@ async function confirmSetupUrl(){
   const v = document.getElementById('setupUrl').value.trim();
   if(!isValidUrl(v)){ document.getElementById('setupHint').textContent='Link chưa đúng định dạng script.google.com'; return; }
   API_URL = v;
+  try{ localStorage.setItem('banTru_apiUrl', v); }catch(e){}
   document.getElementById('setupHint').textContent='Đang kết nối…';
   const ok = await tryConnect();
   if(ok){ showToast('Kết nối thành công'); showTab('dashboard'); }
