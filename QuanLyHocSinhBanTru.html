@@ -610,17 +610,36 @@ function showFinanceSub(sub){
 }
 
 /* ========================= TÍNH PHÍ ========================= */
+let attendancePending = {};
 async function getAttendance(ym){
   if(attendanceCache[ym]) return attendanceCache[ym];
-  try{ attendanceCache[ym] = await apiGet('getAttendance',{month:ym}); }
-  catch(e){ showToast('Lỗi tải điểm danh: '+e.message); attendanceCache[ym]={}; }
-  return attendanceCache[ym];
+  if(attendancePending[ym]) return attendancePending[ym];
+  attendancePending[ym] = (async()=>{
+    try{ attendanceCache[ym] = await apiGet('getAttendance',{month:ym}); }
+    catch(e){ showToast('Lỗi tải điểm danh: '+e.message); attendanceCache[ym]={}; }
+    delete attendancePending[ym];
+    return attendanceCache[ym];
+  })();
+  return attendancePending[ym];
 }
+let paymentsPending = {};
 async function getPayments(ym){
   if(paymentsCache[ym]) return paymentsCache[ym];
-  try{ paymentsCache[ym] = await apiGet('getPayments',{month:ym}); }
-  catch(e){ showToast('Lỗi tải thu phí: '+e.message); paymentsCache[ym]={}; }
-  return paymentsCache[ym];
+  if(paymentsPending[ym]) return paymentsPending[ym];
+  paymentsPending[ym] = (async()=>{
+    try{ paymentsCache[ym] = await apiGet('getPayments',{month:ym}); }
+    catch(e){ showToast('Lỗi tải thu phí: '+e.message); paymentsCache[ym]={}; }
+    delete paymentsPending[ym];
+    return paymentsCache[ym];
+  })();
+  return paymentsPending[ym];
+}
+// Tải song song điểm danh + thu phí (+ công nợ nếu cần) thay vì tuần tự,
+// để rút ngắn thời gian chờ khi mở 1 màn hình cần cả 2-3 loại dữ liệu này.
+async function warmMonthCache(ym, withDebts){
+  const jobs = [getAttendance(ym), getPayments(ym)];
+  if(withDebts) jobs.push(ensureAllDebtsLoaded());
+  await Promise.all(jobs);
 }
 function svcOf(sid){ return services[sid] || {anTruaMode:'off',anTruaTier:0,xeTier:0,hocThemTier:0}; }
 async function computeStudentFee(sid, ym){
@@ -663,6 +682,7 @@ async function renderDashboard(){
   const active = students.filter(s=>s.status!=='withdrawn');
   document.getElementById('statTotal').textContent = active.length;
   const ym = monthNow();
+  await warmMonthCache(ym, true); // tải song song thay vì tuần tự
   const att = await getAttendance(ym);
   const today = todayISO().slice(8,10);
   let presentToday=0;
@@ -887,13 +907,11 @@ async function renderWithdrawn(){
   const withdrawn = students.filter(s=>s.status==='withdrawn');
   if(withdrawn.length===0){ list.innerHTML = `<div class="empty">Chưa có học sinh nào nghỉ học.</div>`; return; }
   list.innerHTML = `<div class="loading-line">Đang kiểm tra công nợ…</div>`;
-  const items = [];
-  for(const s of withdrawn){
-    let owing = 0;
-    try{ const ledger = await apiGet('getLedger', {studentId: s.id}); owing = ledger.reduce((a,m)=>a+Math.max(0,m.remaining),0); }
-    catch(e){}
-    items.push({s, owing});
-  }
+  await ensureAllDebtsLoaded(); // 1 lần gọi duy nhất cho tất cả, không lặp theo từng em
+  const items = withdrawn.map(s=>{
+    const d = debtCache[s.id] || {totalDebt:0};
+    return {s, owing: d.totalDebt};
+  });
   list.innerHTML = items.map(({s,owing})=>`
     <div class="stu-card">
       <div class="bar ${owing>0?'unpaid':'none'}"></div>
@@ -944,6 +962,7 @@ async function renderFeeSummary(){
   tbl.innerHTML = `<tr><td class="empty">Đang tải…</td></tr>`;
   const active = students.filter(s=>s.status!=='withdrawn');
   if(active.length===0){ tbl.innerHTML = `<tr><td class="empty">Chưa có học sinh.</td></tr>`; return; }
+  await warmMonthCache(ym);
   let rows=[]; let sumTotal=0,sumPaid=0;
   for(const s of active){
     const f = await computeStudentFee(s.id, ym);
@@ -1084,6 +1103,7 @@ async function renderFeePaid(){
   const list = document.getElementById('paidList');
   list.innerHTML = `<div class="loading-line">Đang tải…</div>`;
   const active = students.filter(s=>s.status!=='withdrawn');
+  await warmMonthCache(ym);
   const items = [];
   for(const s of active){ const f = await computeStudentFee(s.id, ym); if(f.status==='paid' && f.total>0) items.push({s,f}); }
   if(items.length===0){ list.innerHTML = `<div class="empty">Chưa có học sinh nào đóng đủ trong ${monthLabel(ym)}.</div>`; return; }
@@ -1113,6 +1133,7 @@ async function renderFeeUnpaid(){
   const list = document.getElementById('unpaidList');
   list.innerHTML = `<div class="loading-line">Đang tải… (đang kiểm tra cả nợ tháng trước)</div>`;
   const active = students.filter(s=>s.status!=='withdrawn');
+  await warmMonthCache(ym, true);
   const items = [];
   for(const s of active){
     const f = await computeStudentFee(s.id, ym);
@@ -1308,6 +1329,7 @@ async function renderIncome(){
   const body = document.getElementById('incomeBody');
   body.innerHTML = `<div class="loading-line">Đang tổng hợp…</div>`;
   const active = students.filter(s=>s.status!=='withdrawn');
+  await warmMonthCache(ym);
   let anTrua=0, xe=0, ht=0, paid=0, total=0;
   for(const s of active){
     const f = await computeStudentFee(s.id, ym);
@@ -1340,6 +1362,7 @@ async function getWithdrawnDebtTotal(){
 async function renderDebtTab(){
   const ym = monthNow();
   const active = students.filter(s=>s.status!=='withdrawn');
+  await warmMonthCache(ym, true);
   let count=0, amount=0;
   for(const s of active){ const f = await computeStudentFee(s.id, ym); if((f.status==='unpaid'||f.status==='partial') && f.total>0){ count++; amount+=f.remaining; } }
   document.getElementById('debtStuCount').textContent = count;
@@ -1427,6 +1450,7 @@ async function renderFinanceSummary(){
   const body = document.getElementById('summaryBody');
   body.innerHTML = `<div class="loading-line">Đang tính toán…</div>`;
   const active = students.filter(s=>s.status!=='withdrawn');
+  await warmMonthCache(ym, true);
   let totalThu=0;
   for(const s of active){ const f = await computeStudentFee(s.id, ym); totalThu += f.paid; }
   const exp = await getExpenses(ym);
