@@ -417,24 +417,31 @@ let settings = {anTruaDay:0, anTruaMLbl:["Mức 1","Mức 2","Mức 3"], anTruaM
 let services = {};
 let attendanceCache = {};
 let paymentsCache = {};
-let debtCache = {}; // studentId -> {totalDebt, oweMonths, ledger}
-function invalidateDebtCache(){ debtCache = {}; }
+let debtCache = {}; // studentId -> {totalDebt, oweMonths}
+let allDebtsLoaded = false;
+let allDebtsLoadingPromise = null;
+function invalidateDebtCache(){ debtCache = {}; allDebtsLoaded = false; allDebtsLoadingPromise = null; }
+async function ensureAllDebtsLoaded(){
+  if(allDebtsLoaded) return;
+  if(allDebtsLoadingPromise) return allDebtsLoadingPromise; // tránh gọi trùng nếu nhiều nơi cùng cần lúc đầu
+  allDebtsLoadingPromise = (async()=>{
+    try{
+      const map = await apiGet('getAllDebts'); // 1 lần gọi duy nhất cho TẤT CẢ học sinh
+      Object.keys(map).forEach(sid=>{ debtCache[sid] = map[sid]; });
+      allDebtsLoaded = true;
+    }catch(e){ showToast('Lỗi tải công nợ: '+e.message); }
+  })();
+  return allDebtsLoadingPromise;
+}
 async function getStudentLedgerInfo(sid){
-  if(debtCache[sid]) return debtCache[sid];
-  let info;
-  try{
-    const ledger = await apiGet('getLedger', {studentId: sid});
-    const totalDebt = (ledger||[]).reduce((a,m)=>a+Math.max(0,m.remaining),0);
-    const oweMonths = (ledger||[]).filter(m=>m.remaining>0).length;
-    info = {ledger: ledger||[], totalDebt, oweMonths};
-  }catch(e){ info = {ledger:[], totalDebt:0, oweMonths:0}; }
-  debtCache[sid] = info;
-  return info;
+  await ensureAllDebtsLoaded();
+  return debtCache[sid] || {totalDebt:0, oweMonths:0};
 }
 async function computeActiveDebtSummary(){
+  await ensureAllDebtsLoaded();
   const active = students.filter(s=>s.status!=='withdrawn');
   let count=0, amount=0;
-  for(const s of active){ const d = await getStudentLedgerInfo(s.id); if(d.totalDebt>0){ count++; amount+=d.totalDebt; } }
+  active.forEach(s=>{ const d = debtCache[s.id]||{totalDebt:0}; if(d.totalDebt>0){ count++; amount+=d.totalDebt; } });
   return {count, amount};
 }
 let sessionPin = '';
@@ -1277,15 +1284,10 @@ async function getDebts(){
   return debtsCache;
 }
 async function getWithdrawnDebtTotal(){
+  await ensureAllDebtsLoaded();
   const withdrawn = students.filter(s=>s.status==='withdrawn');
   let count=0, amount=0;
-  for(const s of withdrawn){
-    try{
-      const ledger = await apiGet('getLedger', {studentId: s.id});
-      const owing = (ledger||[]).reduce((a,m)=>a+Math.max(0,m.remaining),0);
-      if(owing>0){ count++; amount+=owing; }
-    }catch(e){}
-  }
+  withdrawn.forEach(s=>{ const d = debtCache[s.id]||{totalDebt:0}; if(d.totalDebt>0){ count++; amount+=d.totalDebt; } });
   return {count, amount};
 }
 async function renderDebtTab(){
