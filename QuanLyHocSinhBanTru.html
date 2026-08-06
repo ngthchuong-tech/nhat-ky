@@ -1171,6 +1171,12 @@ async function renderFeeUnpaid(){
 async function sendUnpaidZaloMessage(sid, ym){
   const s = students.find(x=>x.id===sid);
   if(!s) return;
+  const phoneNum = zaloPhone(s.parentPhone);
+  if(!phoneNum){ showToast('Chưa có số điện thoại Zalo'); return; }
+  // Mở sẵn 1 tab trống NGAY LÚC BẤM (còn trong phạm vi thao tác của người
+  // dùng) để trình duyệt di động không chặn — rồi mới điều hướng tab đó
+  // sang Zalo sau khi soạn xong tin nhắn (có độ trễ do phải tải sổ nợ).
+  const win = window.open('about:blank', '_blank');
   showToast('Đang chuẩn bị tin nhắn…');
   let ledger = [];
   try{ ledger = await apiGet('getLedger', {studentId: sid}); }
@@ -1211,7 +1217,11 @@ async function sendUnpaidZaloMessage(sid, ym){
     ``,
     `Mong phụ huynh sắp xếp đóng giúp. Cảm ơn!`,
   );
-  zaloNotify(s.parentPhone, lines.join('\n'));
+  const msg = lines.join('\n');
+  const ok = await copyText(msg);
+  if(win && !win.closed){ win.location.href = 'https://zalo.me/'+phoneNum; }
+  else { contactZalo(s.parentPhone); } // dự phòng nếu tab trống bị chặn ngay từ đầu
+  showToast(ok?'Đã sao chép nội dung — dán vào khung chat Zalo vừa mở':'Đã mở Zalo — vui lòng soạn tin nhắn thủ công');
 }
 
 /* ========================= CÀI ĐẶT ========================= */
