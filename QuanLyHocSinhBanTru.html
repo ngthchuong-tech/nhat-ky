@@ -257,6 +257,34 @@
     </div>
   </section>
 
+  <!-- HỌC THÊM (module mới, độc lập với bán trú) -->
+  <section class="panel" id="panel-tutor">
+    <div class="segmented">
+      <button data-sub="list" onclick="showTutorSub('list')">Danh sách</button>
+      <button data-sub="attendance" onclick="showTutorSub('attendance')">Điểm danh</button>
+    </div>
+
+    <div class="subview" id="tutor-sub-list">
+      <div class="section-head">
+        <div><h2>Học sinh học thêm</h2><div class="sub">Có thể là học sinh bán trú, hoặc chỉ học thêm không bán trú</div></div>
+        <button class="btn btn-primary" onclick="openStudentModal()">+ Thêm học sinh</button>
+      </div>
+      <div class="searchbox"><span class="ic">🔎</span><input type="text" id="tutorSearch" placeholder="Tìm theo tên, lớp, trường…" oninput="renderTutorList()"></div>
+      <div class="stu-list" id="tutorList"></div>
+    </div>
+
+    <div class="subview" id="tutor-sub-attendance">
+      <div class="section-head">
+        <div><h2>Điểm danh học thêm</h2><div class="sub">Chỉ mang tính theo dõi — không ảnh hưởng tới học phí (học phí tính cố định theo tháng)</div></div>
+        <input type="date" id="tutorAttDate" style="width:auto" onchange="renderTutorAttendance()">
+      </div>
+      <div class="flexbtns" style="margin-bottom:12px;">
+        <button class="btn btn-primary btn-sm" onclick="tutorBulkMarkPresent()">✓ Đánh dấu tất cả có mặt</button>
+      </div>
+      <div class="card"><div class="pad" id="tutorAttendanceList"></div></div>
+    </div>
+  </section>
+
   <!-- THU PHÍ -->
   <section class="panel" id="panel-fees">
     <div class="segmented">
@@ -355,6 +383,25 @@
   <!-- CÀI ĐẶT -->
   <section class="panel" id="panel-settings">
     <div class="section-head"><div><h2>Cài đặt mức phí</h2><div class="sub">Mỗi lần đổi giá cần chọn áp dụng từ tháng nào — không ảnh hưởng các tháng trước đó</div></div></div>
+
+    <div class="card"><div class="pad">
+      <h3 style="margin-top:0;font-size:14px;">Tính năng sử dụng</h3>
+      <p class="hint" style="margin-top:0;">Tắt tính năng nào không cần dùng để giao diện gọn hơn — không mất dữ liệu đã có, chỉ ẩn đi.</p>
+      <div class="field" style="display:flex;align-items:center;justify-content:space-between;">
+        <label style="margin:0;">Xe đưa đón (bán trú)</label>
+        <input type="checkbox" id="featXe" style="width:20px;height:20px;">
+      </div>
+      <div class="field" style="display:flex;align-items:center;justify-content:space-between;">
+        <label style="margin:0;">Đưa đón đi học thêm nơi khác</label>
+        <input type="checkbox" id="featDuaDonHocThem" style="width:20px;height:20px;">
+      </div>
+      <div class="field" style="display:flex;align-items:center;justify-content:space-between;">
+        <label style="margin:0;">Module Học thêm (giáo viên tự tổ chức dạy)</label>
+        <input type="checkbox" id="featHocThemModule" style="width:20px;height:20px;">
+      </div>
+      <button class="btn btn-primary" onclick="saveFeatureFlags()">Lưu tính năng</button>
+    </div></div>
+
     <div class="card"><div class="pad">
       <div class="field"><label>Áp dụng từ tháng</label><input type="month" id="setEffectiveFrom">
         <div class="hint" style="margin-top:6px;">Các tháng TRƯỚC tháng này vẫn giữ nguyên mức giá cũ. Chọn tháng hiện tại nếu muốn áp dụng ngay; chọn tháng tương lai nếu muốn lên lịch đổi giá trước.</div>
@@ -367,15 +414,27 @@
       <div class="row g2"><div class="field"><label>Tên mức 1</label><input type="text" id="anTruaMLbl1"></div><div class="field"><label>Phí (đ)</label><input type="number" id="anTruaMFee1"></div></div>
       <div class="row g2"><div class="field"><label>Tên mức 2</label><input type="text" id="anTruaMLbl2"></div><div class="field"><label>Phí (đ)</label><input type="number" id="anTruaMFee2"></div></div>
       <div class="row g2"><div class="field"><label>Tên mức 3</label><input type="text" id="anTruaMLbl3"></div><div class="field"><label>Phí (đ)</label><input type="number" id="anTruaMFee3"></div></div>
-      <div class="divider"></div>
-      <h3 style="font-size:14px;">Xe đưa đón (theo tháng) — 2 mức</h3>
-      <div class="row g2"><div class="field"><label>Tên mức 1</label><input type="text" id="xeLbl1"></div><div class="field"><label>Phí (đ)</label><input type="number" id="xeFee1"></div></div>
-      <div class="row g2"><div class="field"><label>Tên mức 2</label><input type="text" id="xeLbl2"></div><div class="field"><label>Phí (đ)</label><input type="number" id="xeFee2"></div></div>
-      <div class="divider"></div>
-      <h3 style="font-size:14px;">Đưa đón học thêm (theo tháng) — 3 mức</h3>
-      <div class="row g2"><div class="field"><label>Tên mức 1</label><input type="text" id="htLbl1"></div><div class="field"><label>Phí (đ)</label><input type="number" id="htFee1"></div></div>
-      <div class="row g2"><div class="field"><label>Tên mức 2</label><input type="text" id="htLbl2"></div><div class="field"><label>Phí (đ)</label><input type="number" id="htFee2"></div></div>
-      <div class="row g2"><div class="field"><label>Tên mức 3</label><input type="text" id="htLbl3"></div><div class="field"><label>Phí (đ)</label><input type="number" id="htFee3"></div></div>
+      <div id="featBlockXe">
+        <div class="divider"></div>
+        <h3 style="font-size:14px;">Xe đưa đón (theo tháng) — 2 mức</h3>
+        <div class="row g2"><div class="field"><label>Tên mức 1</label><input type="text" id="xeLbl1"></div><div class="field"><label>Phí (đ)</label><input type="number" id="xeFee1"></div></div>
+        <div class="row g2"><div class="field"><label>Tên mức 2</label><input type="text" id="xeLbl2"></div><div class="field"><label>Phí (đ)</label><input type="number" id="xeFee2"></div></div>
+      </div>
+      <div id="featBlockDuaDonHocThem">
+        <div class="divider"></div>
+        <h3 style="font-size:14px;">Đưa đón đi học thêm nơi khác (theo tháng) — 3 mức</h3>
+        <div class="row g2"><div class="field"><label>Tên mức 1</label><input type="text" id="htLbl1"></div><div class="field"><label>Phí (đ)</label><input type="number" id="htFee1"></div></div>
+        <div class="row g2"><div class="field"><label>Tên mức 2</label><input type="text" id="htLbl2"></div><div class="field"><label>Phí (đ)</label><input type="number" id="htFee2"></div></div>
+        <div class="row g2"><div class="field"><label>Tên mức 3</label><input type="text" id="htLbl3"></div><div class="field"><label>Phí (đ)</label><input type="number" id="htFee3"></div></div>
+      </div>
+      <div id="featBlockHocThemModule">
+        <div class="divider"></div>
+        <h3 style="font-size:14px;">Học thêm (giáo viên dạy) — mức chung, 3 mức</h3>
+        <p class="hint" style="margin-top:0;">Đây là mức GỢI Ý dùng chung — mỗi học sinh vẫn có thể đặt số tiền tuỳ chỉnh riêng khi Thêm/Sửa học sinh.</p>
+        <div class="row g2"><div class="field"><label>Tên mức 1</label><input type="text" id="tutorLbl1"></div><div class="field"><label>Phí (đ/tháng)</label><input type="number" id="tutorFee1"></div></div>
+        <div class="row g2"><div class="field"><label>Tên mức 2</label><input type="text" id="tutorLbl2"></div><div class="field"><label>Phí (đ/tháng)</label><input type="number" id="tutorFee2"></div></div>
+        <div class="row g2"><div class="field"><label>Tên mức 3</label><input type="text" id="tutorLbl3"></div><div class="field"><label>Phí (đ/tháng)</label><input type="number" id="tutorFee3"></div></div>
+      </div>
       <button class="btn btn-primary" onclick="saveSettings()">Lưu mức giá này</button>
     </div></div>
 
@@ -406,6 +465,7 @@
 <nav class="tabbar">
   <button class="tab" data-tab="dashboard" onclick="showTab('dashboard')"><span class="ic">📊</span><span>Tổng quan</span></button>
   <button class="tab" data-tab="students" onclick="showTab('students')"><span class="ic">👤</span><span>Học sinh</span></button>
+  <button class="tab" data-tab="tutor" id="navTutor" onclick="showTab('tutor')" style="display:none;"><span class="ic">📚</span><span>Học thêm</span></button>
   <button class="tab" data-tab="fees" onclick="showTab('fees')"><span class="ic">💰</span><span>Thu phí</span></button>
   <button class="tab" data-tab="finance" onclick="showTab('finance')"><span class="ic">💵</span><span>Tài chính</span></button>
   <button class="tab" data-tab="settings" onclick="showTab('settings')"><span class="ic">⚙️</span><span>Cài đặt</span></button>
@@ -423,7 +483,11 @@ try{ API_URL = localStorage.getItem('banTru_apiUrl') || API_URL; }catch(e){}
 /* ========================= STATE ========================= */
 let students = [];
 let settingsHistory = [];
-let currentSettings = {anTruaDay:0, anTruaMLbl:["Mức 1","Mức 2","Mức 3"], anTruaMFee:[0,0,0], xeLbl:["Mức 1","Mức 2"], xeFee:[0,0], htLbl:["Mức 1","Mức 2","Mức 3"], htFee:[0,0,0]};
+let features = {xe:true, duaDonHocThem:true, hocThemModule:false};
+function isBanTru(s){ return s.status==='active'; }
+function isTutor(s){ return s.tutorStatus==='active'; }
+function isEnrolledAnywhere(s){ return isBanTru(s) || isTutor(s); } // dùng cho màn hình tính tiền vì phí có thể từ bán trú và/hoặc học thêm
+let currentSettings = {anTruaDay:0, anTruaMLbl:["Mức 1","Mức 2","Mức 3"], anTruaMFee:[0,0,0], xeLbl:["Mức 1","Mức 2"], xeFee:[0,0], htLbl:["Mức 1","Mức 2","Mức 3"], htFee:[0,0,0], tutorLbl:["Mức 1","Mức 2","Mức 3"], tutorFee:[0,0,0]};
 // Tìm bảng giá đang hiệu lực ở 1 tháng cụ thể (giống hệt logic backend
 // pickSettingsForMonth_) — vì đổi giá giờ chỉ áp dụng từ 1 tháng chọn trước,
 // không ảnh hưởng ngược các tháng cũ.
@@ -458,7 +522,7 @@ async function getStudentLedgerInfo(sid){
 }
 async function computeActiveDebtSummary(){
   await ensureAllDebtsLoaded();
-  const active = students.filter(s=>s.status!=='withdrawn');
+  const active = students.filter(isEnrolledAnywhere);
   let count=0, amount=0;
   active.forEach(s=>{ const d = debtCache[s.id]||{totalDebt:0}; if(d.totalDebt>0){ count++; amount+=d.totalDebt; } });
   return {count, amount};
@@ -468,8 +532,9 @@ let dataReady = false;
 let curStuSub = 'list';
 let curFeeSub = 'summary';
 
-const TABS = ['dashboard','students','fees','finance','settings'];
-const TAB_TITLES = {dashboard:'Tổng quan',students:'Học sinh',fees:'Thu phí',finance:'Quản lý tài chính',settings:'Cài đặt mức phí'};
+const TABS = ['dashboard','students','tutor','fees','finance','settings'];
+const TAB_TITLES = {dashboard:'Tổng quan',students:'Học sinh',tutor:'Học thêm',fees:'Thu phí',finance:'Quản lý tài chính',settings:'Cài đặt mức phí'};
+let curTutorSub = 'list';
 const EXPENSE_CATEGORIES = ['Tiền chợ','Xe đưa rước','Điện','Nước','Chi khác'];
 let expensesCache = {};
 let debtsCache = null;
@@ -547,6 +612,8 @@ async function tryConnect(){
     settingsHistory = data.settingsHistory||[];
     currentSettings = data.currentSettings || currentSettings;
     services = data.services||{};
+    features = data.features || features;
+    applyFeatureVisibility();
     setConn(true,'Đã kết nối');
     document.getElementById('setupOverlay').style.display='none';
     document.getElementById('pinOverlay').style.display='none';
@@ -593,9 +660,21 @@ function showTab(tab){
   if(!dataReady) return;
   if(tab==='dashboard') renderDashboard();
   if(tab==='students') showStudentSub(curStuSub);
+  if(tab==='tutor') showTutorSub(curTutorSub);
   if(tab==='fees') showFeeSub(curFeeSub);
   if(tab==='finance') showFinanceSub(curFinSub);
   if(tab==='settings') fillSettingsForm();
+}
+function applyFeatureVisibility(){
+  document.getElementById('navTutor').style.display = features.hocThemModule ? '' : 'none';
+}
+function showTutorSub(sub){
+  curTutorSub = sub;
+  document.querySelectorAll('#panel-tutor .segmented button').forEach(b=>b.classList.toggle('active', b.dataset.sub===sub));
+  ['list','attendance'].forEach(s=>document.getElementById('tutor-sub-'+s).classList.toggle('active', s===sub));
+  if(!dataReady) return;
+  if(sub==='list') renderTutorList();
+  if(sub==='attendance') renderTutorAttendance();
 }
 function showStudentSub(sub){
   curStuSub = sub;
@@ -661,28 +740,32 @@ async function warmMonthCache(ym, withDebts){
   if(withDebts) jobs.push(ensureAllDebtsLoaded());
   await Promise.all(jobs);
 }
-function svcOf(sid){ return services[sid] || {anTruaMode:'off',anTruaTier:0,xeTier:0,hocThemTier:0,firstMonthAnTrua:null,firstMonthXe:null,firstMonthHocThem:null}; }
+function svcOf(sid){ return services[sid] || {anTruaMode:'off',anTruaTier:0,xeTier:0,hocThemTier:0,firstMonthAnTrua:null,firstMonthXe:null,firstMonthHocThem:null,tutorMode:'off',tutorTier:0,tutorCustomFee:null}; }
 async function computeStudentFee(sid, ym){
   const s = students.find(x=>x.id===sid);
   const joinYm = s && s.joinDate ? s.joinDate.slice(0,7) : '';
-  if(joinYm && ym < joinYm){
-    return {presentDays:0, anTruaFee:0, xeFee:0, htFee:0, total:0, paid:0, remaining:0, status:'none', lastDate:'', lastNote:''};
-  }
+  const tutorJoinYm = s && s.tutorJoinDate ? s.tutorJoinDate.slice(0,7) : '';
+  const banTruActive = !!joinYm && ym>=joinYm;
+  const tutorActive = !!tutorJoinYm && ym>=tutorJoinYm;
   const st = pickSettingsForMonth(ym); // bảng giá đúng theo tháng này, không phải giá hiện tại
-  const isFirstMonth = joinYm && ym===joinYm;
+  const isFirstBanTruMonth = banTruActive && ym===joinYm;
   const att = await getAttendance(ym);
   const presentDays = Object.values(att[sid]||{}).filter(v=>v==='present').length;
   const sv = svcOf(sid);
-  let anTruaFee=0;
-  if(sv.anTruaMode==='day') anTruaFee = presentDays*(st.anTruaDay||0);
-  else if(sv.anTruaMode==='month' && sv.anTruaTier>0){
-    anTruaFee = (isFirstMonth && sv.firstMonthAnTrua!=null) ? sv.firstMonthAnTrua : (st.anTruaMFee[sv.anTruaTier-1]||0);
+  let anTruaFee=0, xeFee=0, htFee=0, tutorFee=0;
+  if(banTruActive){
+    if(sv.anTruaMode==='day') anTruaFee = presentDays*(st.anTruaDay||0);
+    else if(sv.anTruaMode==='month' && sv.anTruaTier>0){
+      anTruaFee = (isFirstBanTruMonth && sv.firstMonthAnTrua!=null) ? sv.firstMonthAnTrua : (st.anTruaMFee[sv.anTruaTier-1]||0);
+    }
+    if(sv.xeTier>0) xeFee = (isFirstBanTruMonth && sv.firstMonthXe!=null) ? sv.firstMonthXe : (st.xeFee[sv.xeTier-1]||0);
+    if(sv.hocThemTier>0) htFee = (isFirstBanTruMonth && sv.firstMonthHocThem!=null) ? sv.firstMonthHocThem : (st.htFee[sv.hocThemTier-1]||0);
   }
-  let xeFee=0;
-  if(sv.xeTier>0) xeFee = (isFirstMonth && sv.firstMonthXe!=null) ? sv.firstMonthXe : (st.xeFee[sv.xeTier-1]||0);
-  let htFee=0;
-  if(sv.hocThemTier>0) htFee = (isFirstMonth && sv.firstMonthHocThem!=null) ? sv.firstMonthHocThem : (st.htFee[sv.hocThemTier-1]||0);
-  const total = anTruaFee+xeFee+htFee;
+  if(tutorActive){
+    if(sv.tutorMode==='custom' && sv.tutorCustomFee!=null) tutorFee = sv.tutorCustomFee;
+    else if(sv.tutorMode==='common' && sv.tutorTier>0) tutorFee = st.tutorFee[sv.tutorTier-1]||0;
+  }
+  const total = anTruaFee+xeFee+htFee+tutorFee;
   const pays = await getPayments(ym);
   const list = pays[sid]||[];
   const paid = list.reduce((a,p)=>a+Number(p.amount||0),0);
@@ -691,7 +774,7 @@ async function computeStudentFee(sid, ym){
   let status='none';
   if(total>0){ if(paid<=0) status='unpaid'; else if(paid<total) status='partial'; else status='paid'; }
   else if(paid>0){ status='paid'; }
-  return {presentDays, anTruaFee, xeFee, htFee, total, paid, remaining: total-paid, status, lastDate: last?last.date:'', lastNote: last?last.note:''};
+  return {presentDays, anTruaFee, xeFee, htFee, tutorFee, total, paid, remaining: total-paid, status, lastDate: last?last.date:'', lastNote: last?last.note:''};
 }
 function serviceDesc(sid){
   const sv = svcOf(sid);
@@ -699,25 +782,26 @@ function serviceDesc(sid){
   if(sv.anTruaMode==='day') parts.push('Ăn trưa (theo ngày)');
   else if(sv.anTruaMode==='month' && sv.anTruaTier>0) parts.push('Ăn trưa: '+(currentSettings.anTruaMLbl[sv.anTruaTier-1]||''));
   if(sv.xeTier>0) parts.push('Xe: '+(currentSettings.xeLbl[sv.xeTier-1]||''));
-  if(sv.hocThemTier>0) parts.push('Học thêm: '+(currentSettings.htLbl[sv.hocThemTier-1]||''));
+  if(sv.hocThemTier>0) parts.push('Đưa đón HT nơi khác: '+(currentSettings.htLbl[sv.hocThemTier-1]||''));
   return parts.length? parts.join(' · ') : 'Không dùng dịch vụ';
 }
 
 /* ========================= TỔNG QUAN ========================= */
 async function renderDashboard(){
   document.getElementById('dashDate').textContent = monthLabel(monthNow())+' · '+new Date().toLocaleDateString('vi-VN');
-  const active = students.filter(s=>s.status!=='withdrawn');
-  document.getElementById('statTotal').textContent = active.length;
+  const banTruStudents = students.filter(isBanTru);
+  const moneyStudents = students.filter(isEnrolledAnywhere);
+  document.getElementById('statTotal').textContent = banTruStudents.length;
   const ym = monthNow();
   await warmMonthCache(ym, true); // tải song song thay vì tuần tự
   const att = await getAttendance(ym);
   const today = todayISO().slice(8,10);
   let presentToday=0;
-  active.forEach(s=>{ if((att[s.id]||{})[today]==='present') presentToday++; });
+  banTruStudents.forEach(s=>{ if((att[s.id]||{})[today]==='present') presentToday++; });
   document.getElementById('statPresent').textContent = presentToday;
 
   let collected=0, owing=0; const unpaidItems=[];
-  for(const s of active){
+  for(const s of moneyStudents){
     const f = await computeStudentFee(s.id, ym);
     const d = await getStudentLedgerInfo(s.id);
     collected += f.paid;
@@ -743,7 +827,7 @@ async function renderDashboard(){
 /* ========================= HỌC SINH: DANH SÁCH ========================= */
 function renderStudents(){
   const q = (document.getElementById('stuSearch').value||'').toLowerCase().trim();
-  const active = students.filter(s=>s.status!=='withdrawn');
+  const active = students.filter(s=>s.status==='active');
   const filtered = active.filter(s=> !q || (s.name+' '+s.className+' '+s.school).toLowerCase().includes(q));
   document.getElementById('stuCount').textContent = active.length+' học sinh'+(q?` (hiện ${filtered.length})`:'');
   const list = document.getElementById('studentList');
@@ -782,14 +866,14 @@ async function annotateStudentDebts(list){
 }
 
 /* Modal thêm/sửa học sinh (gồm cả chọn dịch vụ) */
-function svcFieldsHtml(sv){
+function svcFieldsHtmlBanTru(sv){
   sv = sv || {anTruaMode:'off',anTruaTier:0,xeTier:0,hocThemTier:0,firstMonthAnTrua:null,firstMonthXe:null,firstMonthHocThem:null};
   const anTruaMonthOpts = currentSettings.anTruaMLbl.map((lbl,i)=>`<option value="${i+1}" ${sv.anTruaTier===i+1?'selected':''}>${escapeHtml(lbl)} (${fmtMoney(currentSettings.anTruaMFee[i])})</option>`).join('');
   const xeOpts = `<option value="0" ${sv.xeTier===0?'selected':''}>Không dùng</option>` + currentSettings.xeLbl.map((lbl,i)=>`<option value="${i+1}" ${sv.xeTier===i+1?'selected':''}>${escapeHtml(lbl)} (${fmtMoney(currentSettings.xeFee[i])})</option>`).join('');
   const htOpts = `<option value="0" ${sv.hocThemTier===0?'selected':''}>Không dùng</option>` + currentSettings.htLbl.map((lbl,i)=>`<option value="${i+1}" ${sv.hocThemTier===i+1?'selected':''}>${escapeHtml(lbl)} (${fmtMoney(currentSettings.htFee[i])})</option>`).join('');
   return `
     <div class="divider"></div>
-    <h3 style="font-size:14px;margin:0 0 8px;">Dịch vụ sử dụng</h3>
+    <h3 style="font-size:14px;margin:0 0 8px;">Dịch vụ bán trú</h3>
     <div class="field"><label>Ăn trưa + nghỉ trưa</label>
       <select id="mAnTruaMode" onchange="document.getElementById('mAnTruaTierWrap').style.display=(this.value==='month')?'block':'none'">
         <option value="off" ${sv.anTruaMode==='off'?'selected':''}>Không dùng</option>
@@ -798,8 +882,8 @@ function svcFieldsHtml(sv){
       </select>
     </div>
     <div class="field" id="mAnTruaTierWrap" style="display:${sv.anTruaMode==='month'?'block':'none'}"><label>Mức ăn trưa theo tháng</label><select id="mAnTruaTier">${anTruaMonthOpts}</select></div>
-    <div class="field"><label>Xe đưa đón</label><select id="mXeTier">${xeOpts}</select></div>
-    <div class="field"><label>Đưa đón học thêm</label><select id="mHocThemTier">${htOpts}</select></div>
+    ${features.xe ? `<div class="field"><label>Xe đưa đón</label><select id="mXeTier">${xeOpts}</select></div>` : `<select id="mXeTier" style="display:none;"><option value="0" selected>0</option></select>`}
+    ${features.duaDonHocThem ? `<div class="field"><label>Đưa đón đi học thêm nơi khác</label><select id="mHocThemTier">${htOpts}</select></div>` : `<select id="mHocThemTier" style="display:none;"><option value="0" selected>0</option></select>`}
     <div class="divider"></div>
     <h3 style="font-size:14px;margin:0 0 6px;">Phí tháng đầu tiên (tùy chỉnh)</h3>
     <div class="hint" style="margin-top:0;margin-bottom:8px;">Chỉ áp dụng cho đúng "Ngày tham gia bán trú" ở trên — dùng khi học sinh tham gia giữa tháng nên phí tháng đầu ít hơn mức đầy đủ. Để trống = tính đủ theo mức đã chọn như bình thường.</div>
@@ -810,9 +894,30 @@ function svcFieldsHtml(sv){
     </div>
   `;
 }
+function tutorFieldsHtml(sv){
+  sv = sv || {tutorMode:'off',tutorTier:0,tutorCustomFee:null};
+  const mode = sv.tutorMode==='custom' ? 'custom' : 'common';
+  const tierOpts = currentSettings.tutorLbl.map((lbl,i)=>`<option value="${i+1}" ${sv.tutorTier===i+1?'selected':''}>${escapeHtml(lbl)} (${fmtMoney(currentSettings.tutorFee[i])}/tháng)</option>`).join('');
+  return `
+    <div class="divider"></div>
+    <h3 style="font-size:14px;margin:0 0 8px;">Học phí học thêm</h3>
+    <div class="field"><label>Cách tính phí</label>
+      <select id="mTutorMode" onchange="const c=this.value==='custom';document.getElementById('mTutorTierWrap').style.display=c?'none':'block';document.getElementById('mTutorCustomWrap').style.display=c?'block':'none';">
+        <option value="common" ${mode==='common'?'selected':''}>Dùng mức chung</option>
+        <option value="custom" ${mode==='custom'?'selected':''}>Tuỳ chỉnh riêng cho học sinh này</option>
+      </select>
+    </div>
+    <div class="field" id="mTutorTierWrap" style="display:${mode==='common'?'block':'none'}"><label>Mức chung</label><select id="mTutorTier">${tierOpts}</select></div>
+    <div class="field" id="mTutorCustomWrap" style="display:${mode==='custom'?'block':'none'}"><label>Số tiền tuỳ chỉnh (đ/tháng)</label><input type="number" id="mTutorCustomFee" value="${sv.tutorCustomFee!=null?sv.tutorCustomFee:''}" placeholder="VD: 250000">
+      <div class="hint" style="margin-top:6px;">Áp dụng cho MỌI tháng (không chỉ tháng đầu) cho tới khi bạn sửa lại.</div>
+    </div>
+  `;
+}
 function openStudentModal(id){
   const s = id ? students.find(x=>x.id===id) : null;
   const sv = id ? svcOf(id) : null;
+  const banTruChecked = s ? (s.status==='active') : true;
+  const tutorChecked = s ? (s.tutorStatus==='active') : false;
   const bg = document.createElement('div');
   bg.className='modal-bg';
   bg.innerHTML = `
@@ -826,10 +931,30 @@ function openStudentModal(id){
       </div>
       <div class="field"><label>Tên bố/mẹ</label><input type="text" id="mParent" value="${s?escapeHtml(s.parentName||''):''}" placeholder="Tên phụ huynh"></div>
       <div class="field"><label>Số điện thoại (Zalo)</label><input type="tel" id="mPhone" value="${s?escapeHtml(s.parentPhone||''):''}" placeholder="09xxxxxxxx"></div>
-      <div class="field"><label>Ngày tham gia bán trú</label><input type="date" id="mJoinDate" value="${s&&s.joinDate?s.joinDate:todayISO()}">
-        <div class="hint" style="margin-top:6px;">Chỉ tính phí dịch vụ từ tháng này trở đi — các tháng trước đó sẽ không bị tính phí dù có gán dịch vụ.</div>
+
+      <div class="divider"></div>
+      <div class="field" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <label style="margin:0;font-size:14px;">Tham gia bán trú</label>
+        <input type="checkbox" id="mBanTruOn" ${banTruChecked?'checked':''} onchange="document.getElementById('mBanTruWrap').style.display=this.checked?'block':'none'" style="width:20px;height:20px;">
       </div>
-      ${svcFieldsHtml(sv)}
+      <div id="mBanTruWrap" style="display:${banTruChecked?'block':'none'}">
+        <div class="field"><label>Ngày tham gia bán trú</label><input type="date" id="mJoinDate" value="${s&&s.joinDate?s.joinDate:todayISO()}">
+          <div class="hint" style="margin-top:6px;">Chỉ tính phí dịch vụ từ tháng này trở đi — các tháng trước đó sẽ không bị tính phí dù có gán dịch vụ.</div>
+        </div>
+        ${svcFieldsHtmlBanTru(sv)}
+      </div>
+
+      ${features.hocThemModule ? `
+      <div class="divider"></div>
+      <div class="field" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <label style="margin:0;font-size:14px;">Tham gia học thêm</label>
+        <input type="checkbox" id="mTutorOn" ${tutorChecked?'checked':''} onchange="document.getElementById('mTutorWrap').style.display=this.checked?'block':'none'" style="width:20px;height:20px;">
+      </div>
+      <div id="mTutorWrap" style="display:${tutorChecked?'block':'none'}">
+        <div class="field"><label>Ngày tham gia học thêm</label><input type="date" id="mTutorJoinDate" value="${s&&s.tutorJoinDate?s.tutorJoinDate:todayISO()}"></div>
+        ${tutorFieldsHtml(sv)}
+      </div>` : ''}
+
       <button class="btn btn-primary" id="mSaveBtn" style="width:100%;justify-content:center;margin-top:14px;" onclick="saveStudent('${s?s.id:''}')">Lưu</button>
     </div>`;
   document.body.appendChild(bg);
@@ -837,14 +962,55 @@ function openStudentModal(id){
 async function saveStudent(id){
   const name = document.getElementById('mName').value.trim();
   if(!name){ showToast('Vui lòng nhập tên học sinh'); return; }
+  const s = id ? students.find(x=>x.id===id) : null;
+
+  const banTruOn = document.getElementById('mBanTruOn').checked;
+  let status, joinDate, withdrawnDate;
+  if(banTruOn){
+    status = 'active';
+    joinDate = document.getElementById('mJoinDate').value || todayISO();
+    withdrawnDate = '';
+  } else {
+    // Tắt công tắc chỉ có nghĩa "không tham gia" — nếu trước đó đã từng
+    // tham gia rồi nghỉ (withdrawn) thì giữ nguyên lịch sử đó, không xoá.
+    const wasWithdrawn = s && s.status==='withdrawn';
+    status = wasWithdrawn ? 'withdrawn' : '';
+    joinDate = wasWithdrawn ? (s.joinDate||'') : '';
+    withdrawnDate = wasWithdrawn ? (s.withdrawnDate||'') : '';
+  }
+
+  const tutorCheckbox = document.getElementById('mTutorOn');
+  let tutorStatus, tutorJoinDate, tutorWithdrawnDate;
+  if(tutorCheckbox){
+    if(tutorCheckbox.checked){
+      tutorStatus = 'active';
+      tutorJoinDate = document.getElementById('mTutorJoinDate').value || todayISO();
+      tutorWithdrawnDate = '';
+    } else {
+      const wasT = s && s.tutorStatus==='withdrawn';
+      tutorStatus = wasT ? 'withdrawn' : '';
+      tutorJoinDate = wasT ? (s.tutorJoinDate||'') : '';
+      tutorWithdrawnDate = wasT ? (s.tutorWithdrawnDate||'') : '';
+    }
+  } else {
+    // Module Học thêm đang tắt (không hiện công tắc) — giữ nguyên dữ liệu cũ nếu có
+    tutorStatus = s ? (s.tutorStatus||'') : '';
+    tutorJoinDate = s ? (s.tutorJoinDate||'') : '';
+    tutorWithdrawnDate = s ? (s.tutorWithdrawnDate||'') : '';
+  }
+
   const data = { id: id||undefined, name,
     className: document.getElementById('mClass').value.trim(),
     school: document.getElementById('mSchool').value.trim(),
     parentName: document.getElementById('mParent').value.trim(),
     parentPhone: document.getElementById('mPhone').value.trim(),
-    joinDate: document.getElementById('mJoinDate').value || todayISO(),
+    status, joinDate, withdrawnDate,
+    tutorStatus, tutorJoinDate, tutorWithdrawnDate,
   };
-  const readOverride = id => { const v = document.getElementById(id).value; return v===''? null : Number(v); };
+  const readOverride = elId => { const el = document.getElementById(elId); return (el && el.value!=='') ? Number(el.value) : null; };
+  const existingSv = id ? svcOf(id) : null;
+  const tutorModeEl = document.getElementById('mTutorMode');
+  const tutorTierEl = document.getElementById('mTutorTier');
   const svc = {
     anTruaMode: document.getElementById('mAnTruaMode').value,
     anTruaTier: Number(document.getElementById('mAnTruaTier').value)||0,
@@ -853,6 +1019,9 @@ async function saveStudent(id){
     firstMonthAnTrua: readOverride('mFirstAnTrua'),
     firstMonthXe: readOverride('mFirstXe'),
     firstMonthHocThem: readOverride('mFirstHocThem'),
+    tutorMode: tutorModeEl ? tutorModeEl.value : (existingSv?existingSv.tutorMode:'off'),
+    tutorTier: tutorTierEl ? (Number(tutorTierEl.value)||0) : (existingSv?existingSv.tutorTier:0),
+    tutorCustomFee: document.getElementById('mTutorCustomFee') ? readOverride('mTutorCustomFee') : (existingSv?existingSv.tutorCustomFee:null),
   };
   const btn = document.getElementById('mSaveBtn'); btn.disabled=true; btn.textContent='Đang lưu…';
   try{
@@ -860,7 +1029,7 @@ async function saveStudent(id){
     const sid = id || res.id;
     await apiPost('saveService', Object.assign({studentId: sid}, svc));
     if(id){ Object.assign(students.find(x=>x.id===id), data); }
-    else { students.push(Object.assign({}, data, {id: sid, status:'active'})); }
+    else { students.push(Object.assign({}, data, {id: sid})); }
     services[sid] = svc;
     invalidateDebtCache();
     document.querySelector('.modal-bg').remove();
@@ -898,7 +1067,7 @@ async function renderAttendance(){
   const list = document.getElementById('attendanceList');
   list.innerHTML = `<div class="loading-line">Đang tải điểm danh…</div>`;
   const att = await getAttendance(ym);
-  const active = students.filter(s=>s.status!=='withdrawn');
+  const active = students.filter(s=>s.status==='active');
   if(active.length===0){ list.innerHTML = `<div class="empty">Chưa có học sinh để điểm danh.</div>`; return; }
   list.innerHTML = active.map(s=>{
     const st = (att[s.id]||{})[day] || '';
@@ -927,7 +1096,7 @@ async function markAttendance(sid, status){
 }
 async function bulkMarkPresent(){
   const date = document.getElementById('attDate').value;
-  const active = students.filter(s=>s.status!=='withdrawn');
+  const active = students.filter(s=>s.status==='active');
   if(active.length===0) return;
   const ym = date.slice(0,7); const day = date.slice(8,10);
   const att = await getAttendance(ym);
@@ -967,6 +1136,101 @@ async function renderWithdrawn(){
     </div>`).join('');
 }
 
+/* ========================= HỌC THÊM (module mới) ========================= */
+let hocThemAttendanceCache = {};
+function renderTutorList(){
+  const q = (document.getElementById('tutorSearch').value||'').toLowerCase().trim();
+  const tutorStudents = students.filter(isTutor);
+  const filtered = tutorStudents.filter(s=> !q || (s.name+' '+s.className+' '+s.school).toLowerCase().includes(q));
+  const list = document.getElementById('tutorList');
+  if(tutorStudents.length===0){ list.innerHTML = `<div class="empty"><div class="big">📚</div>Chưa có học sinh nào học thêm.<br>Bấm "+ Thêm học sinh" rồi bật "Tham gia học thêm".</div>`; return; }
+  if(filtered.length===0){ list.innerHTML = `<div class="empty">Không tìm thấy học sinh phù hợp.</div>`; return; }
+  list.innerHTML = filtered.map(s=>{
+    const sv = svcOf(s.id);
+    let feeDesc = 'Chưa cấu hình phí';
+    if(sv.tutorMode==='common' && sv.tutorTier>0) feeDesc = 'Mức chung: '+(currentSettings.tutorLbl[sv.tutorTier-1]||'')+' ('+fmtMoney(currentSettings.tutorFee[sv.tutorTier-1])+'/tháng)';
+    else if(sv.tutorMode==='custom' && sv.tutorCustomFee!=null) feeDesc = 'Tuỳ chỉnh riêng: '+fmtMoney(sv.tutorCustomFee)+'/tháng';
+    return `<div class="stu-card">
+      <div class="bar none"></div>
+      <div class="avatar" onclick="openLedgerModal('${s.id}')">${initials(s.name)}</div>
+      <div class="info">
+        <div class="name" onclick="openLedgerModal('${s.id}')">${escapeHtml(s.name)} ${isBanTru(s)?'<span class="pill none">Có bán trú</span>':''}</div>
+        <div class="meta">${escapeHtml(s.className||'—')} · ${escapeHtml(s.school||'—')}</div>
+        <div class="meta">👪 ${escapeHtml(s.parentName||'—')} · 📱 ${escapeHtml(s.parentPhone||'—')}</div>
+        <div class="meta">${feeDesc}</div>
+      </div>
+      <div class="actions">
+        <button class="iconbtn" onclick="contactZalo('${escapeHtml(s.parentPhone)}')" title="Liên hệ Zalo">💬</button>
+        <button class="btn btn-sm btn-ghost" onclick="openStudentModal('${s.id}')">Sửa</button>
+        <button class="btn btn-sm btn-warm" onclick="doTutorWithdraw('${s.id}',true)">Ngừng học thêm</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+async function doTutorWithdraw(id, stop){
+  const msg = stop ? 'Đánh dấu học sinh này ngừng học thêm?' : 'Cho học sinh này học thêm trở lại?';
+  if(!confirm(msg)) return;
+  try{
+    await apiPost('setTutorEnrollment', {id, active: !stop, date: todayISO()});
+    const s = students.find(x=>x.id===id);
+    if(s){ s.tutorStatus = stop?'withdrawn':'active'; if(!stop) s.tutorJoinDate = s.tutorJoinDate||todayISO(); }
+    invalidateDebtCache();
+    showToast(stop?'Đã ngừng học thêm':'Đã cho học thêm trở lại');
+    renderTutorList();
+  }catch(e){ showToast('Lỗi: '+e.message); }
+}
+async function getTutorAttendance(ym){
+  if(hocThemAttendanceCache[ym]) return hocThemAttendanceCache[ym];
+  try{ hocThemAttendanceCache[ym] = await apiGet('getHocThemAttendance',{month:ym}); }
+  catch(e){ showToast('Lỗi tải điểm danh học thêm: '+e.message); hocThemAttendanceCache[ym]={}; }
+  return hocThemAttendanceCache[ym];
+}
+async function renderTutorAttendance(){
+  const dateEl = document.getElementById('tutorAttDate');
+  if(!dateEl.value) dateEl.value = todayISO();
+  const date = dateEl.value; const ym = date.slice(0,7); const day = date.slice(8,10);
+  const list = document.getElementById('tutorAttendanceList');
+  list.innerHTML = `<div class="loading-line">Đang tải điểm danh…</div>`;
+  const att = await getTutorAttendance(ym);
+  const tutorStudents = students.filter(isTutor);
+  if(tutorStudents.length===0){ list.innerHTML = `<div class="empty">Chưa có học sinh nào học thêm.</div>`; return; }
+  list.innerHTML = tutorStudents.map(s=>{
+    const st = (att[s.id]||{})[day] || '';
+    return `<div class="att-row">
+      <div class="nm">${escapeHtml(s.name)} <span style="color:var(--ink-soft);font-weight:400;">(${escapeHtml(s.className||'')})</span></div>
+      <button class="iconbtn" onclick="contactZalo('${escapeHtml(s.parentPhone)}')" title="Liên hệ Zalo">💬</button>
+      <div class="toggle-group">
+        <button class="${st==='present'?'on present':''}" onclick="markTutorAttendance('${s.id}','present')">Có mặt</button>
+        <button class="${st==='absent'?'on absent':''}" onclick="markTutorAttendance('${s.id}','absent')">Vắng</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+async function markTutorAttendance(sid, status){
+  const date = document.getElementById('tutorAttDate').value;
+  const ym = date.slice(0,7); const day = date.slice(8,10);
+  const att = await getTutorAttendance(ym);
+  att[sid] = att[sid] || {};
+  const newStatus = (att[sid][day]===status) ? '' : status;
+  if(newStatus) att[sid][day]=newStatus; else delete att[sid][day];
+  renderTutorAttendance();
+  try{ await apiPost('markHocThemAttendance', {studentId: sid, date, status: newStatus}); }
+  catch(e){ showToast('Lỗi lưu điểm danh: '+e.message); }
+}
+async function tutorBulkMarkPresent(){
+  const date = document.getElementById('tutorAttDate').value;
+  const tutorStudents = students.filter(isTutor);
+  if(tutorStudents.length===0) return;
+  const ym = date.slice(0,7); const day = date.slice(8,10);
+  const att = await getTutorAttendance(ym);
+  tutorStudents.forEach(s=>{ att[s.id]=att[s.id]||{}; att[s.id][day]='present'; });
+  renderTutorAttendance();
+  try{
+    await apiPost('bulkMarkHocThemAttendance', {date, status:'present', studentIds: tutorStudents.map(s=>s.id)});
+    showToast('Đã đánh dấu tất cả có mặt');
+  }catch(e){ showToast('Lỗi lưu điểm danh hàng loạt: '+e.message); }
+}
+
 /* ========================= SỔ NỢ LŨY KẾ ========================= */
 async function openLedgerModal(sid){
   const s = students.find(x=>x.id===sid);
@@ -999,7 +1263,7 @@ async function renderFeeSummary(){
   const ym = monthEl.value;
   const tbl = document.getElementById('feeTable');
   tbl.innerHTML = `<tr><td class="empty">Đang tải…</td></tr>`;
-  const active = students.filter(s=>s.status!=='withdrawn');
+  const active = students.filter(isEnrolledAnywhere);
   if(active.length===0){ tbl.innerHTML = `<tr><td class="empty">Chưa có học sinh.</td></tr>`; return; }
   await warmMonthCache(ym);
   let rows=[]; let sumTotal=0,sumPaid=0;
@@ -1018,6 +1282,7 @@ async function renderFeeSummary(){
       <td class="num">${fmtMoney(f.anTruaFee)}</td>
       <td class="num">${fmtMoney(f.xeFee)}</td>
       <td class="num">${fmtMoney(f.htFee)}</td>
+      <td class="num">${fmtMoney(f.tutorFee)}</td>
       <td class="num money">${fmtMoney(f.total)}</td>
       <td class="num" style="${paidCellStyle}">${fmtMoney(f.paid)}</td>
       <td class="num" style="${remainCellStyle}">${fmtMoney(f.remaining)}</td>
@@ -1026,8 +1291,8 @@ async function renderFeeSummary(){
       <td><button class="btn btn-sm btn-primary" onclick="openPaymentModal('${s.id}','${ym}')">Nộp tiền</button></td>
     </tr>`);
   }
-  tbl.innerHTML = `<thead><tr><th>Học sinh</th><th>Ngày ở bán trú</th><th>Tiền ăn</th><th>Tiền xe</th><th>Học thêm</th><th>Tổng phải đóng</th><th>Đã đóng</th><th>Chưa đóng</th><th>Ngày đóng</th><th>Ghi chú</th><th></th></tr></thead>
-    <tbody>${rows.join('')}<tr class="total-row"><td style="background:#FAF8F2;">Tổng cộng</td><td></td><td></td><td></td><td></td><td class="num">${fmtMoney(sumTotal)}</td><td class="num">${fmtMoney(sumPaid)}</td><td class="num">${fmtMoney(sumTotal-sumPaid)}</td><td></td><td></td><td></td></tr></tbody>`;
+  tbl.innerHTML = `<thead><tr><th>Học sinh</th><th>Ngày ở bán trú</th><th>Tiền ăn</th><th>Xe bán trú</th><th>Đưa đón HT nơi khác</th><th>Học thêm (dạy)</th><th>Tổng phải đóng</th><th>Đã đóng</th><th>Chưa đóng</th><th>Ngày đóng</th><th>Ghi chú</th><th></th></tr></thead>
+    <tbody>${rows.join('')}<tr class="total-row"><td style="background:#FAF8F2;">Tổng cộng</td><td></td><td></td><td></td><td></td><td></td><td class="num">${fmtMoney(sumTotal)}</td><td class="num">${fmtMoney(sumPaid)}</td><td class="num">${fmtMoney(sumTotal-sumPaid)}</td><td></td><td></td><td></td></tr></tbody>`;
 }
 
 function openPaymentModal(sid, ym){
@@ -1141,7 +1406,7 @@ async function renderFeePaid(){
   const ym = document.getElementById('feeMonth').value || monthNow();
   const list = document.getElementById('paidList');
   list.innerHTML = `<div class="loading-line">Đang tải…</div>`;
-  const active = students.filter(s=>s.status!=='withdrawn');
+  const active = students.filter(isEnrolledAnywhere);
   await warmMonthCache(ym);
   const items = [];
   for(const s of active){ const f = await computeStudentFee(s.id, ym); if(f.status==='paid' && f.total>0) items.push({s,f}); }
@@ -1171,7 +1436,7 @@ async function renderFeeUnpaid(){
   const ym = document.getElementById('feeMonth').value || monthNow();
   const list = document.getElementById('unpaidList');
   list.innerHTML = `<div class="loading-line">Đang tải… (đang kiểm tra cả nợ tháng trước)</div>`;
-  const active = students.filter(s=>s.status!=='withdrawn');
+  const active = students.filter(isEnrolledAnywhere);
   await warmMonthCache(ym, true);
   const items = [];
   for(const s of active){
@@ -1275,15 +1540,40 @@ function fillSettingsForm(){
   document.getElementById('htLbl1').value=currentSettings.htLbl[0]||''; document.getElementById('htFee1').value=currentSettings.htFee[0]||'';
   document.getElementById('htLbl2').value=currentSettings.htLbl[1]||''; document.getElementById('htFee2').value=currentSettings.htFee[1]||'';
   document.getElementById('htLbl3').value=currentSettings.htLbl[2]||''; document.getElementById('htFee3').value=currentSettings.htFee[2]||'';
+  document.getElementById('tutorLbl1').value=currentSettings.tutorLbl[0]||''; document.getElementById('tutorFee1').value=currentSettings.tutorFee[0]||'';
+  document.getElementById('tutorLbl2').value=currentSettings.tutorLbl[1]||''; document.getElementById('tutorFee2').value=currentSettings.tutorFee[1]||'';
+  document.getElementById('tutorLbl3').value=currentSettings.tutorLbl[2]||''; document.getElementById('tutorFee3').value=currentSettings.tutorFee[2]||'';
   document.getElementById('curApiUrl').value = API_URL;
+  document.getElementById('featXe').checked = features.xe;
+  document.getElementById('featDuaDonHocThem').checked = features.duaDonHocThem;
+  document.getElementById('featHocThemModule').checked = features.hocThemModule;
+  document.getElementById('featBlockXe').style.display = features.xe ? '' : 'none';
+  document.getElementById('featBlockDuaDonHocThem').style.display = features.duaDonHocThem ? '' : 'none';
+  document.getElementById('featBlockHocThemModule').style.display = features.hocThemModule ? '' : 'none';
   renderSettingsHistory();
+}
+async function saveFeatureFlags(){
+  const payload = {
+    xe: document.getElementById('featXe').checked,
+    duaDonHocThem: document.getElementById('featDuaDonHocThem').checked,
+    hocThemModule: document.getElementById('featHocThemModule').checked,
+  };
+  try{
+    await apiPost('saveFeatureFlags', payload);
+    features = payload;
+    applyFeatureVisibility();
+    document.getElementById('featBlockXe').style.display = features.xe ? '' : 'none';
+    document.getElementById('featBlockDuaDonHocThem').style.display = features.duaDonHocThem ? '' : 'none';
+    document.getElementById('featBlockHocThemModule').style.display = features.hocThemModule ? '' : 'none';
+    showToast('Đã lưu tính năng — tải lại trang để áp dụng đầy đủ cho các form khác');
+  }catch(e){ showToast('Lỗi lưu tính năng: '+e.message); }
 }
 function renderSettingsHistory(){
   const box = document.getElementById('settingsHistoryList');
   if(!settingsHistory || settingsHistory.length===0){ box.innerHTML = `<div class="empty">Chưa có lịch sử giá.</div>`; return; }
   const sorted = settingsHistory.slice().sort((a,b)=> (b.effectiveFrom||'').localeCompare(a.effectiveFrom||''));
   box.innerHTML = `<table>
-    <thead><tr><th>Áp dụng từ</th><th>Ăn trưa/ngày</th><th>Xe M1/M2</th><th>Học thêm M1/M2/M3</th><th></th></tr></thead>
+    <thead><tr><th>Áp dụng từ</th><th>Ăn trưa/ngày</th><th>Xe M1/M2</th><th>Đưa đón HT M1/M2/M3</th><th></th></tr></thead>
     <tbody>${sorted.map(v=>`
       <tr>
         <td>${v.effectiveFrom? monthLabel(v.effectiveFrom) : 'Từ trước tới nay'}</td>
@@ -1304,6 +1594,8 @@ function collectSettingsPayload(){
     xeFee: [Number(document.getElementById('xeFee1').value)||0, Number(document.getElementById('xeFee2').value)||0],
     htLbl: [document.getElementById('htLbl1').value.trim()||'Mức 1', document.getElementById('htLbl2').value.trim()||'Mức 2', document.getElementById('htLbl3').value.trim()||'Mức 3'],
     htFee: [Number(document.getElementById('htFee1').value)||0, Number(document.getElementById('htFee2').value)||0, Number(document.getElementById('htFee3').value)||0],
+    tutorLbl: [document.getElementById('tutorLbl1').value.trim()||'Mức 1', document.getElementById('tutorLbl2').value.trim()||'Mức 2', document.getElementById('tutorLbl3').value.trim()||'Mức 3'],
+    tutorFee: [Number(document.getElementById('tutorFee1').value)||0, Number(document.getElementById('tutorFee2').value)||0, Number(document.getElementById('tutorFee3').value)||0],
   };
 }
 async function reloadSettingsHistory(){
@@ -1415,17 +1707,18 @@ async function renderIncome(){
   const ym = monthEl.value;
   const body = document.getElementById('incomeBody');
   body.innerHTML = `<div class="loading-line">Đang tổng hợp…</div>`;
-  const active = students.filter(s=>s.status!=='withdrawn');
+  const active = students.filter(isEnrolledAnywhere);
   await warmMonthCache(ym);
-  let anTrua=0, xe=0, ht=0, paid=0, total=0;
+  let anTrua=0, xe=0, ht=0, tutor=0, paid=0, total=0;
   for(const s of active){
     const f = await computeStudentFee(s.id, ym);
-    anTrua+=f.anTruaFee; xe+=f.xeFee; ht+=f.htFee; paid+=f.paid; total+=f.total;
+    anTrua+=f.anTruaFee; xe+=f.xeFee; ht+=f.htFee; tutor+=f.tutorFee; paid+=f.paid; total+=f.total;
   }
   body.innerHTML = `<table>
     <tr><td>Tiền ăn trưa + nghỉ trưa (phải thu)</td><td class="num money">${fmtMoney(anTrua)}</td></tr>
-    <tr><td>Tiền xe đưa đón (phải thu)</td><td class="num money">${fmtMoney(xe)}</td></tr>
-    <tr><td>Tiền đưa đón học thêm (phải thu)</td><td class="num money">${fmtMoney(ht)}</td></tr>
+    <tr><td>Tiền xe đưa đón bán trú (phải thu)</td><td class="num money">${fmtMoney(xe)}</td></tr>
+    <tr><td>Đưa đón đi học thêm nơi khác (phải thu)</td><td class="num money">${fmtMoney(ht)}</td></tr>
+    <tr><td>Học thêm - giáo viên dạy (phải thu)</td><td class="num money">${fmtMoney(tutor)}</td></tr>
     <tr class="total-row"><td>Tổng phải thu</td><td class="num">${fmtMoney(total)}</td></tr>
     <tr><td>Đã thu thực tế (từ Thu phí)</td><td class="num" style="color:var(--success);font-weight:700;">${fmtMoney(paid)}</td></tr>
     <tr><td>Còn phải thu</td><td class="num" style="color:var(--danger);font-weight:700;">${fmtMoney(total-paid)}</td></tr>
@@ -1448,7 +1741,7 @@ async function getWithdrawnDebtTotal(){
 }
 async function renderDebtTab(){
   const ym = monthNow();
-  const active = students.filter(s=>s.status!=='withdrawn');
+  const active = students.filter(isEnrolledAnywhere);
   await warmMonthCache(ym, true);
   let count=0, amount=0;
   for(const s of active){ const f = await computeStudentFee(s.id, ym); if((f.status==='unpaid'||f.status==='partial') && f.total>0){ count++; amount+=f.remaining; } }
@@ -1536,7 +1829,7 @@ async function renderFinanceSummary(){
   const ym = monthEl.value;
   const body = document.getElementById('summaryBody');
   body.innerHTML = `<div class="loading-line">Đang tính toán…</div>`;
-  const active = students.filter(s=>s.status!=='withdrawn');
+  const active = students.filter(isEnrolledAnywhere);
   await warmMonthCache(ym, true);
   let totalThu=0;
   for(const s of active){ const f = await computeStudentFee(s.id, ym); totalThu += f.paid; }
@@ -1570,7 +1863,7 @@ function downloadWorkbook(sheets, filename){
   XLSX.writeFile(wb, filename);
 }
 function exportStudentsExcel(){
-  const active = students.filter(s=>s.status!=='withdrawn');
+  const active = students.filter(s=>s.status==='active');
   const rows = [['Tên học sinh','Lớp','Trường','Tên phụ huynh','SĐT/Zalo','Ngày tham gia bán trú','Dịch vụ sử dụng']];
   active.forEach(s=>rows.push([s.name, s.className||'', s.school||'', s.parentName||'', s.parentPhone||'', s.joinDate||'', serviceDesc(s.id)]));
   downloadWorkbook([{name:'DanhSachHocSinh', rows}], 'DanhSachHocSinh.xlsx');
@@ -1580,7 +1873,7 @@ async function exportAttendanceDayExcel(){
   const date = document.getElementById('attDate').value;
   const ym = date.slice(0,7); const day = date.slice(8,10);
   const att = await getAttendance(ym);
-  const active = students.filter(s=>s.status!=='withdrawn');
+  const active = students.filter(s=>s.status==='active');
   const rows = [['Tên học sinh','Lớp','Trạng thái']];
   active.forEach(s=>rows.push([s.name, s.className||'', ((att[s.id]||{})[day]==='present')?'Có mặt':(((att[s.id]||{})[day]==='absent')?'Vắng':'Chưa điểm danh')]));
   downloadWorkbook([{name:'DiemDanh_'+date, rows}], 'DiemDanh_'+date+'.xlsx');
@@ -1590,7 +1883,7 @@ async function exportAttendanceMonthExcel(){
   const date = document.getElementById('attDate').value;
   const ym = date.slice(0,7);
   const att = await getAttendance(ym);
-  const active = students.filter(s=>s.status!=='withdrawn');
+  const active = students.filter(s=>s.status==='active');
   const rows = [['Tên học sinh','Lớp','Số ngày có mặt','Số ngày vắng']];
   active.forEach(s=>{
     const vals = Object.values(att[s.id]||{});
@@ -1601,15 +1894,15 @@ async function exportAttendanceMonthExcel(){
 }
 async function exportFeeSummaryExcel(){
   const ym = document.getElementById('feeMonth').value || monthNow();
-  const active = students.filter(s=>s.status!=='withdrawn');
-  const rows = [['Tên học sinh','Lớp','Trường','Ngày ở bán trú','Tiền ăn','Tiền xe','Tiền học thêm','Tổng phải đóng','Đã đóng','Chưa đóng','Ngày đóng','Ghi chú']];
-  for(const s of active){ const f = await computeStudentFee(s.id, ym); rows.push([s.name, s.className||'', s.school||'', f.presentDays, f.anTruaFee, f.xeFee, f.htFee, f.total, f.paid, f.remaining, f.lastDate||'', f.lastNote||'']); }
+  const active = students.filter(isEnrolledAnywhere);
+  const rows = [['Tên học sinh','Lớp','Trường','Ngày ở bán trú','Tiền ăn','Tiền xe','Đưa đón HT nơi khác','Học thêm (dạy)','Tổng phải đóng','Đã đóng','Chưa đóng','Ngày đóng','Ghi chú']];
+  for(const s of active){ const f = await computeStudentFee(s.id, ym); rows.push([s.name, s.className||'', s.school||'', f.presentDays, f.anTruaFee, f.xeFee, f.htFee, f.tutorFee, f.total, f.paid, f.remaining, f.lastDate||'', f.lastNote||'']); }
   downloadWorkbook([{name:'HocPhi_'+ym, rows}], 'HocPhi_'+ym+'.xlsx');
   showToast('Đã xuất file Excel');
 }
 async function exportPaidExcel(){
   const ym = document.getElementById('feeMonth').value || monthNow();
-  const active = students.filter(s=>s.status!=='withdrawn');
+  const active = students.filter(isEnrolledAnywhere);
   const rows = [['Tên học sinh','Lớp','Số tiền đã đóng','Ngày đóng','Ghi chú']];
   for(const s of active){ const f = await computeStudentFee(s.id, ym); if(f.status==='paid' && f.total>0) rows.push([s.name, s.className||'', f.paid, f.lastDate||'', f.lastNote||'']); }
   downloadWorkbook([{name:'DaDong_'+ym, rows}], 'DaDongTien_'+ym+'.xlsx');
@@ -1617,7 +1910,7 @@ async function exportPaidExcel(){
 }
 async function exportUnpaidExcel(){
   const ym = document.getElementById('feeMonth').value || monthNow();
-  const active = students.filter(s=>s.status!=='withdrawn');
+  const active = students.filter(isEnrolledAnywhere);
   const rows = [['Tên học sinh','Lớp','Số tiền còn thiếu','Số ngày có mặt']];
   for(const s of active){ const f = await computeStudentFee(s.id, ym); if((f.status==='unpaid'||f.status==='partial') && f.total>0) rows.push([s.name, s.className||'', f.remaining, f.presentDays]); }
   downloadWorkbook([{name:'ChuaDong_'+ym, rows}], 'ChuaDongTien_'+ym+'.xlsx');
@@ -1634,9 +1927,9 @@ async function exportExpensesExcel(){
 }
 async function exportIncomeExcel(){
   const ym = document.getElementById('incMonth').value || monthNow();
-  const active = students.filter(s=>s.status!=='withdrawn');
-  const rows = [['Học sinh','Lớp','Tiền ăn (phải thu)','Tiền xe (phải thu)','Tiền học thêm (phải thu)','Tổng phải thu','Đã thu']];
-  for(const s of active){ const f = await computeStudentFee(s.id, ym); rows.push([s.name, s.className||'', f.anTruaFee, f.xeFee, f.htFee, f.total, f.paid]); }
+  const active = students.filter(isEnrolledAnywhere);
+  const rows = [['Học sinh','Lớp','Tiền ăn (phải thu)','Tiền xe (phải thu)','Đưa đón HT nơi khác (phải thu)','Học thêm dạy (phải thu)','Tổng phải thu','Đã thu']];
+  for(const s of active){ const f = await computeStudentFee(s.id, ym); rows.push([s.name, s.className||'', f.anTruaFee, f.xeFee, f.htFee, f.tutorFee, f.total, f.paid]); }
   downloadWorkbook([{name:'CacKhoanThu_'+ym, rows}], 'CacKhoanThu_'+ym+'.xlsx');
   showToast('Đã xuất file Excel');
 }
@@ -1649,7 +1942,7 @@ async function exportDebtsExcel(){
 }
 async function exportSummaryExcel(){
   const ym = document.getElementById('sumMonth').value || monthNow();
-  const active = students.filter(s=>s.status!=='withdrawn');
+  const active = students.filter(isEnrolledAnywhere);
   let totalThu=0, owingStu=0;
   for(const s of active){ const f = await computeStudentFee(s.id, ym); totalThu+=f.paid; if(f.status==='unpaid'||f.status==='partial') owingStu+=f.remaining; }
   const exp = await getExpenses(ym);
