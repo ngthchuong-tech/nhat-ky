@@ -2360,6 +2360,49 @@ function exportViPham(){
     showStatus('vp_status','Có lỗi khi xuất file: '+e.message, false);
   }
 }
+
+/* ============================================================
+   TẢI DỮ LIỆU ĐỘNG — chạy ngay khi trang mở
+   (QUAN TRỌNG: đừng xóa khối này khi đồng bộ lại code Lập biên bản
+   từ file độc lập LapBienBan_KSNB.html — file đó không có khối
+   này, nó chỉ tồn tại ở đây vì tab Tra cứu văn bản/Câu hỏi kiểm
+   tra/Mẫu biểu cần nó để tải dữ liệu từ ksnb_data.json.)
+   ============================================================ */
+async function loadKSNBData(){
+  try{
+    const resp = await fetch('ksnb_data.json?t=' + Date.now());
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    const d = await resp.json();
+
+    DATA_VB = (d.vanBan && d.vanBan.records) || [];
+    DATA_CH = (d.cauHoi && d.cauHoi.records) || [];
+    DANH_SACH_QT_CH = (d.cauHoi && d.cauHoi.danhSachQuyTrinh) || [];
+    DATA_MB = (d.mauBieu && d.mauBieu.records) || [];
+    DANH_SACH_QT_MB = (d.mauBieu && d.mauBieu.danhSachQuyTrinh) || [];
+
+    const tbVB = document.getElementById('tabbtn-vb');
+    if (tbVB) tbVB.textContent = '📁 Tra cứu văn bản (' + ((d.vanBan && d.vanBan.tongSo) || 0) + ')';
+    const tbCH = document.getElementById('tabbtn-ch');
+    if (tbCH) tbCH.textContent = '📋 Câu hỏi kiểm tra (' + ((d.cauHoi && d.cauHoi.tongSo) || 0) + ')';
+    const tbMB = document.getElementById('tabbtn-mb');
+    if (tbMB) tbMB.textContent = '📎 Mẫu biểu (' + ((d.mauBieu && d.mauBieu.tongSo) || 0) + ')';
+    const capNhatEl = document.getElementById('cap-nhat-text');
+    if (capNhatEl) capNhatEl.textContent = 'Cập nhật: ' + (d.ngayCapNhat || '?');
+
+    __ksnbDataReady = true;
+    __ksnbPendingInits.forEach(function(fn){ fn(); });
+    __ksnbPendingInits = [];
+  }catch(err){
+    console.error('Không tải được dữ liệu KSNB:', err);
+    const capNhatEl = document.getElementById('cap-nhat-text');
+    if (capNhatEl) capNhatEl.textContent = 'Cập nhật: lỗi tải dữ liệu';
+    ['stats-vb','stats-ch','stats-mb'].forEach(function(id){
+      const el = document.getElementById(id);
+      if (el) el.textContent = 'Không tải được dữ liệu (ksnb_data.json) — thử tải lại trang.';
+    });
+  }
+}
+loadKSNBData();
 </script>
 </body>
 </html>
