@@ -2017,6 +2017,102 @@ function companyParas(companies){
   return paras;
 }
 
+// Groups vị trí by "đang có mặt" / "không có mặt" instead of listing status inline per vị trí.
+// groups: [{heading: string|null, items: positionBlocks[], showCondition: bool}]
+function groupedPositionParas(groups){
+  const paras = [];
+  const presentByGroup = [];
+  const absentRows = [];
+
+  groups.forEach(g=>{
+    const rows = [];
+    (g.items||[]).forEach(pb=>{
+      const employees = (pb.employees && pb.employees.length) ? pb.employees : [];
+      const presentNames = employees.filter(e=>e.name && e.status && e.status.startsWith('Đang')).map(e=>e.name);
+      const absentNames = employees.filter(e=>e.name && e.status && e.status.startsWith('Không')).map(e=>e.name);
+      let suffix = '';
+      if(g.showCondition && pb.condition){
+        suffix = ` — ${pb.condition}`;
+        if(pb.condition === 'Ngừng hoạt động'){ suffix += ` (Lý do: ${pb.reason || '……………………'})`; }
+      }
+      if(presentNames.length) rows.push({label: pb.label || '…………', suffix, names: presentNames});
+      if(absentNames.length) absentRows.push({label: pb.label || '…………', names: absentNames});
+    });
+    if(rows.length) presentByGroup.push({heading: g.heading, rows});
+  });
+
+  paras.push(new Paragraph({indent:{left:400}, spacing:{after:20}, children:[new TextRun({text:'- Các nhân viên đang có mặt tại vị trí làm việc gồm:'})]}));
+  if(presentByGroup.length === 0){
+    paras.push(new Paragraph({indent:{left:600}, spacing:{after:20}, children:[new TextRun('……………………………………')]}));
+  }
+  presentByGroup.forEach(g=>{
+    if(g.heading){
+      paras.push(new Paragraph({indent:{left:400}, spacing:{before:40,after:20}, children:[new TextRun({text:g.heading, bold:true})]}));
+    }
+    g.rows.forEach(r=>{
+      paras.push(new Paragraph({indent:{left:600}, spacing:{after:20}, children:[
+        new TextRun({text:`+ ${r.label}${r.suffix}: `}),
+        new TextRun({text: r.names.join(', ') + '.'})
+      ]}));
+    });
+  });
+
+  paras.push(new Paragraph({indent:{left:400}, spacing:{before:60,after:20}, children:[new TextRun({text:'- Các nhân viên không có mặt tại vị trí làm việc:'})]}));
+  if(absentRows.length === 0){
+    paras.push(new Paragraph({indent:{left:600}, spacing:{after:20}, children:[new TextRun('+ Vị trí: tên nhân viên')]}));
+  } else {
+    absentRows.forEach(r=>{
+      paras.push(new Paragraph({indent:{left:600}, spacing:{after:20}, children:[
+        new TextRun({text:`+ ${r.label}: `}),
+        new TextRun({text: r.names.join(', ')})
+      ]}));
+    });
+  }
+  return paras;
+}
+
+// Groups thiết bị thuê ngoài by "đang hoạt động" / "ngừng hoạt động" instead of inline per-device status.
+function groupedEquipmentParas(companies){
+  const paras = [];
+  const activeByCompany = [];
+  const stopped = [];
+
+  companies.forEach(c=>{
+    const items = [];
+    (c.devices||[]).forEach(d=>{
+      const names = (d.employees||[]).filter(e=>e.name).map(e=>e.name);
+      if(d.condition === 'Ngừng hoạt động'){
+        stopped.push({label: d.label || '…………', reason: d.reason || '……………………'});
+      } else {
+        items.push({label: d.label || '…………', names});
+      }
+    });
+    if(items.length) activeByCompany.push({name: c.name || 'Công ty ……', items});
+  });
+
+  paras.push(new Paragraph({indent:{left:400}, spacing:{after:20}, children:[new TextRun({text:'- Các phương tiện thiết bị đang hoạt động gồm:'})]}));
+  if(activeByCompany.length === 0){
+    paras.push(new Paragraph({indent:{left:600}, spacing:{after:20}, children:[new TextRun('……………………………………')]}));
+  }
+  activeByCompany.forEach(c=>{
+    paras.push(new Paragraph({indent:{left:400}, spacing:{before:40,after:20}, children:[new TextRun({text:`* ${c.name}`, bold:true})]}));
+    c.items.forEach(it=>{
+      const nameText = it.names.length ? `: ${it.names.join(', ')}` : '';
+      paras.push(new Paragraph({indent:{left:600}, spacing:{after:20}, children:[new TextRun({text:`+ ${it.label}${nameText}`})]}));
+    });
+  });
+
+  paras.push(new Paragraph({indent:{left:400}, spacing:{before:60,after:20}, children:[new TextRun({text:'- Các phương tiện ngừng hoạt động:'})]}));
+  if(stopped.length === 0){
+    paras.push(new Paragraph({indent:{left:600}, spacing:{after:20}, children:[new TextRun('+ Tên phương tiện (Lý do)')]}));
+  } else {
+    stopped.forEach(s=>{
+      paras.push(new Paragraph({indent:{left:600}, spacing:{after:20}, children:[new TextRun({text:`+ ${s.label} (${s.reason})`})]}));
+    });
+  }
+  return paras;
+}
+
 function multilineParas(text, opts={}){
   const lines = (text||'').split('\n').filter(l=>l.trim());
   if(lines.length===0) return [new Paragraph({indent:{left:200}, children:[new TextRun("……………………………………………………………………………………………")]})];
@@ -2096,17 +2192,19 @@ function exportGD1(){
     children.push(...berthParas(readBerths('gd1_berths')));
 
     children.push(headingArabic(2, "Ban Khai thác điều độ"));
-    children.push(...posBlockParas(readPositionBlocks('gd1_dieuDo'), "Bộ phận điều độ:", {expand:true}));
-    children.push(...posBlockParas(readPositionBlocks('gd1_coGioi'), "Bộ phận cơ giới:", {expand:true, showCondition:true}));
+    children.push(...groupedPositionParas([
+      {heading:"Bộ phận điều độ:", items: readPositionBlocks('gd1_dieuDo')},
+      {heading:"Bộ phận cơ giới:", items: readPositionBlocks('gd1_coGioi'), showCondition:true}
+    ]));
 
     children.push(headingArabic(3, "Ban Kế toán Tài vụ"));
-    children.push(...posBlockParas(readPositionBlocks('gd1_ketoan'), null));
+    children.push(...groupedPositionParas([{heading:null, items: readPositionBlocks('gd1_ketoan')}]));
 
     children.push(headingArabic(4, "Ban Hành chính bảo vệ"));
-    children.push(...posBlockParas(readPositionBlocks('gd1_hcbv'), null));
+    children.push(...groupedPositionParas([{heading:null, items: readPositionBlocks('gd1_hcbv')}]));
 
     children.push(headingArabic(5, "Thiết bị thuê ngoài"));
-    children.push(...companyParas(readCompanies('gd1_companies')));
+    children.push(...groupedEquipmentParas(readCompanies('gd1_companies')));
 
     children.push(headingRoman("III", "Tình hình an ninh trật tự"));
     children.push(...multilineParas(document.getElementById('gd1_antt').value || 'Tình hình an ninh trật tự ổn định, không có vụ việc bất thường xảy ra trong ca trực.', {justify:true}));
@@ -2166,17 +2264,19 @@ function exportLBT(){
     children.push(...berthParas(readBerths('lbt_berths')));
 
     children.push(headingArabic(2, "Ban Khai thác điều độ"));
-    children.push(...posBlockParas(readPositionBlocks('lbt_dieuDo'), "Bộ phận điều độ:", {expand:true}));
-    children.push(...posBlockParas(readPositionBlocks('lbt_coGioi'), "Bộ phận cơ giới:", {expand:true, showCondition:true}));
+    children.push(...groupedPositionParas([
+      {heading:"Bộ phận điều độ:", items: readPositionBlocks('lbt_dieuDo')},
+      {heading:"Bộ phận cơ giới:", items: readPositionBlocks('lbt_coGioi'), showCondition:true}
+    ]));
 
     children.push(headingArabic(3, "Ban Kế toán thương vụ"));
-    children.push(...posBlockParas(readPositionBlocks('lbt_ketoan'), null));
+    children.push(...groupedPositionParas([{heading:null, items: readPositionBlocks('lbt_ketoan')}]));
 
     children.push(headingArabic(4, "Ban Hành chính bảo vệ"));
-    children.push(...posBlockParas(readPositionBlocks('lbt_hcbv'), null));
+    children.push(...groupedPositionParas([{heading:null, items: readPositionBlocks('lbt_hcbv')}]));
 
     children.push(headingArabic(5, "Thiết bị thuê ngoài"));
-    children.push(...companyParas(readCompanies('lbt_companies')));
+    children.push(...groupedEquipmentParas(readCompanies('lbt_companies')));
 
     children.push(headingArabic(6, "Trực lãnh đạo, chỉ huy"));
     [
@@ -2260,45 +2360,6 @@ function exportViPham(){
     showStatus('vp_status','Có lỗi khi xuất file: '+e.message, false);
   }
 }
-
-/* ============================================================
-   TẢI DỮ LIỆU ĐỘNG — chạy ngay khi trang mở
-   ============================================================ */
-async function loadKSNBData(){
-  try{
-    const resp = await fetch('ksnb_data.json?t=' + Date.now());
-    if(!resp.ok) throw new Error('HTTP ' + resp.status);
-    const d = await resp.json();
-
-    DATA_VB = (d.vanBan && d.vanBan.records) || [];
-    DATA_CH = (d.cauHoi && d.cauHoi.records) || [];
-    DANH_SACH_QT_CH = (d.cauHoi && d.cauHoi.danhSachQuyTrinh) || [];
-    DATA_MB = (d.mauBieu && d.mauBieu.records) || [];
-    DANH_SACH_QT_MB = (d.mauBieu && d.mauBieu.danhSachQuyTrinh) || [];
-
-    const tbVB = document.getElementById('tabbtn-vb');
-    if (tbVB) tbVB.textContent = '📁 Tra cứu văn bản (' + ((d.vanBan && d.vanBan.tongSo) || 0) + ')';
-    const tbCH = document.getElementById('tabbtn-ch');
-    if (tbCH) tbCH.textContent = '📋 Câu hỏi kiểm tra (' + ((d.cauHoi && d.cauHoi.tongSo) || 0) + ')';
-    const tbMB = document.getElementById('tabbtn-mb');
-    if (tbMB) tbMB.textContent = '📎 Mẫu biểu (' + ((d.mauBieu && d.mauBieu.tongSo) || 0) + ')';
-    const capNhatEl = document.getElementById('cap-nhat-text');
-    if (capNhatEl) capNhatEl.textContent = 'Cập nhật: ' + (d.ngayCapNhat || '?');
-
-    __ksnbDataReady = true;
-    __ksnbPendingInits.forEach(function(fn){ fn(); });
-    __ksnbPendingInits = [];
-  }catch(err){
-    console.error('Không tải được dữ liệu KSNB:', err);
-    const capNhatEl = document.getElementById('cap-nhat-text');
-    if (capNhatEl) capNhatEl.textContent = 'Cập nhật: lỗi tải dữ liệu';
-    ['stats-vb','stats-ch','stats-mb'].forEach(function(id){
-      const el = document.getElementById(id);
-      if (el) el.textContent = 'Không tải được dữ liệu (ksnb_data.json) — thử tải lại trang.';
-    });
-  }
-}
-loadKSNBData();
 </script>
 </body>
 </html>
