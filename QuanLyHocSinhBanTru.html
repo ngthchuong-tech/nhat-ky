@@ -354,8 +354,12 @@
 
   <!-- CÀI ĐẶT -->
   <section class="panel" id="panel-settings">
-    <div class="section-head"><div><h2>Cài đặt mức phí</h2><div class="sub">Áp dụng cho toàn bộ tính toán học phí</div></div></div>
+    <div class="section-head"><div><h2>Cài đặt mức phí</h2><div class="sub">Mỗi lần đổi giá cần chọn áp dụng từ tháng nào — không ảnh hưởng các tháng trước đó</div></div></div>
     <div class="card"><div class="pad">
+      <div class="field"><label>Áp dụng từ tháng</label><input type="month" id="setEffectiveFrom">
+        <div class="hint" style="margin-top:6px;">Các tháng TRƯỚC tháng này vẫn giữ nguyên mức giá cũ. Chọn tháng hiện tại nếu muốn áp dụng ngay; chọn tháng tương lai nếu muốn lên lịch đổi giá trước.</div>
+      </div>
+      <div class="divider"></div>
       <h3 style="margin-top:0;font-size:14px;">Ăn trưa + nghỉ trưa — tính theo ngày</h3>
       <div class="field"><label>Giá 1 ngày (đ)</label><input type="number" id="setAnTruaDay" placeholder="VD: 30000"></div>
       <div class="divider"></div>
@@ -372,7 +376,12 @@
       <div class="row g2"><div class="field"><label>Tên mức 1</label><input type="text" id="htLbl1"></div><div class="field"><label>Phí (đ)</label><input type="number" id="htFee1"></div></div>
       <div class="row g2"><div class="field"><label>Tên mức 2</label><input type="text" id="htLbl2"></div><div class="field"><label>Phí (đ)</label><input type="number" id="htFee2"></div></div>
       <div class="row g2"><div class="field"><label>Tên mức 3</label><input type="text" id="htLbl3"></div><div class="field"><label>Phí (đ)</label><input type="number" id="htFee3"></div></div>
-      <button class="btn btn-primary" onclick="saveSettings()">Lưu cài đặt mức phí</button>
+      <button class="btn btn-primary" onclick="saveSettings()">Lưu mức giá này</button>
+    </div></div>
+
+    <div class="card"><div class="pad">
+      <h3 style="margin-top:0;font-size:14px;">Lịch sử thay đổi giá</h3>
+      <div id="settingsHistoryList" class="tbl-wrap"></div>
     </div></div>
 
     <div class="card"><div class="pad">
@@ -413,7 +422,17 @@ try{ API_URL = localStorage.getItem('banTru_apiUrl') || API_URL; }catch(e){}
 
 /* ========================= STATE ========================= */
 let students = [];
-let settings = {anTruaDay:0, anTruaMLbl:["Mức 1","Mức 2","Mức 3"], anTruaMFee:[0,0,0], xeLbl:["Mức 1","Mức 2"], xeFee:[0,0], htLbl:["Mức 1","Mức 2","Mức 3"], htFee:[0,0,0]};
+let settingsHistory = [];
+let currentSettings = {anTruaDay:0, anTruaMLbl:["Mức 1","Mức 2","Mức 3"], anTruaMFee:[0,0,0], xeLbl:["Mức 1","Mức 2"], xeFee:[0,0], htLbl:["Mức 1","Mức 2","Mức 3"], htFee:[0,0,0]};
+// Tìm bảng giá đang hiệu lực ở 1 tháng cụ thể (giống hệt logic backend
+// pickSettingsForMonth_) — vì đổi giá giờ chỉ áp dụng từ 1 tháng chọn trước,
+// không ảnh hưởng ngược các tháng cũ.
+function pickSettingsForMonth(ym){
+  if(!settingsHistory || settingsHistory.length===0) return currentSettings;
+  let chosen = settingsHistory[0];
+  for(const v of settingsHistory){ if(!v.effectiveFrom || v.effectiveFrom<=ym) chosen=v; else break; }
+  return chosen;
+}
 let services = {};
 let attendanceCache = {};
 let paymentsCache = {};
@@ -525,7 +544,8 @@ async function tryConnect(){
     }
     const data = await apiGet('getAllData');
     students = data.students||[];
-    settings = Object.assign(settings, data.settings||{});
+    settingsHistory = data.settingsHistory||[];
+    currentSettings = data.currentSettings || currentSettings;
     services = data.services||{};
     setConn(true,'Đã kết nối');
     document.getElementById('setupOverlay').style.display='none';
@@ -641,20 +661,27 @@ async function warmMonthCache(ym, withDebts){
   if(withDebts) jobs.push(ensureAllDebtsLoaded());
   await Promise.all(jobs);
 }
-function svcOf(sid){ return services[sid] || {anTruaMode:'off',anTruaTier:0,xeTier:0,hocThemTier:0}; }
+function svcOf(sid){ return services[sid] || {anTruaMode:'off',anTruaTier:0,xeTier:0,hocThemTier:0,firstMonthAnTrua:null,firstMonthXe:null,firstMonthHocThem:null}; }
 async function computeStudentFee(sid, ym){
   const s = students.find(x=>x.id===sid);
-  if(s && s.joinDate && ym < s.joinDate.slice(0,7)){
+  const joinYm = s && s.joinDate ? s.joinDate.slice(0,7) : '';
+  if(joinYm && ym < joinYm){
     return {presentDays:0, anTruaFee:0, xeFee:0, htFee:0, total:0, paid:0, remaining:0, status:'none', lastDate:'', lastNote:''};
   }
+  const st = pickSettingsForMonth(ym); // bảng giá đúng theo tháng này, không phải giá hiện tại
+  const isFirstMonth = joinYm && ym===joinYm;
   const att = await getAttendance(ym);
   const presentDays = Object.values(att[sid]||{}).filter(v=>v==='present').length;
   const sv = svcOf(sid);
   let anTruaFee=0;
-  if(sv.anTruaMode==='day') anTruaFee = presentDays*(settings.anTruaDay||0);
-  else if(sv.anTruaMode==='month' && sv.anTruaTier>0) anTruaFee = settings.anTruaMFee[sv.anTruaTier-1]||0;
-  const xeFee = sv.xeTier>0 ? (settings.xeFee[sv.xeTier-1]||0) : 0;
-  const htFee = sv.hocThemTier>0 ? (settings.htFee[sv.hocThemTier-1]||0) : 0;
+  if(sv.anTruaMode==='day') anTruaFee = presentDays*(st.anTruaDay||0);
+  else if(sv.anTruaMode==='month' && sv.anTruaTier>0){
+    anTruaFee = (isFirstMonth && sv.firstMonthAnTrua!=null) ? sv.firstMonthAnTrua : (st.anTruaMFee[sv.anTruaTier-1]||0);
+  }
+  let xeFee=0;
+  if(sv.xeTier>0) xeFee = (isFirstMonth && sv.firstMonthXe!=null) ? sv.firstMonthXe : (st.xeFee[sv.xeTier-1]||0);
+  let htFee=0;
+  if(sv.hocThemTier>0) htFee = (isFirstMonth && sv.firstMonthHocThem!=null) ? sv.firstMonthHocThem : (st.htFee[sv.hocThemTier-1]||0);
   const total = anTruaFee+xeFee+htFee;
   const pays = await getPayments(ym);
   const list = pays[sid]||[];
@@ -670,9 +697,9 @@ function serviceDesc(sid){
   const sv = svcOf(sid);
   const parts = [];
   if(sv.anTruaMode==='day') parts.push('Ăn trưa (theo ngày)');
-  else if(sv.anTruaMode==='month' && sv.anTruaTier>0) parts.push('Ăn trưa: '+(settings.anTruaMLbl[sv.anTruaTier-1]||''));
-  if(sv.xeTier>0) parts.push('Xe: '+(settings.xeLbl[sv.xeTier-1]||''));
-  if(sv.hocThemTier>0) parts.push('Học thêm: '+(settings.htLbl[sv.hocThemTier-1]||''));
+  else if(sv.anTruaMode==='month' && sv.anTruaTier>0) parts.push('Ăn trưa: '+(currentSettings.anTruaMLbl[sv.anTruaTier-1]||''));
+  if(sv.xeTier>0) parts.push('Xe: '+(currentSettings.xeLbl[sv.xeTier-1]||''));
+  if(sv.hocThemTier>0) parts.push('Học thêm: '+(currentSettings.htLbl[sv.hocThemTier-1]||''));
   return parts.length? parts.join(' · ') : 'Không dùng dịch vụ';
 }
 
@@ -756,23 +783,31 @@ async function annotateStudentDebts(list){
 
 /* Modal thêm/sửa học sinh (gồm cả chọn dịch vụ) */
 function svcFieldsHtml(sv){
-  sv = sv || {anTruaMode:'off',anTruaTier:0,xeTier:0,hocThemTier:0};
-  const anTruaMonthOpts = settings.anTruaMLbl.map((lbl,i)=>`<option value="${i+1}" ${sv.anTruaTier===i+1?'selected':''}>${escapeHtml(lbl)} (${fmtMoney(settings.anTruaMFee[i])})</option>`).join('');
-  const xeOpts = `<option value="0" ${sv.xeTier===0?'selected':''}>Không dùng</option>` + settings.xeLbl.map((lbl,i)=>`<option value="${i+1}" ${sv.xeTier===i+1?'selected':''}>${escapeHtml(lbl)} (${fmtMoney(settings.xeFee[i])})</option>`).join('');
-  const htOpts = `<option value="0" ${sv.hocThemTier===0?'selected':''}>Không dùng</option>` + settings.htLbl.map((lbl,i)=>`<option value="${i+1}" ${sv.hocThemTier===i+1?'selected':''}>${escapeHtml(lbl)} (${fmtMoney(settings.htFee[i])})</option>`).join('');
+  sv = sv || {anTruaMode:'off',anTruaTier:0,xeTier:0,hocThemTier:0,firstMonthAnTrua:null,firstMonthXe:null,firstMonthHocThem:null};
+  const anTruaMonthOpts = currentSettings.anTruaMLbl.map((lbl,i)=>`<option value="${i+1}" ${sv.anTruaTier===i+1?'selected':''}>${escapeHtml(lbl)} (${fmtMoney(currentSettings.anTruaMFee[i])})</option>`).join('');
+  const xeOpts = `<option value="0" ${sv.xeTier===0?'selected':''}>Không dùng</option>` + currentSettings.xeLbl.map((lbl,i)=>`<option value="${i+1}" ${sv.xeTier===i+1?'selected':''}>${escapeHtml(lbl)} (${fmtMoney(currentSettings.xeFee[i])})</option>`).join('');
+  const htOpts = `<option value="0" ${sv.hocThemTier===0?'selected':''}>Không dùng</option>` + currentSettings.htLbl.map((lbl,i)=>`<option value="${i+1}" ${sv.hocThemTier===i+1?'selected':''}>${escapeHtml(lbl)} (${fmtMoney(currentSettings.htFee[i])})</option>`).join('');
   return `
     <div class="divider"></div>
     <h3 style="font-size:14px;margin:0 0 8px;">Dịch vụ sử dụng</h3>
     <div class="field"><label>Ăn trưa + nghỉ trưa</label>
       <select id="mAnTruaMode" onchange="document.getElementById('mAnTruaTierWrap').style.display=(this.value==='month')?'block':'none'">
         <option value="off" ${sv.anTruaMode==='off'?'selected':''}>Không dùng</option>
-        <option value="day" ${sv.anTruaMode==='day'?'selected':''}>Theo ngày (${fmtMoney(settings.anTruaDay)}/ngày)</option>
+        <option value="day" ${sv.anTruaMode==='day'?'selected':''}>Theo ngày (${fmtMoney(currentSettings.anTruaDay)}/ngày)</option>
         <option value="month" ${sv.anTruaMode==='month'?'selected':''}>Theo tháng (chọn mức)</option>
       </select>
     </div>
     <div class="field" id="mAnTruaTierWrap" style="display:${sv.anTruaMode==='month'?'block':'none'}"><label>Mức ăn trưa theo tháng</label><select id="mAnTruaTier">${anTruaMonthOpts}</select></div>
     <div class="field"><label>Xe đưa đón</label><select id="mXeTier">${xeOpts}</select></div>
     <div class="field"><label>Đưa đón học thêm</label><select id="mHocThemTier">${htOpts}</select></div>
+    <div class="divider"></div>
+    <h3 style="font-size:14px;margin:0 0 6px;">Phí tháng đầu tiên (tùy chỉnh)</h3>
+    <div class="hint" style="margin-top:0;margin-bottom:8px;">Chỉ áp dụng cho đúng "Ngày tham gia bán trú" ở trên — dùng khi học sinh tham gia giữa tháng nên phí tháng đầu ít hơn mức đầy đủ. Để trống = tính đủ theo mức đã chọn như bình thường.</div>
+    <div class="row g3">
+      <div class="field"><label>Ăn trưa tháng đầu (đ)</label><input type="number" id="mFirstAnTrua" value="${sv.firstMonthAnTrua!=null?sv.firstMonthAnTrua:''}" placeholder="Để trống"></div>
+      <div class="field"><label>Xe tháng đầu (đ)</label><input type="number" id="mFirstXe" value="${sv.firstMonthXe!=null?sv.firstMonthXe:''}" placeholder="Để trống"></div>
+      <div class="field"><label>Học thêm tháng đầu (đ)</label><input type="number" id="mFirstHocThem" value="${sv.firstMonthHocThem!=null?sv.firstMonthHocThem:''}" placeholder="Để trống"></div>
+    </div>
   `;
 }
 function openStudentModal(id){
@@ -809,11 +844,15 @@ async function saveStudent(id){
     parentPhone: document.getElementById('mPhone').value.trim(),
     joinDate: document.getElementById('mJoinDate').value || todayISO(),
   };
+  const readOverride = id => { const v = document.getElementById(id).value; return v===''? null : Number(v); };
   const svc = {
     anTruaMode: document.getElementById('mAnTruaMode').value,
     anTruaTier: Number(document.getElementById('mAnTruaTier').value)||0,
     xeTier: Number(document.getElementById('mXeTier').value)||0,
     hocThemTier: Number(document.getElementById('mHocThemTier').value)||0,
+    firstMonthAnTrua: readOverride('mFirstAnTrua'),
+    firstMonthXe: readOverride('mFirstXe'),
+    firstMonthHocThem: readOverride('mFirstHocThem'),
   };
   const btn = document.getElementById('mSaveBtn'); btn.disabled=true; btn.textContent='Đang lưu…';
   try{
@@ -1226,19 +1265,38 @@ async function sendUnpaidZaloMessage(sid, ym){
 
 /* ========================= CÀI ĐẶT ========================= */
 function fillSettingsForm(){
-  document.getElementById('setAnTruaDay').value = settings.anTruaDay||'';
-  document.getElementById('anTruaMLbl1').value=settings.anTruaMLbl[0]||''; document.getElementById('anTruaMFee1').value=settings.anTruaMFee[0]||'';
-  document.getElementById('anTruaMLbl2').value=settings.anTruaMLbl[1]||''; document.getElementById('anTruaMFee2').value=settings.anTruaMFee[1]||'';
-  document.getElementById('anTruaMLbl3').value=settings.anTruaMLbl[2]||''; document.getElementById('anTruaMFee3').value=settings.anTruaMFee[2]||'';
-  document.getElementById('xeLbl1').value=settings.xeLbl[0]||''; document.getElementById('xeFee1').value=settings.xeFee[0]||'';
-  document.getElementById('xeLbl2').value=settings.xeLbl[1]||''; document.getElementById('xeFee2').value=settings.xeFee[1]||'';
-  document.getElementById('htLbl1').value=settings.htLbl[0]||''; document.getElementById('htFee1').value=settings.htFee[0]||'';
-  document.getElementById('htLbl2').value=settings.htLbl[1]||''; document.getElementById('htFee2').value=settings.htFee[1]||'';
-  document.getElementById('htLbl3').value=settings.htLbl[2]||''; document.getElementById('htFee3').value=settings.htFee[2]||'';
+  document.getElementById('setEffectiveFrom').value = monthNow();
+  document.getElementById('setAnTruaDay').value = currentSettings.anTruaDay||'';
+  document.getElementById('anTruaMLbl1').value=currentSettings.anTruaMLbl[0]||''; document.getElementById('anTruaMFee1').value=currentSettings.anTruaMFee[0]||'';
+  document.getElementById('anTruaMLbl2').value=currentSettings.anTruaMLbl[1]||''; document.getElementById('anTruaMFee2').value=currentSettings.anTruaMFee[1]||'';
+  document.getElementById('anTruaMLbl3').value=currentSettings.anTruaMLbl[2]||''; document.getElementById('anTruaMFee3').value=currentSettings.anTruaMFee[2]||'';
+  document.getElementById('xeLbl1').value=currentSettings.xeLbl[0]||''; document.getElementById('xeFee1').value=currentSettings.xeFee[0]||'';
+  document.getElementById('xeLbl2').value=currentSettings.xeLbl[1]||''; document.getElementById('xeFee2').value=currentSettings.xeFee[1]||'';
+  document.getElementById('htLbl1').value=currentSettings.htLbl[0]||''; document.getElementById('htFee1').value=currentSettings.htFee[0]||'';
+  document.getElementById('htLbl2').value=currentSettings.htLbl[1]||''; document.getElementById('htFee2').value=currentSettings.htFee[1]||'';
+  document.getElementById('htLbl3').value=currentSettings.htLbl[2]||''; document.getElementById('htFee3').value=currentSettings.htFee[2]||'';
   document.getElementById('curApiUrl').value = API_URL;
+  renderSettingsHistory();
+}
+function renderSettingsHistory(){
+  const box = document.getElementById('settingsHistoryList');
+  if(!settingsHistory || settingsHistory.length===0){ box.innerHTML = `<div class="empty">Chưa có lịch sử giá.</div>`; return; }
+  const sorted = settingsHistory.slice().sort((a,b)=> (b.effectiveFrom||'').localeCompare(a.effectiveFrom||''));
+  box.innerHTML = `<table>
+    <thead><tr><th>Áp dụng từ</th><th>Ăn trưa/ngày</th><th>Xe M1/M2</th><th>Học thêm M1/M2/M3</th><th></th></tr></thead>
+    <tbody>${sorted.map(v=>`
+      <tr>
+        <td>${v.effectiveFrom? monthLabel(v.effectiveFrom) : 'Từ trước tới nay'}</td>
+        <td class="num">${fmtMoney(v.anTruaDay)}</td>
+        <td class="num">${fmtMoney(v.xeFee[0])} / ${fmtMoney(v.xeFee[1])}</td>
+        <td class="num">${fmtMoney(v.htFee[0])} / ${fmtMoney(v.htFee[1])} / ${fmtMoney(v.htFee[2])}</td>
+        <td><button class="btn btn-sm btn-danger" onclick="deleteSettingsVersion('${v.effectiveFrom}')">Xoá</button></td>
+      </tr>`).join('')}</tbody>
+  </table>`;
 }
 function collectSettingsPayload(){
   return {
+    effectiveFrom: document.getElementById('setEffectiveFrom').value || monthNow(),
     anTruaDay: Number(document.getElementById('setAnTruaDay').value)||0,
     anTruaMLbl: [document.getElementById('anTruaMLbl1').value.trim()||'Mức 1', document.getElementById('anTruaMLbl2').value.trim()||'Mức 2', document.getElementById('anTruaMLbl3').value.trim()||'Mức 3'],
     anTruaMFee: [Number(document.getElementById('anTruaMFee1').value)||0, Number(document.getElementById('anTruaMFee2').value)||0, Number(document.getElementById('anTruaMFee3').value)||0],
@@ -1248,18 +1306,37 @@ function collectSettingsPayload(){
     htFee: [Number(document.getElementById('htFee1').value)||0, Number(document.getElementById('htFee2').value)||0, Number(document.getElementById('htFee3').value)||0],
   };
 }
+async function reloadSettingsHistory(){
+  try{
+    const data = await apiGet('getAllData');
+    settingsHistory = data.settingsHistory||[];
+    currentSettings = data.currentSettings || currentSettings;
+  }catch(e){ showToast('Lỗi tải lại bảng giá: '+e.message); }
+}
 async function saveSettings(){
-  const newSettings = collectSettingsPayload();
-  try{ await apiPost('saveSettings', newSettings); settings = newSettings; showToast('Đã lưu cài đặt mức phí'); }
-  catch(e){ showToast('Lỗi lưu cài đặt: '+e.message); }
+  const payload = collectSettingsPayload();
+  try{
+    await apiPost('saveSettingsVersion', payload);
+    await reloadSettingsHistory();
+    showToast('Đã lưu mức giá, áp dụng từ '+monthLabel(payload.effectiveFrom).toLowerCase());
+    renderSettingsHistory();
+  }catch(e){ showToast('Lỗi lưu cài đặt: '+e.message); }
+}
+async function deleteSettingsVersion(effectiveFrom){
+  if(!confirm('Xoá phiên bản giá này? Các tháng liên quan sẽ tự chuyển sang dùng phiên bản gần nhất trước đó.')) return;
+  try{
+    await apiPost('deleteSettingsVersion', {effectiveFrom});
+    await reloadSettingsHistory();
+    showToast('Đã xoá');
+    renderSettingsHistory();
+  }catch(e){ showToast('Lỗi xoá: '+e.message); }
 }
 async function changePin(){
   const p1 = document.getElementById('newPin1').value.trim();
   const p2 = document.getElementById('newPin2').value.trim();
   if(p1!==p2){ showToast('PIN nhập lại không khớp'); return; }
-  const payload = Object.assign(collectSettingsPayload(), {newPin: p1});
   try{
-    await apiPost('saveSettings', payload);
+    await apiPost('changePin', {newPin: p1});
     sessionPin = p1;
     document.getElementById('newPin1').value=''; document.getElementById('newPin2').value='';
     showToast(p1? 'Đã đặt mã PIN mới' : 'Đã tắt khoá PIN');
