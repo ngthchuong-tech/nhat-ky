@@ -129,11 +129,6 @@
     box-shadow:2px 0 4px rgba(32,41,31,0.06);
   }
   .tbl-wrap table th:first-child{z-index:3;background:var(--bg);}
-  .tbl-wrap table td.pin-right, .tbl-wrap table th.pin-right{
-    position:sticky;right:0;z-index:2;background:var(--surface);
-    box-shadow:-2px 0 4px rgba(32,41,31,0.06);
-  }
-  .tbl-wrap table th.pin-right{z-index:3;background:var(--bg);}
 
   nav.tabbar{position:fixed;bottom:0;left:0;right:0;z-index:30;background:#fff;border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:6px 2px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -2px 12px rgba(0,0,0,0.05);}
   nav.tabbar .tab{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;color:var(--ink-soft);font-size:10px;font-weight:700;padding:6px 4px;border-radius:8px;flex:1;max-width:110px;}
@@ -306,10 +301,11 @@
 
     <div class="subview" id="fee-summary">
       <div class="section-head">
-        <div><h2>Học phí theo tháng</h2><div class="sub">Tổng hợp phí dịch vụ mỗi học sinh trong tháng</div></div>
+        <div><h2>Học phí theo tháng</h2><div class="sub">Bấm vào tên học sinh để nộp tiền</div></div>
         <div class="flexbtns"><input type="month" id="feeMonth" style="width:auto" onchange="onFeeMonthChange()"><button class="btn btn-ghost btn-sm" onclick="exportFeeSummaryExcel()">⬇ Excel</button></div>
       </div>
-      <div class="card"><div class="pad tbl-wrap"><table id="feeTable"></table></div></div>
+      <div class="card" style="margin-bottom:12px;"><div class="pad" id="feeSummaryTotals" style="display:flex;justify-content:space-around;text-align:center;flex-wrap:wrap;gap:10px;"></div></div>
+      <div class="stu-list" id="feeList"></div>
     </div>
 
     <div class="subview" id="fee-paid">
@@ -1322,39 +1318,55 @@ async function renderFeeSummary(){
   const monthEl = document.getElementById('feeMonth');
   if(!monthEl.value) monthEl.value = monthNow();
   const ym = monthEl.value;
-  const tbl = document.getElementById('feeTable');
-  tbl.innerHTML = `<tr><td class="empty">Đang tải…</td></tr>`;
+  const list = document.getElementById('feeList');
+  const totalsBox = document.getElementById('feeSummaryTotals');
+  list.innerHTML = `<div class="loading-line">Đang tải…</div>`;
+  totalsBox.innerHTML = '';
   const active = students.filter(isEnrolledAnywhere);
-  if(active.length===0){ tbl.innerHTML = `<tr><td class="empty">Chưa có học sinh.</td></tr>`; return; }
+  if(active.length===0){ list.innerHTML = `<div class="empty">Chưa có học sinh.</div>`; return; }
   await warmMonthCache(ym);
-  let rows=[]; let sumTotal=0,sumPaid=0;
+  const items = [];
+  let sumTotal=0, sumPaid=0;
   for(const s of active){
     const f = await computeStudentFee(s.id, ym);
     sumTotal+=f.total; sumPaid+=f.paid;
-    let rowBg='', remainCellStyle='', paidCellStyle='';
-    if(f.remaining>0 && f.paid<=0){ rowBg='var(--danger-soft)'; remainCellStyle='color:var(--danger);font-weight:800;'; }
-    else if(f.remaining>0 && f.paid>0){ rowBg='var(--warm-soft)'; remainCellStyle='color:var(--warm);font-weight:800;'; paidCellStyle='color:var(--success);font-weight:700;'; }
-    else if(f.total>0){ paidCellStyle='color:var(--success);font-weight:700;'; }
-    const rowStyle = rowBg ? ` style="background:${rowBg};"` : '';
-    const firstCellStyle = rowBg ? ` style="background:${rowBg};"` : '';
-    const pinRightStyle = rowBg ? ` style="background:${rowBg};"` : '';
-    rows.push(`<tr${rowStyle}>
-      <td${firstCellStyle}>${escapeHtml(s.name)}<div style="color:var(--ink-soft);font-size:11px;">${escapeHtml(s.className||'')} · ${escapeHtml(s.school||'')}</div></td>
-      <td class="num">${f.presentDays}</td>
-      <td class="num">${fmtMoney(f.anTruaFee)}</td>
-      <td class="num">${fmtMoney(f.xeFee)}</td>
-      <td class="num">${fmtMoney(f.htFee)}</td>
-      <td class="num">${fmtMoney(f.tutorFee)}</td>
-      <td class="num money">${fmtMoney(f.total)}</td>
-      <td class="num" style="${paidCellStyle}">${fmtMoney(f.paid)}</td>
-      <td class="num" style="${remainCellStyle}">${fmtMoney(f.remaining)}</td>
-      <td>${f.lastDate||'—'}</td>
-      <td>${escapeHtml(f.lastNote||'')}</td>
-      <td class="pin-right"${pinRightStyle}><button class="btn btn-sm btn-primary" onclick="openPaymentModal('${s.id}','${ym}')">Nộp tiền</button></td>
-    </tr>`);
+    items.push({s,f});
   }
-  tbl.innerHTML = `<thead><tr><th>Học sinh</th><th>Ngày ở bán trú</th><th>Tiền ăn</th><th>Xe bán trú</th><th>Đưa đón HT nơi khác</th><th>Học thêm (dạy)</th><th>Tổng phải đóng</th><th>Đã đóng</th><th>Chưa đóng</th><th>Ngày đóng</th><th>Ghi chú</th><th class="pin-right"></th></tr></thead>
-    <tbody>${rows.join('')}<tr class="total-row"><td style="background:#FAF8F2;">Tổng cộng</td><td></td><td></td><td></td><td></td><td></td><td class="num">${fmtMoney(sumTotal)}</td><td class="num">${fmtMoney(sumPaid)}</td><td class="num">${fmtMoney(sumTotal-sumPaid)}</td><td></td><td></td><td class="pin-right" style="background:#FAF8F2;"></td></tr></tbody>`;
+  // học sinh còn thiếu nhiều nhất lên đầu, đã đóng đủ xuống cuối — dễ thấy ai cần thu trước
+  items.sort((a,b)=> b.f.remaining - a.f.remaining);
+
+  totalsBox.innerHTML = `
+    <div><div class="label" style="font-size:11.5px;color:var(--ink-soft);font-weight:600;">Tổng phải đóng</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:17px;">${fmtMoney(sumTotal)}</div></div>
+    <div><div class="label" style="font-size:11.5px;color:var(--ink-soft);font-weight:600;">Đã đóng</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:17px;color:var(--success);">${fmtMoney(sumPaid)}</div></div>
+    <div><div class="label" style="font-size:11.5px;color:var(--ink-soft);font-weight:600;">Còn thiếu</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:17px;color:var(--danger);">${fmtMoney(sumTotal-sumPaid)}</div></div>`;
+
+  list.innerHTML = items.map(({s,f})=>{
+    let bar='none', pill='';
+    if(f.remaining>0 && f.paid<=0){ bar='unpaid'; pill='<span class="pill unpaid">Chưa đóng</span>'; }
+    else if(f.remaining>0 && f.paid>0){ bar='partial'; pill='<span class="pill partial">Đóng thiếu</span>'; }
+    else if(f.total>0){ bar='paid'; pill='<span class="pill paid">Đã đóng đủ</span>'; }
+    const detailParts = [];
+    if(f.anTruaFee>0) detailParts.push('Ăn trưa '+fmtMoney(f.anTruaFee));
+    if(f.xeFee>0) detailParts.push('Xe '+fmtMoney(f.xeFee));
+    if(f.htFee>0) detailParts.push('Đưa đón HT '+fmtMoney(f.htFee));
+    if(f.tutorFee>0) detailParts.push('Học thêm '+fmtMoney(f.tutorFee));
+    const detailLine = detailParts.length ? detailParts.join(' · ')+(f.presentDays?(' · Ở bán trú '+f.presentDays+' ngày'):'') : 'Không có khoản phí nào tháng này';
+    return `<div class="stu-card">
+      <div class="bar ${bar}"></div>
+      <div class="avatar" onclick="openPaymentModal('${s.id}','${ym}')">${initials(s.name)}</div>
+      <div class="info">
+        <div class="name" onclick="openPaymentModal('${s.id}','${ym}')">${escapeHtml(s.name)} ${pill}</div>
+        <div class="meta">${escapeHtml(s.className||'—')} · ${escapeHtml(s.school||'—')}</div>
+        <div class="meta">${detailLine}</div>
+        <div class="meta" style="font-weight:700;">Tổng ${fmtMoney(f.total)} · Đã đóng <span style="color:var(--success);">${fmtMoney(f.paid)}</span>${f.remaining>0?` · Còn thiếu <span style="color:var(--danger);">${fmtMoney(f.remaining)}</span>`:''}</div>
+        ${f.lastDate?`<div class="meta">Đóng gần nhất: ${f.lastDate}${f.lastNote?(' · '+escapeHtml(f.lastNote)):''}</div>`:''}
+      </div>
+      <div class="actions">
+        <button class="iconbtn" onclick="openLedgerModal('${s.id}')" title="Sổ nợ lũy kế">📖</button>
+        <button class="btn btn-sm btn-primary" onclick="openPaymentModal('${s.id}','${ym}')">Nộp tiền</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function openPaymentModal(sid, ym){
