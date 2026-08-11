@@ -1306,10 +1306,21 @@ async function openLedgerModal(sid){
     const rows = ledger.map(m=>{
       totalOwing += Math.max(0, m.remaining);
       const st = m.total<=0 ? 'none' : (m.paid<=0?'unpaid':(m.paid<m.total?'partial':'paid'));
-      return `<tr><td>${monthLabel(m.month)}</td><td class="num">${fmtMoney(m.total)}</td><td class="num">${fmtMoney(m.paid)}</td><td class="num" style="color:${m.remaining>0?'var(--danger)':'inherit'}">${fmtMoney(m.remaining)}</td><td><span class="pill ${st}">${{paid:'Đã đóng đủ',partial:'Đóng thiếu',unpaid:'Chưa đóng',none:'—'}[st]}</span></td></tr>`;
+      const stLabel = {paid:'Đã đóng đủ',partial:'Đóng thiếu',unpaid:'Chưa đóng',none:'—'}[st];
+      return `<div class="stu-card" style="padding:12px;">
+        <div class="bar ${st}"></div>
+        <div class="info" style="margin-left:6px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <span style="font-weight:700;font-size:14.5px;">${monthLabel(m.month)}</span>
+            <span class="pill ${st}">${stLabel}</span>
+          </div>
+          <div class="meta" style="margin-top:5px;font-size:13.5px;">Tổng phí: <b style="color:var(--ink);">${fmtMoney(m.total)}</b></div>
+          <div class="meta" style="font-size:13.5px;">Đã đóng: <b style="color:var(--success);">${fmtMoney(m.paid)}</b>${m.remaining>0?` · Còn nợ: <b style="color:var(--danger);">${fmtMoney(m.remaining)}</b>`:''}</div>
+        </div>
+      </div>`;
     }).join('');
-    body.innerHTML = `<div class="tbl-wrap"><table><thead><tr><th>Tháng</th><th>Tổng phí</th><th>Đã đóng</th><th>Còn nợ</th><th>TT</th></tr></thead><tbody>${rows}</tbody></table></div>
-      <div class="hint" style="font-weight:700;font-size:13px;margin-top:10px;">Tổng nợ hiện tại: ${fmtMoney(totalOwing)}</div>`;
+    body.innerHTML = `<div class="stu-list">${rows}</div>
+      <div class="hint" style="font-weight:700;font-size:14px;margin-top:12px;">Tổng nợ hiện tại: ${fmtMoney(totalOwing)}</div>`;
   }catch(e){ document.getElementById('ledgerBody').innerHTML = `<div class="empty">Lỗi tải sổ nợ: ${escapeHtml(e.message)}</div>`; }
 }
 
