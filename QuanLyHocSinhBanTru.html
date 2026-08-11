@@ -129,6 +129,11 @@
     box-shadow:2px 0 4px rgba(32,41,31,0.06);
   }
   .tbl-wrap table th:first-child{z-index:3;background:var(--bg);}
+  .tbl-wrap table td.pin-right, .tbl-wrap table th.pin-right{
+    position:sticky;right:0;z-index:2;background:var(--surface);
+    box-shadow:-2px 0 4px rgba(32,41,31,0.06);
+  }
+  .tbl-wrap table th.pin-right{z-index:3;background:var(--bg);}
 
   nav.tabbar{position:fixed;bottom:0;left:0;right:0;z-index:30;background:#fff;border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:6px 2px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -2px 12px rgba(0,0,0,0.05);}
   nav.tabbar .tab{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;color:var(--ink-soft);font-size:10px;font-weight:700;padding:6px 4px;border-radius:8px;flex:1;max-width:110px;}
@@ -1332,6 +1337,7 @@ async function renderFeeSummary(){
     else if(f.total>0){ paidCellStyle='color:var(--success);font-weight:700;'; }
     const rowStyle = rowBg ? ` style="background:${rowBg};"` : '';
     const firstCellStyle = rowBg ? ` style="background:${rowBg};"` : '';
+    const pinRightStyle = rowBg ? ` style="background:${rowBg};"` : '';
     rows.push(`<tr${rowStyle}>
       <td${firstCellStyle}>${escapeHtml(s.name)}<div style="color:var(--ink-soft);font-size:11px;">${escapeHtml(s.className||'')} · ${escapeHtml(s.school||'')}</div></td>
       <td class="num">${f.presentDays}</td>
@@ -1344,11 +1350,11 @@ async function renderFeeSummary(){
       <td class="num" style="${remainCellStyle}">${fmtMoney(f.remaining)}</td>
       <td>${f.lastDate||'—'}</td>
       <td>${escapeHtml(f.lastNote||'')}</td>
-      <td><button class="btn btn-sm btn-primary" onclick="openPaymentModal('${s.id}','${ym}')">Nộp tiền</button></td>
+      <td class="pin-right"${pinRightStyle}><button class="btn btn-sm btn-primary" onclick="openPaymentModal('${s.id}','${ym}')">Nộp tiền</button></td>
     </tr>`);
   }
-  tbl.innerHTML = `<thead><tr><th>Học sinh</th><th>Ngày ở bán trú</th><th>Tiền ăn</th><th>Xe bán trú</th><th>Đưa đón HT nơi khác</th><th>Học thêm (dạy)</th><th>Tổng phải đóng</th><th>Đã đóng</th><th>Chưa đóng</th><th>Ngày đóng</th><th>Ghi chú</th><th></th></tr></thead>
-    <tbody>${rows.join('')}<tr class="total-row"><td style="background:#FAF8F2;">Tổng cộng</td><td></td><td></td><td></td><td></td><td></td><td class="num">${fmtMoney(sumTotal)}</td><td class="num">${fmtMoney(sumPaid)}</td><td class="num">${fmtMoney(sumTotal-sumPaid)}</td><td></td><td></td><td></td></tr></tbody>`;
+  tbl.innerHTML = `<thead><tr><th>Học sinh</th><th>Ngày ở bán trú</th><th>Tiền ăn</th><th>Xe bán trú</th><th>Đưa đón HT nơi khác</th><th>Học thêm (dạy)</th><th>Tổng phải đóng</th><th>Đã đóng</th><th>Chưa đóng</th><th>Ngày đóng</th><th>Ghi chú</th><th class="pin-right"></th></tr></thead>
+    <tbody>${rows.join('')}<tr class="total-row"><td style="background:#FAF8F2;">Tổng cộng</td><td></td><td></td><td></td><td></td><td></td><td class="num">${fmtMoney(sumTotal)}</td><td class="num">${fmtMoney(sumPaid)}</td><td class="num">${fmtMoney(sumTotal-sumPaid)}</td><td></td><td></td><td class="pin-right" style="background:#FAF8F2;"></td></tr></tbody>`;
 }
 
 function openPaymentModal(sid, ym){
