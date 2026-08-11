@@ -262,6 +262,7 @@
     <div class="segmented">
       <button data-sub="list" onclick="showTutorSub('list')">Danh sách</button>
       <button data-sub="attendance" onclick="showTutorSub('attendance')">Điểm danh</button>
+      <button data-sub="withdrawn" onclick="showTutorSub('withdrawn')">Đã ngừng</button>
     </div>
 
     <div class="subview" id="tutor-sub-list">
@@ -282,6 +283,11 @@
         <button class="btn btn-primary btn-sm" onclick="tutorBulkMarkPresent()">✓ Đánh dấu tất cả có mặt</button>
       </div>
       <div class="card"><div class="pad" id="tutorAttendanceList"></div></div>
+    </div>
+
+    <div class="subview" id="tutor-sub-withdrawn">
+      <div class="section-head"><div><h2>Học sinh đã ngừng học thêm</h2><div class="sub">Học sinh còn nợ phí vẫn hiển thị ở đây cho đến khi đóng đủ</div></div></div>
+      <div class="stu-list" id="tutorWithdrawnList"></div>
     </div>
   </section>
 
@@ -671,10 +677,11 @@ function applyFeatureVisibility(){
 function showTutorSub(sub){
   curTutorSub = sub;
   document.querySelectorAll('#panel-tutor .segmented button').forEach(b=>b.classList.toggle('active', b.dataset.sub===sub));
-  ['list','attendance'].forEach(s=>document.getElementById('tutor-sub-'+s).classList.toggle('active', s===sub));
+  ['list','attendance','withdrawn'].forEach(s=>document.getElementById('tutor-sub-'+s).classList.toggle('active', s===sub));
   if(!dataReady) return;
   if(sub==='list') renderTutorList();
   if(sub==='attendance') renderTutorAttendance();
+  if(sub==='withdrawn') renderTutorWithdrawnList();
 }
 function showStudentSub(sub){
   curStuSub = sub;
@@ -1167,16 +1174,65 @@ function renderTutorList(){
     </div>`;
   }).join('');
 }
-async function doTutorWithdraw(id, stop){
-  const msg = stop ? 'Đánh dấu học sinh này ngừng học thêm?' : 'Cho học sinh này học thêm trở lại?';
-  if(!confirm(msg)) return;
+function openTutorStopModal(id){
+  const s = students.find(x=>x.id===id);
+  if(!s) return;
+  const bg = document.createElement('div');
+  bg.className='modal-bg';
+  bg.innerHTML = `<div class="modal"><button class="closebtn" onclick="this.closest('.modal-bg').remove()">✕</button>
+    <h3>Ngừng học thêm — ${escapeHtml(s.name)}</h3>
+    <div class="field"><label>Ngày ngừng học thêm</label><input type="date" id="tutorStopDate" value="${todayISO()}"></div>
+    <button class="btn btn-warm" style="width:100%;justify-content:center;" onclick="confirmTutorStop('${id}')">Xác nhận ngừng học thêm</button>
+  </div>`;
+  document.body.appendChild(bg);
+}
+async function confirmTutorStop(id){
+  const date = document.getElementById('tutorStopDate').value || todayISO();
   try{
-    await apiPost('setTutorEnrollment', {id, active: !stop, date: todayISO()});
+    await apiPost('setTutorEnrollment', {id, active: false, date});
     const s = students.find(x=>x.id===id);
-    if(s){ s.tutorStatus = stop?'withdrawn':'active'; if(!stop) s.tutorJoinDate = s.tutorJoinDate||todayISO(); }
+    if(s){ s.tutorStatus = 'withdrawn'; s.tutorWithdrawnDate = date; }
     invalidateDebtCache();
-    showToast(stop?'Đã ngừng học thêm':'Đã cho học thêm trở lại');
+    document.querySelector('.modal-bg').remove();
+    showToast('Đã ngừng học thêm');
     renderTutorList();
+  }catch(e){ showToast('Lỗi: '+e.message); }
+}
+async function renderTutorWithdrawnList(){
+  const list = document.getElementById('tutorWithdrawnList');
+  const withdrawn = students.filter(s=>s.tutorStatus==='withdrawn');
+  if(withdrawn.length===0){ list.innerHTML = `<div class="empty">Chưa có học sinh nào ngừng học thêm.</div>`; return; }
+  list.innerHTML = `<div class="loading-line">Đang kiểm tra công nợ…</div>`;
+  await ensureAllDebtsLoaded(); // 1 lần gọi duy nhất cho tất cả, không lặp theo từng em
+  const items = withdrawn.map(s=>{
+    const d = debtCache[s.id] || {totalDebt:0};
+    return {s, owing: d.totalDebt};
+  });
+  items.sort((a,b)=> (b.s.tutorWithdrawnDate||'').localeCompare(a.s.tutorWithdrawnDate||''));
+  list.innerHTML = items.map(({s,owing})=>`
+    <div class="stu-card">
+      <div class="bar ${owing>0?'unpaid':'none'}"></div>
+      <div class="avatar" onclick="openLedgerModal('${s.id}')">${initials(s.name)}</div>
+      <div class="info">
+        <div class="name">${escapeHtml(s.name)} <span class="pill withdrawn">Ngừng học thêm ${s.tutorWithdrawnDate?('· '+s.tutorWithdrawnDate):''}</span></div>
+        <div class="meta">${escapeHtml(s.className||'—')} · ${escapeHtml(s.school||'—')}</div>
+        ${owing>0? `<div class="meta" style="color:var(--danger);font-weight:700;">Còn nợ: ${fmtMoney(owing)}</div>` : `<div class="meta" style="color:var(--success);">Không còn nợ phí</div>`}
+      </div>
+      <div class="actions">
+        <button class="btn btn-sm btn-ghost" onclick="doTutorWithdraw('${s.id}',false)">Khôi phục</button>
+      </div>
+    </div>`).join('');
+}
+async function doTutorWithdraw(id, stop){
+  if(stop){ openTutorStopModal(id); return; }
+  if(!confirm('Cho học sinh này học thêm trở lại?')) return;
+  try{
+    await apiPost('setTutorEnrollment', {id, active: true, date: todayISO()});
+    const s = students.find(x=>x.id===id);
+    if(s){ s.tutorStatus = 'active'; s.tutorJoinDate = s.tutorJoinDate||todayISO(); s.tutorWithdrawnDate=''; }
+    invalidateDebtCache();
+    showToast('Đã cho học thêm trở lại');
+    if(curTutorSub==='list') renderTutorList(); else renderTutorWithdrawnList();
   }catch(e){ showToast('Lỗi: '+e.message); }
 }
 async function getTutorAttendance(ym){
