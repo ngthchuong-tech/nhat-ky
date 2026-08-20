@@ -185,14 +185,14 @@
   <header>
     <div class="eyebrow">Công cụ nội bộ · Ban KSNB</div>
     <h1>Công cụ chuyển tiếng nói sang văn bản</h1>
-    <p class="sub">Chuyển giọng nói sang văn bản trực tiếp trong buổi làm việc.</p>
+    <p class="sub">Chuyển giọng nói sang văn bản trực tiếp trong buổi làm việc. Khi kết thúc, tải về cả file âm thanh và file văn bản để đối chiếu, chỉnh sửa.</p>
   </header>
 
   <div id="bannerUnsupported" class="banner err">
     <strong>Trình duyệt này chưa hỗ trợ chuyển giọng nói sang văn bản.</strong> Vẫn có thể sử dụng bình thường, nhưng phần văn bản sẽ trống. Nên mở lại bằng <strong>Google Chrome</strong> (máy tính hoặc Android) để dùng đầy đủ tính năng.
   </div>
   <div id="bannerInfo" class="banner warn show">
-    Công cụ này cần <strong>kết nối Internet liên tục</strong> trong lúc sử dụng để chuyển giọng nói sang văn bản (qua dịch vụ nhận dạng của trình duyệt).
+    Công cụ này cần <strong>kết nối Internet liên tục</strong> trong lúc sử dụng để chuyển giọng nói sang văn bản (qua dịch vụ nhận dạng của trình duyệt). File âm thanh gốc vẫn được lưu lại trên máy bạn. Nên thông báo rõ với người tham gia rằng âm thanh buổi làm việc sẽ được lưu lại, trước khi bắt đầu.
   </div>
 
   <div class="card">
@@ -223,7 +223,7 @@
       </div>
       <div class="toggle">
         <input type="checkbox" id="autoBackup" checked />
-        <label for="autoBackup">Tự động tải file văn bản sao lưu mỗi 15 phút (đề phòng sự cố khi thực hiện trong thời gian dài)</label>
+        <label for="autoBackup">Tự động tải file âm thanh và văn bản sao lưu mỗi 15 phút (đề phòng sự cố khi thực hiện trong thời gian dài)</label>
       </div>
     </div>
 
@@ -249,7 +249,7 @@
   </div>
 
   <footer>
-    Dữ liệu chỉ xử lý trong phiên làm việc này trên trình duyệt của bạn, không tự lưu lại sau khi đóng trang.<br />
+    Dữ liệu chỉ xử lý trong phiên làm việc này trên trình duyệt của bạn - nếu đóng trang mà chưa bấm "Kết thúc" và tải file, dữ liệu sẽ mất (trừ các file sao lưu tự động đã tải trong lúc thực hiện, nếu có bật).<br />
     Luôn đọc lại và đối chiếu văn bản do công cụ tạo ra với ghi chép tay trước khi đưa vào biên bản chính thức.
   </footer>
 </div>
@@ -365,10 +365,16 @@
   }
 
   function doBackupDownload(){
-    if(finalSegments.length===0) return;
-    const txt = buildTranscriptText();
-    const blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
-    downloadBlob(blob, safeFileBase()+'_saoluu_'+fmtClock(new Date()).replace(/:/g,'-')+'.txt');
+    const stamp = fmtClock(new Date()).replace(/:/g,'-');
+    if(finalSegments.length>0){
+      const txt = buildTranscriptText();
+      const blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
+      downloadBlob(blob, safeFileBase()+'_saoluu_'+stamp+'.txt');
+    }
+    if(audioChunks.length>0){
+      const audioBlobBackup = new Blob(audioChunks, {type:'audio/webm'});
+      downloadBlob(audioBlobBackup, safeFileBase()+'_saoluu_'+stamp+'.webm');
+    }
   }
 
   function startRecognition(){
