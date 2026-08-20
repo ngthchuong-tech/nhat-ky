@@ -344,7 +344,7 @@
 <script>
 /* ---------------- DATA ---------------- */
 // Dán URL Web App (Google Apps Script) của bạn vào đây sau khi Deploy — xem hướng dẫn trong Code.gs
-const GAS_URL = "https://script.google.com/macros/s/AKfycbws_KuH0vTOzg-_MY8hrH_qa6z3_lkBbi3C4S351EJbMtcw0OFuL34ed-5kVvFGRt7PYw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbypaF3K5BQ6XQhjVPM8fZPe1TIOVVy3z0xWAYLDw8sw5z7XxtpSTvarh5gMus6-D-VgQA/exec";
 // Đặt đúng môn/lớp đang soạn để backend tra đúng tài liệu tham khảo trong Thư viện
 const MON_HOC_HIEN_TAI = "Toán";
 const LOP_HIEN_TAI = "2";
