@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soạn Giáo Án — Thư viện & Trợ lý AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+  :root{
+    --paper:#FBF7EE;
+    --ink:#2A2418;
+    --ink-soft:#6b6250;
+    --leaf:#3F6B4B;
+    --leaf-deep:#2C4E37;
+    --clay:#C4592F;
+    --gold:#D9A441;
+    --line:#E3DAC5;
+    --card:#FFFFFF;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;overflow:hidden;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Be Vietnam Pro',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    height:100vh;display:flex;flex-direction:column;
+    max-width:1560px;margin:0 auto;padding:16px 24px;overflow:hidden;
+    transition:max-width .2s ease;
+  }
+  .app.split-active{max-width:1680px;}
+
+  /* Header — luôn cố định trên cùng, không cuộn theo trang */
+  header.top{
+    flex-shrink:0;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:6px 4px 16px;border-bottom:1px solid var(--line);margin-bottom:16px;
+  }
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-mark{
+    width:40px;height:40px;border-radius:10px;
+    background:linear-gradient(135deg,var(--leaf),var(--leaf-deep));
+    display:flex;align-items:center;justify-content:center;
+    font-size:20px;color:#fff;flex-shrink:0;
+  }
+  .brand h1{font-family:'Fraunces',serif;font-size:19px;font-weight:600;margin:0;line-height:1.2;}
+  .brand p{margin:2px 0 0;font-size:12.5px;color:var(--ink-soft);}
+  nav.tabs{display:flex;gap:6px;background:#F0EADA;padding:4px;border-radius:999px;}
+  nav.tabs button{
+    border:none;background:transparent;padding:9px 18px;border-radius:999px;
+    font-family:inherit;font-size:14px;font-weight:600;color:var(--ink-soft);cursor:pointer;
+    transition:all .15s ease;
+  }
+  nav.tabs button.active{background:var(--leaf);color:#fff;box-shadow:0 2px 6px rgba(44,78,55,.25);}
+
+  .views-wrap{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;}
+
+  section.view{display:none;flex:1;min-height:0;overflow:hidden;}
+  section.view.active{display:flex;flex-direction:column;animation:fade .2s ease;}
+  @keyframes fade{from{opacity:0;}to{opacity:1;}}
+
+  .views-wrap.split-mode{
+    display:grid;grid-template-columns:400px 1fr;gap:22px;align-items:stretch;
+  }
+  .views-wrap.split-mode section.view{display:flex !important;flex-direction:column;height:100%;}
+  .views-wrap.split-mode .lib-grid{grid-template-columns:1fr 1fr;gap:10px;flex-shrink:0;}
+  .views-wrap.split-mode .book-cover{height:70px;font-size:12.5px;}
+  .views-wrap.split-mode .lib-body{grid-template-columns:1fr;gap:14px;margin-top:14px;}
+  .views-wrap.split-mode .editor-stack .pane.chat-pane{flex:0 0 300px;}
+  @media (max-width:1100px){
+    .views-wrap.split-mode{grid-template-columns:1fr;}
+  }
+
+  /* ---------- THƯ VIỆN ---------- */
+  .lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px;margin-bottom:8px;flex-shrink:0;}
+  .book{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:0;cursor:pointer;overflow:hidden;transition:transform .15s ease, box-shadow .15s ease;
+    text-align:left;
+  }
+  .book:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(42,36,24,.10);}
+  .book.selected{outline:2px solid var(--leaf);}
+  .book-cover{
+    height:120px;display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-weight:600;font-size:15px;color:#fff;text-align:center;padding:12px;line-height:1.3;
+  }
+  .book-meta{padding:12px 14px 14px;}
+  .book-meta .subject{font-size:14px;font-weight:700;margin:0 0 3px;}
+  .book-meta .status{font-size:12px;color:var(--ink-soft);}
+  .status.ready::before{content:"● ";color:var(--leaf);}
+  .status.empty::before{content:"○ ";color:var(--gold);}
+
+  .lib-body{display:grid;grid-template-columns:290px 1fr;gap:22px;margin-top:20px;flex:1;min-height:0;}
+  @media (max-width:800px){.lib-body{grid-template-columns:1fr;}}
+
+  .toc-panel{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    height:100%;overflow-y:auto;
+  }
+  .toc-panel h3{
+    margin:0;padding:14px 16px;font-size:13px;text-transform:uppercase;letter-spacing:.04em;
+    color:var(--ink-soft);border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--card);
+  }
+  .chude{padding:10px 8px 4px;}
+  .chude-label{
+    font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+    color:var(--leaf-deep);padding:8px 10px 4px;
+  }
+  .bai-item{
+    display:flex;align-items:baseline;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;
+    font-size:13.5px;line-height:1.4;
+  }
+  .bai-item:hover{background:#F0EADA;}
+  .bai-item.active{background:var(--leaf);color:#fff;}
+  .bai-item .num{font-weight:700;color:var(--clay);flex-shrink:0;width:18px;}
+  .bai-item.active .num{color:#FFE3D2;}
+  .bai-item .page{margin-left:auto;font-size:11.5px;color:var(--ink-soft);flex-shrink:0;}
+  .bai-item.active .page{color:#e8f0e9;}
+
+  .content-panel{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:26px 28px;height:100%;overflow-y:auto;
+  }
+  .content-panel .eyebrow{font-size:12px;color:var(--clay);font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+  .content-panel h2{font-family:'Fraunces',serif;font-size:24px;margin:4px 0 14px;}
+  .muctieu-box{
+    background:#F5F0DF;border-left:3px solid var(--gold);border-radius:0 8px 8px 0;
+    padding:12px 16px;margin-bottom:18px;font-size:14px;
+  }
+  .muctieu-box strong{display:block;margin-bottom:6px;font-size:12.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-soft);}
+  .hoat-dong{margin-bottom:16px;}
+  .hoat-dong .label{font-weight:700;font-size:13.5px;color:var(--leaf-deep);margin-bottom:4px;}
+  .hoat-dong p, .hoat-dong ul{margin:0;font-size:14px;line-height:1.65;color:var(--ink);}
+  .hoat-dong ul{padding-left:20px;}
+  .empty-state{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    height:340px;text-align:center;color:var(--ink-soft);gap:8px;
+  }
+  .empty-state .glyph{font-size:34px;}
+  .empty-state p{max-width:320px;font-size:14px;margin:0;}
+  .btn-ghost{
+    margin-top:10px;border:1px solid var(--line);background:#fff;color:var(--leaf-deep);
+    padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;
+  }
+
+  /* ---------- SOẠN GIÁO ÁN ---------- */
+  .editor-stack{display:flex;flex-direction:row;gap:16px;flex:1;min-height:0;}
+  .pane.doc-pane{flex:1;min-width:0;min-height:0;}
+  .pane.chat-pane{flex:0 0 360px;}
+  @media (max-width:1000px){
+    .editor-stack{flex-direction:column;}
+    .pane.chat-pane{flex:0 0 260px;}
+  }
+  .pane{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;
+    display:flex;flex-direction:column;height:100%;
+  }
+  .pane-head{
+    flex-shrink:0;
+    padding:7px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;
+  }
+  .pane-head h3{margin:0;font-size:13.5px;font-weight:700;}
+  .pane-head .sub{font-size:11.5px;color:var(--ink-soft);}
+  textarea#giaoanText{display:none;}
+  #giaoanText.doc-view{
+    flex:1;min-height:0;overflow-y:auto;width:100%;
+    padding:34px 40px;font-family:'Times New Roman',Georgia,serif;font-size:14.5px;line-height:1.7;color:#1a1a1a;
+    background:#fff;outline:none;
+  }
+  #giaoanText.doc-view p{margin:0 0 10px;}
+  #giaoanText.doc-view strong,#giaoanText.doc-view b{font-weight:700;}
+  #giaoanText.doc-view table{border-collapse:collapse;width:100%;margin:12px 0;}
+  #giaoanText.doc-view table td,#giaoanText.doc-view table th{border:1px solid #999;padding:6px 8px;vertical-align:top;font-size:13.5px;}
+  #giaoanText.doc-view img{max-width:100%;height:auto;display:block;margin:10px auto;}
+  #giaoanText.doc-view h1,#giaoanText.doc-view h2,#giaoanText.doc-view h3{font-family:inherit;margin:14px 0 8px;}
+  #giaoanText.doc-view:empty::before{
+    content:"Chưa có nội dung — bấm 'Tải giáo án mẫu lên' hoặc dùng bản demo có sẵn.";
+    color:var(--ink-soft);font-family:'Be Vietnam Pro',sans-serif;font-size:13.5px;
+  }
+  #giaoanText.doc-view.placeholder{white-space:pre-wrap;font-family:'Be Vietnam Pro',sans-serif;font-size:13.5px;color:var(--ink);}
+  #giaoanText.doc-view .diff-new{
+    background:#FFF3B0;border-radius:3px;padding:2px 6px;
+    box-shadow:0 0 0 1px #F0D878;
+  }
+  #giaoanText.doc-view p.diff-new{margin-left:-6px;}
+  #giaoanText.doc-view .ai-target{
+    outline:2px dashed var(--clay);background:rgba(196,89,47,.08);border-radius:2px;
+  }
+  .select-tip{
+    position:fixed;z-index:80;transform:translate(-50%,-100%);
+    background:var(--leaf-deep);color:#fff;font-size:12.5px;font-weight:600;
+    padding:8px 14px;border-radius:8px;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.22);
+    display:none;white-space:nowrap;
+  }
+  .select-tip:hover{background:var(--leaf);}
+  .target-chip{
+    display:none;align-items:center;gap:10px;background:#FCEFE7;border:1px solid #EAD3C2;
+    border-radius:8px;padding:7px 12px;margin:0 16px 8px;font-size:12px;color:var(--ink-soft);flex-shrink:0;
+  }
+  .target-chip span{flex:1;color:var(--clay);font-weight:600;}
+  .target-chip button{border:none;background:transparent;color:var(--ink-soft);cursor:pointer;font-size:15px;font-weight:700;line-height:1;}
+  .target-chip button:hover{color:var(--clay);}
+  .diff-banner{
+    flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
+    padding:8px 16px;background:#FFF8DC;border-bottom:1px solid var(--line);
+    font-size:12.5px;color:#8a6d1f;
+  }
+  .chat-col{display:flex;flex-direction:column;height:100%;}
+  .chat-log{flex:1;min-height:0;padding:16px 18px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;}
+  .msg{font-size:13.5px;line-height:1.6;padding:11px 14px;border-radius:10px;max-width:92%;}
+  .msg.user{align-self:flex-end;background:var(--leaf);color:#fff;border-bottom-right-radius:3px;}
+  .msg.ai{align-self:flex-start;background:#F0EADA;color:var(--ink);border-bottom-left-radius:3px;}
+  .msg.hint{align-self:center;background:transparent;color:var(--ink-soft);font-size:12.5px;text-align:center;max-width:100%;}
+  .chat-input-row{flex-shrink:0;padding:14px 16px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:flex-end;}
+  .chat-input-row textarea{
+    flex:1;min-height:44px;max-height:160px;overflow-y:auto;resize:none;border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+    font-family:inherit;font-size:13.5px;outline:none;line-height:1.5;
+  }
+  .chat-input-row textarea:focus{border-color:var(--leaf);}
+  .send-btn{
+    background:var(--leaf);color:#fff;border:none;border-radius:10px;padding:0 20px;font-weight:700;
+    cursor:pointer;font-size:14px;font-family:inherit;flex-shrink:0;align-self:stretch;
+  }
+  .send-btn:disabled{opacity:.55;cursor:default;}
+  .quick-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 12px;flex-shrink:0;}
+  .chip{
+    font-size:12px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 11px;
+    cursor:pointer;color:var(--ink-soft);
+  }
+  .chip:hover{border-color:var(--leaf);color:var(--leaf-deep);}
+  .toolbar{flex-shrink:0;padding:6px 16px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .btn-primary{
+    background:var(--clay);color:#fff;border:none;border-radius:8px;padding:6px 14px;
+    font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;
+  }
+  .btn-secondary{
+    background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 14px;
+    font-weight:600;font-size:12.5px;cursor:pointer;font-family:inherit;
+  }
+  .note{
+    flex-shrink:0;font-size:12px;color:var(--ink-soft);background:#F5F0DF;border-radius:8px;padding:10px 14px;margin:14px 0 0;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">📘</div>
+      <div>
+        <h1>Soạn Giáo Án</h1>
+        <p>Thư viện SGK/SGV · Trợ lý chỉnh sửa giáo án bằng AI</p>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="tab-btn active" data-view="lib">📚 Thư viện</button>
+      <button class="tab-btn" data-view="editor">📝 Soạn giáo án</button>
+      <button class="tab-btn" data-view="split">🖥️ Xem cùng lúc</button>
+    </nav>
+  </header>
+
+  <div class="views-wrap" id="viewsWrap">
+
+  <!-- ============ THƯ VIỆN ============ -->
+  <section class="view active" id="view-lib">
+    <div class="lib-grid" id="bookGrid"></div>
+
+    <div class="lib-body">
+      <div class="toc-panel">
+        <h3 id="tocTitle">Mục lục</h3>
+        <div id="tocList"></div>
+      </div>
+      <div class="content-panel" id="contentPanel">
+        <div class="empty-state">
+          <div class="glyph">📖</div>
+          <p>Chọn một cuốn sách ở trên, sau đó bấm vào một bài trong mục lục để xem nội dung.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SOẠN GIÁO ÁN ============ -->
+  <section class="view" id="view-editor">
+    <div class="editor-stack">
+      <div class="pane doc-pane">
+        <div class="pane-head">
+          <h3 id="giaoanTitle">Giáo án — Toán 2, Tuần 1, Bài 1, Tiết 1 (mẫu demo)</h3>
+          <span class="sub">Có thể sửa trực tiếp</span>
+        </div>
+        <div class="toolbar" style="border-top:none;border-bottom:1px solid var(--line);">
+          <label class="btn-secondary" style="cursor:pointer;">
+            ⬆ Tải giáo án mẫu lên
+            <input type="file" id="uploadInput" accept=".docx,.txt" style="display:none;">
+          </label>
+          <button class="btn-primary" id="exportBtn">⬇ Xuất file Word</button>
+          <button class="btn-secondary" id="resetBtn">↺ Khôi phục bản demo</button>
+          <span class="sub" id="uploadStatus" style="align-self:center;"></span>
+        </div>
+        <div id="diffBanner" class="diff-banner" style="display:none;">
+          <span id="diffCount"></span>
+          <button class="btn-ghost" id="clearDiffBtn">✓ Đã xem — bỏ tô màu</button>
+        </div>
+        <div id="giaoanText" class="doc-view placeholder" contenteditable="true"></div>
+      </div>
+
+      <div class="pane chat-col chat-pane">
+        <div class="pane-head">
+          <h3>Yêu cầu chỉnh sửa</h3>
+          <span class="sub">Trợ lý AI</span>
+        </div>
+        <div class="quick-chips">
+          <button class="chip" data-q="Đối chiếu mục tiêu tiết này với nội dung SGK, chỉnh lại cho khớp.">Đối chiếu mục tiêu với SGK</button>
+          <button class="chip" data-q="Bổ sung phần Tích hợp giáo dục An toàn giao thông theo đúng quy định KHGD khối 2.">Bổ sung tích hợp ATGT</button>
+          <button class="chip" data-q="Thêm mục điều chỉnh cho học sinh hòa nhập vào phần III, sau mỗi hoạt động chính.">Thêm điều chỉnh hòa nhập</button>
+        </div>
+        <div class="chat-log" id="chatLog">
+          <div class="msg hint">Gõ yêu cầu chỉnh sửa — AI sẽ cập nhật trực tiếp vào giáo án phía trên.</div>
+        </div>
+        <div class="target-chip" id="targetChip">
+          <span id="targetChipText"></span>
+          <button id="clearTargetBtn" title="Bỏ chọn đoạn này">✕</button>
+        </div>
+        <div class="chat-input-row">
+          <textarea id="chatInput" placeholder="Ví dụ: bổ sung nội dung tích hợp giáo dục địa phương vào phần Chuẩn bị..."></textarea>
+          <button class="send-btn" id="sendBtn">Gửi</button>
+        </div>
+      </div>
+    </div>
+    <p class="note">🔎 Bản demo này minh hoạ luồng thao tác. Trong bản chính thức, AI sẽ tự động tra cứu đúng đoạn liên quan trong Thư viện (SGK/SGV, KHGD, kế hoạch hoà nhập) trước khi chỉnh sửa, thay vì chỉ dựa vào nội dung giáo án hiện có.</p>
+  </section>
+
+  </div><!-- /viewsWrap -->
+
+</div>
+
+<button id="selectTip" class="select-tip">✏️ Yêu cầu AI sửa đoạn này</button>
+
+<script>
+/* ---------------- DATA ---------------- */
+// Dán URL Web App (Google Apps Script) của bạn vào đây sau khi Deploy — xem hướng dẫn trong Code.gs
+const GAS_URL = "https://script.google.com/macros/s/AKfycbws_KuH0vTOzg-_MY8hrH_qa6z3_lkBbi3C4S351EJbMtcw0OFuL34ed-5kVvFGRt7PYw/exec";
+// Đặt đúng môn/lớp đang soạn để backend tra đúng tài liệu tham khảo trong Thư viện
+const MON_HOC_HIEN_TAI = "Toán";
+const LOP_HIEN_TAI = "2";
+
+async function callBackend(action, payload){
+  if(!GAS_URL || GAS_URL.indexOf('DÁN_URL') === 0){
+    throw new Error('Chưa cấu hình GAS_URL — xem hướng dẫn ở đầu file Code.gs để lấy URL Web App.');
+  }
+  const res = await fetch(GAS_URL, {
+    method: 'POST',
+    // dùng text/plain để tránh Google Apps Script yêu cầu preflight CORS (OPTIONS) mà nó không hỗ trợ tốt
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action, payload })
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error);
+  return data;
+}
+const books = {
+  hdtn: {
+    subject: "Hoạt động trải nghiệm 2",
+    color1:"#3F6B4B", color2:"#2C4E37",
+    status:"ready",
+    toc: [
+      { chude:"Khám phá bản thân", bai:[
+        {num:1,ten:"Hình ảnh của em",trang:5,coContent:true},
+        {num:2,ten:"Nụ cười thân thiện",trang:8,coContent:true},
+        {num:3,ten:"Luyện tay cho khéo",trang:11,coContent:true},
+        {num:4,ten:"Tay khéo, tay đảm",trang:14,coContent:true},
+        {num:5,ten:"Vui Trung thu",trang:16,coContent:true},
+      ]},
+      { chude:"Rèn nếp sống", bai:[
+        {num:6,ten:"Góc học tập của em",trang:19,coContent:true},
+        {num:7,ten:"Gọn gàng, ngăn nắp",trang:21,coContent:false},
+        {num:8,ten:"Quý trọng đồng tiền",trang:23,coContent:false},
+      ]},
+      { chude:"Em yêu trường em", bai:[
+        {num:9,ten:"Có bạn thật vui",trang:26,coContent:false},
+        {num:10,ten:"Tìm sự trợ giúp để giữ gìn tình bạn",trang:29,coContent:false},
+        {num:11,ten:"Trường học hạnh phúc",trang:32,coContent:false},
+        {num:12,ten:"Biết ơn thầy cô",trang:34,coContent:false},
+      ]},
+      { chude:"Tự phục vụ bản thân", bai:[
+        {num:13,ten:"Em tự làm lấy việc của mình",trang:36,coContent:false},
+        {num:14,ten:"Nghỉ nhanh, làm giỏi",trang:39,coContent:false},
+        {num:15,ten:"Việc của mình không cần ai nhắc",trang:41,coContent:false},
+        {num:16,ten:"Lựa chọn trang phục",trang:43,coContent:false},
+        {num:17,ten:"Hành trang lên đường",trang:45,coContent:false},
+      ]},
+      { chude:"Gia đình thân thương", bai:[
+        {num:18,ten:"Người trong một nhà",trang:48,coContent:false},
+        {num:19,ten:"Tết Nguyên đán",trang:51,coContent:false},
+        {num:20,ten:"Ngày đáng nhớ của gia đình",trang:53,coContent:false},
+      ]},
+      { chude:"Tự chăm sóc và bảo vệ bản thân", bai:[
+        {num:21,ten:"Tự chăm sóc sức khoẻ bản thân",trang:56,coContent:false},
+        {num:22,ten:"Những vật dụng bảo vệ em",trang:58,coContent:false},
+        {num:23,ten:"Câu chuyện lạc đường",trang:60,coContent:false},
+        {num:24,ten:"Phòng tránh bị bắt cóc",trang:63,coContent:false},
+      ]},
+      { chude:"Chia sẻ cộng đồng", bai:[
+        {num:25,ten:"Những người bạn hàng xóm",trang:66,coContent:false},
+        {num:26,ten:"Tôi luôn bên bạn",trang:68,coContent:false},
+        {num:27,ten:"Chia sẻ khó khăn với người khuyết tật",trang:70,coContent:false},
+      ]},
+      { chude:"Môi trường quanh em", bai:[
+        {num:28,ten:"Cảnh đẹp quê em",trang:73,coContent:false},
+        {num:29,ten:"Bảo vệ cảnh quan quê em",trang:75,coContent:false},
+        {num:30,ten:"Giữ gìn vệ sinh môi trường",trang:77,coContent:false},
+        {num:31,ten:"Lớp học xanh",trang:79,coContent:false},
+      ]},
+      { chude:"Em tìm hiểu nghề nghiệp", bai:[
+        {num:32,ten:"Nghề của mẹ, nghề của cha",trang:81,coContent:false},
+        {num:33,ten:"Nghề nào tính nấy",trang:83,coContent:false},
+        {num:34,ten:"Lao động an toàn",trang:85,coContent:false},
+        {num:35,ten:"Đón mùa hè trải nghiệm",trang:88,coContent:false},
+      ]},
+    ]
+  },
+  toan: { subject:"Toán 2 — Tập một", color1:"#C4592F", color2:"#8f3f1f", status:"empty", toc:[] },
+  tv: { subject:"Tiếng Việt 2 — Tập một", color1:"#D9A441", color2:"#a97a26", status:"empty", toc:[] },
+};
+
+const baiContent = {
+  1: {
+    muctieu:["Nhận biết được hình ảnh thân thiện, vui vẻ của bản thân.","Thể hiện được sự khéo léo, cẩn thận của bản thân qua sản phẩm tự làm."],
+    hoatdong:[
+      {label:"Sinh hoạt dưới cờ",text:"Tham gia lễ khai giảng năm học mới."},
+      {label:"Hoạt động giáo dục theo chủ đề",text:"Chơi trò Máy ảnh thân thiện (sắm vai chụp ảnh cho nhau); nhận biết và kể những biểu hiện thân thiện, tươi vui của bản thân và các bạn."},
+      {label:"Sinh hoạt lớp",text:"Triển lãm tranh/ảnh theo tổ; chụp một tấm ảnh kỉ niệm theo tổ."},
+      {label:"Hoạt động sau giờ học",text:"Cùng người thân ngắm lại những bức ảnh vui vẻ của em; chọn một tấm ảnh để tham gia triển lãm của tổ."},
+    ]
+  },
+  2: {
+    muctieu:["Nhận biết những biểu hiện của nụ cười thân thiện.","Biết cách thể hiện nụ cười thân thiện trong giao tiếp."],
+    hoatdong:[
+      {label:"Sinh hoạt dưới cờ",text:"Xem trích đoạn hề chèo hoặc một tiết mục hài; nhận xét về cử chỉ hài hước, vui nhộn của người biểu diễn."},
+      {label:"Hoạt động giáo dục theo chủ đề",text:"Kể về bạn trong lớp có nụ cười thân thiện; kể chuyện/làm động tác vui nhộn; sắm vai thể hiện nụ cười thân thiện trong tình huống thực tế."},
+      {label:"Sinh hoạt lớp",text:"Tổ chức 'Ngày hội nụ cười' — chơi trò chơi, nhảy múa theo nhạc vui nhộn."},
+    ]
+  },
+  3: {
+    muctieu:["Thử tài khéo léo của đôi bàn tay qua các sản phẩm tự làm."],
+    hoatdong:[
+      {label:"Sinh hoạt dưới cờ",text:"Tham dự phát động phong trào 'Khéo tay hay làm'."},
+      {label:"Hoạt động giáo dục theo chủ đề",text:"Chơi trò Bàn tay biết nói; làm sản phẩm từ len, lá cây; trang trí tranh bằng hạt đỗ, hạt gạo."},
+      {label:"Sinh hoạt lớp",text:"Chia sẻ cách làm xiếc bóng của gia đình em."},
+    ]
+  },
+  4: {
+    muctieu:["Thực hiện việc nhà một cách khéo léo, cẩn thận."],
+    hoatdong:[
+      {label:"Sinh hoạt dưới cờ",text:"Nghe giới thiệu về một nghề thủ công của địa phương."},
+      {label:"Hoạt động giáo dục theo chủ đề",text:"Kể chuyện tương tác 'Cậu bé hậu đậu'; thực hành cắm hoa theo tổ."},
+      {label:"Sinh hoạt lớp",text:"Chia sẻ về việc nhà em đã làm; tập thắt nơ trang trí quà."},
+    ]
+  },
+  5: {
+    muctieu:["Biết về Tết Trung thu và thực hành làm đèn lồng đón Tết Trung thu."],
+    hoatdong:[
+      {label:"Sinh hoạt dưới cờ",text:"Nghe tổng kết phong trào 'Khéo tay hay làm'; giới thiệu các loại mặt nạ Trung thu."},
+      {label:"Hoạt động giáo dục theo chủ đề",text:"Chia sẻ về Tết Trung thu; thực hành làm đèn lồng đón Tết Trung thu."},
+      {label:"Sinh hoạt lớp",text:"Chia sẻ việc chuẩn bị đón Tết Trung thu; góp quà cùng các bạn bày tiệc vui Trung thu."},
+    ]
+  },
+  6: {
+    muctieu:["Sắp xếp được đồ dùng sinh hoạt cá nhân ngăn nắp, gọn gàng."],
+    hoatdong:[
+      {label:"Sinh hoạt dưới cờ",text:"Hát, đọc thơ về đồ dùng học tập."},
+      {label:"Hoạt động giáo dục theo chủ đề",text:"Thực hành sắp xếp đồ dùng học tập; tự làm vật dụng để đựng đồ dùng học tập."},
+      {label:"Sinh hoạt lớp",text:"Chia sẻ về những việc đã làm để góc học tập gọn gàng, sạch đẹp."},
+    ]
+  }
+};
+
+const giaoanMau = `KẾ HOẠCH BÀI DẠY MÔN TOÁN LỚP 2
+CHỦ ĐỀ 1: ÔN TẬP VÀ BỔ SUNG – TUẦN 1
+BÀI 1: ÔN TẬP CÁC SỐ ĐẾN 100 – TIẾT 1: LUYỆN TẬP
+Thời gian thực hiện: .....
+
+I. YÊU CẦU CẦN ĐẠT:
+1. Năng lực đặc thù
+- Ôn tập, củng cố cách đọc, viết các số có hai chữ số theo cấu tạo chục và đơn vị.
+- Nhận biết, phân tích và viết được số có hai chữ số tương ứng với hình ảnh que tính, bảng số.
+2. Năng lực chung
+- Hình thành năng lực tư duy và lập luận toán học qua việc quan sát, phân tích cấu tạo số.
+- Phát triển năng lực giao tiếp, hợp tác khi trình bày cách đọc, viết số và chia sẻ kết quả.
+3. Phẩm chất
+- Chăm chỉ, cẩn thận khi hoàn thành bảng số; trung thực khi nêu kết quả; hợp tác khi làm việc nhóm.
+4. Tích hợp
+- Tích hợp năng lực số 1.3.CB1a: Nhận biết được nơi để sắp xếp dữ liệu, thông tin một cách đơn giản trong môi trường có cấu trúc.
+- Mục tiêu tích hợp: Biết nhận diện bảng số hoặc các ô nhập liệu số trên ứng dụng toán học là nơi sắp xếp dữ liệu có cấu trúc.
+
+II. CHUẨN BỊ:
+- GV: Máy tính, tivi/bảng tương tác; hình cắt bài tập SGK; thẻ số, bảng con.
+- HS: Bộ đồ dùng học Toán 2, bảng con, vở ô li.
+
+III. CÁC HOẠT ĐỘNG DẠY - HỌC CHỦ YẾU
+(... nội dung chi tiết từng hoạt động ...)
+
+IV. ĐIỀU CHỈNH TIẾT DẠY (NẾU CÓ)
+....................................................................`;
+
+/* ---------------- RENDER: LIBRARY ---------------- */
+const bookGrid = document.getElementById('bookGrid');
+let currentBook = null;
+
+function renderBooks(){
+  bookGrid.innerHTML = '';
+  Object.entries(books).forEach(([key,b])=>{
+    const el = document.createElement('button');
+    el.className = 'book' + (currentBook===key ? ' selected':'');
+    el.innerHTML = `
+      <div class="book-cover" style="background:linear-gradient(135deg,${b.color1},${b.color2})">${b.subject}</div>
+      <div class="book-meta">
+        <p class="subject">${b.subject}</p>
+        <p class="status ${b.status}">${b.status==='ready' ? 'Đã có mục lục' : 'Chưa nạp mục lục'}</p>
+      </div>`;
+    el.onclick = ()=>selectBook(key);
+    bookGrid.appendChild(el);
+  });
+}
+
+function selectBook(key){
+  currentBook = key;
+  renderBooks();
+  const b = books[key];
+  document.getElementById('tocTitle').textContent = 'Mục lục — ' + b.subject;
+  const tocList = document.getElementById('tocList');
+  tocList.innerHTML = '';
+  if(b.toc.length===0){
+    tocList.innerHTML = `<div style="padding:16px;font-size:13px;color:var(--ink-soft)">Chưa nạp mục lục cho cuốn này. Tải file PDF lên để hệ thống tự trích mục lục.</div>`;
+    showEmptyContent("Cuốn sách này chưa được nạp mục lục. Bạn có thể tải file PDF lên để hệ thống tự động trích mục lục theo tuần/bài.");
+    return;
+  }
+  b.toc.forEach(group=>{
+    const g = document.createElement('div');
+    g.className='chude';
+    g.innerHTML = `<div class="chude-label">${group.chude}</div>`;
+    group.bai.forEach(bai=>{
+      const item = document.createElement('div');
+      item.className='bai-item';
+      item.innerHTML = `<span class="num">${bai.num}</span><span>${bai.ten}</span><span class="page">tr.${bai.trang}</span>`;
+      item.onclick = ()=>selectBai(item, bai);
+      g.appendChild(item);
+    });
+    tocList.appendChild(g);
+  });
+  showEmptyContent("Chọn một bài trong mục lục bên trái để xem nội dung.");
+}
+
+function selectBai(el, bai){
+  document.querySelectorAll('.bai-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+  const panel = document.getElementById('contentPanel');
+  if(!bai.coContent){
+    panel.innerHTML = `
+      <div class="empty-state">
+        <div class="glyph">📄</div>
+        <p>Nội dung trang ${bai.trang} ("${bai.ten}") chưa được số hoá đầy đủ trong bản demo này.</p>
+        <button class="btn-ghost">Nạp nội dung từ PDF (trang ${bai.trang})</button>
+      </div>`;
+    return;
+  }
+  const c = baiContent[bai.num];
+  panel.innerHTML = `
+    <div class="eyebrow">Bài ${bai.num} · Trang ${bai.trang}</div>
+    <h2>${bai.ten}</h2>
+    <div class="muctieu-box">
+      <strong>Mục tiêu</strong>
+      ${c.muctieu.map(m=>`• ${m}`).join('<br>')}
+    </div>
+    ${c.hoatdong.map(h=>`
+      <div class="hoat-dong">
+        <div class="label">${h.label}</div>
+        <p>${h.text}</p>
+      </div>
+    `).join('')}
+  `;
+}
+
+function showEmptyContent(text){
+  document.getElementById('contentPanel').innerHTML = `
+    <div class="empty-state">
+      <div class="glyph">📖</div>
+      <p>${text}</p>
+    </div>`;
+}
+
+renderBooks();
+selectBook('hdtn');
+
+/* ---------------- CẢNH BÁO KHI ĐÓNG TAB LÚC CHƯA LƯU ---------------- */
+let hasUnsavedChanges = false;
+function markUnsaved(){ hasUnsavedChanges = true; }
+function markSaved(){ hasUnsavedChanges = false; }
+window.addEventListener('beforeunload', (e)=>{
+  if(hasUnsavedChanges){
+    e.preventDefault();
+    e.returnValue = ''; // trình duyệt sẽ tự hiện hộp thoại cảnh báo chuẩn
+    return '';
+  }
+});
+
+/* ---------------- EDITOR + AI CHAT ---------------- */
+const ta = document.getElementById('giaoanText');
+
+function setPlainDemo(text){
+  ta.classList.add('placeholder');
+  ta.textContent = text;
+}
+setPlainDemo(giaoanMau);
+
+/* ---------------- TỰ ĐỘNG LƯU NHÁP (autosave qua backend GAS) ---------------- */
+// ID nháp gắn theo trình duyệt này — bản chính thức nên thay bằng ID theo đúng
+// tiết học được chọn (từ Phân phối chương trình) thay vì theo trình duyệt.
+const uploadStatusEl = document.getElementById('uploadStatus');
+function getDraftId(){
+  let id = localStorage.getItem('giaoan_draft_id');
+  if(!id){
+    id = 'draft_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+    localStorage.setItem('giaoan_draft_id', id);
+  }
+  return id;
+}
+const draftId = getDraftId();
+let autosaveTimer = null;
+
+function autosaveDraft(){
+  clearTimeout(autosaveTimer);
+  // gộp các lần sửa liên tiếp lại, chỉ thực sự lưu sau 1.5s im lặng — tránh gọi backend liên tục
+  autosaveTimer = setTimeout(async ()=>{
+    if(!GAS_URL || GAS_URL.indexOf('DÁN_URL') === 0) return; // chưa cấu hình backend thì bỏ qua, không báo lỗi làm phiền
+    try{
+      await callBackend('luuNhap', {
+        id: draftId,
+        tieuDe: document.getElementById('giaoanTitle').textContent,
+        noiDungHTML: ta.innerHTML
+      });
+      uploadStatusEl.textContent = 'Đã tự động lưu nháp lúc ' + new Date().toLocaleTimeString('vi-VN');
+    }catch(err){
+      console.error('Lỗi autosave:', err);
+    }
+  }, 1500);
+}
+
+// Khi mở app, thử tải lại nháp lần làm việc trước (nếu có cấu hình backend)
+async function loadDraftOnStart(){
+  if(!GAS_URL || GAS_URL.indexOf('DÁN_URL') === 0) return;
+  try{
+    const data = await callBackend('layNhap', { id: draftId });
+    if(data.found && data.noiDungHTML){
+      ta.classList.remove('placeholder');
+      ta.innerHTML = data.noiDungHTML;
+      document.getElementById('giaoanTitle').textContent = data.tieuDe || 'Giáo án (nháp đã lưu)';
+      uploadStatusEl.textContent = 'Đã tải lại nháp lần làm việc trước.';
+    }
+  }catch(err){
+    console.error('Lỗi tải nháp:', err);
+  }
+}
+loadDraftOnStart();
+
+document.getElementById('resetBtn').onclick = ()=>{
+  setPlainDemo(giaoanMau);
+  document.getElementById('giaoanTitle').textContent = 'Giáo án — Toán 2, Tuần 1, Bài 1, Tiết 1 (mẫu demo)';
+  document.getElementById('uploadStatus').textContent = '';
+  diffBanner.style.display = 'none';
+  markSaved();
+};
+
+const uploadInput = document.getElementById('uploadInput');
+const uploadStatus = document.getElementById('uploadStatus');
+uploadInput.addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  uploadStatus.textContent = 'Đang đọc file…';
+  try{
+    if(file.name.toLowerCase().endsWith('.docx')){
+      const arrayBuffer = await file.arrayBuffer();
+      // convertToHtml giữ định dạng gốc: in đậm, tiêu đề, bảng, và nhúng ảnh dạng base64
+      const result = await mammoth.convertToHtml(
+        { arrayBuffer },
+        { convertImage: mammoth.images.imgElement(image =>
+            image.read('base64').then(b64 => ({ src: 'data:' + image.contentType + ';base64,' + b64 }))
+          )
+        }
+      );
+      ta.classList.remove('placeholder');
+      ta.innerHTML = result.value || '<p><em>(Không đọc được nội dung)</em></p>';
+    } else {
+      const text = await file.text();
+      setPlainDemo(text.trim());
+    }
+    document.getElementById('giaoanTitle').textContent = 'Giáo án — ' + file.name;
+    uploadStatus.textContent = 'Đã tải: ' + file.name + ' (định dạng gốc)';
+    diffBanner.style.display = 'none';
+    markUnsaved();
+  }catch(err){
+    console.error(err);
+    uploadStatus.textContent = 'Không đọc được file này.';
+  }
+  uploadInput.value = '';
+});
+
+const chatLog = document.getElementById('chatLog');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+
+document.querySelectorAll('.chip').forEach(c=>{
+  c.onclick = ()=>{
+    chatInput.value = c.dataset.q;
+    chatInput.focus();
+    chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length);
+  };
+});
+sendBtn.onclick = sendMessage;
+chatInput.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
+});
+// Tự giãn ô nhập theo nội dung khi gõ dài, không để chữ bị che khuất
+chatInput.addEventListener('input', ()=>{
+  chatInput.style.height = 'auto';
+  chatInput.style.height = chatInput.scrollHeight + 'px';
+});
+
+function addMsg(text, cls){
+  const d = document.createElement('div');
+  d.className = 'msg ' + cls;
+  d.textContent = text;
+  chatLog.appendChild(d);
+  chatLog.scrollTop = chatLog.scrollHeight;
+  return d;
+}
+
+// Chuyển văn bản thuần AI trả về thành các đoạn <p>, in đậm dòng tiêu đề kiểu I./II./III./IV. hoặc CHỮ HOA
+// và tô màu đoạn nào KHÔNG khớp với nội dung cũ (tức là đoạn AI vừa thêm/sửa)
+function splitLines(text){
+  return text.split(/\n+/).map(l=>l.trim()).filter(l=>l!=='');
+}
+
+// So khớp đoạn cũ/mới kiểu LCS đơn giản — trả về mảng boolean: true = đoạn giữ nguyên, false = vừa thay đổi
+function diffMask(oldLines, newLines){
+  const n = oldLines.length, m = newLines.length;
+  const dp = Array.from({length:n+1}, ()=>new Array(m+1).fill(0));
+  for(let i=n-1;i>=0;i--){
+    for(let j=m-1;j>=0;j--){
+      dp[i][j] = (oldLines[i]===newLines[j]) ? dp[i+1][j+1]+1 : Math.max(dp[i+1][j], dp[i][j+1]);
+    }
+  }
+  const matched = new Array(m).fill(false);
+  let i=0,j=0;
+  while(i<n && j<m){
+    if(oldLines[i]===newLines[j]){ matched[j]=true; i++; j++; }
+    else if(dp[i+1][j] >= dp[i][j+1]) i++;
+    else j++;
+  }
+  return matched;
+}
+
+function textToParagraphs(newText, oldText){
+  const newLines = splitLines(newText);
+  const matched = oldText != null ? diffMask(splitLines(oldText), newLines) : newLines.map(()=>true);
+  let changedCount = 0;
+  const html = newLines.map((line, idx)=>{
+    const isHeading = /^(I{1,3}V?|IV)\./.test(line) || (line === line.toUpperCase() && line.length>3 && /[A-ZÀ-Ỹ]/.test(line));
+    const esc = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const isNew = !matched[idx];
+    if(isNew) changedCount++;
+    const cls = isNew ? ' class="diff-new"' : '';
+    return isHeading ? `<p${cls}><strong>${esc}</strong></p>` : `<p${cls}>${esc}</p>`;
+  }).join('');
+  return { html, changedCount };
+}
+
+const diffBanner = document.getElementById('diffBanner');
+const diffCount = document.getElementById('diffCount');
+document.getElementById('clearDiffBtn').onclick = clearDiffHighlight;
+function clearDiffHighlight(){
+  ta.querySelectorAll('.diff-new').forEach(el=>el.classList.remove('diff-new'));
+  ta.querySelectorAll('.ai-target').forEach(el=>{
+    if(el !== targetSpan) el.classList.remove('ai-target'); // giữ lại nếu đang thực sự chờ AI xử lý
+  });
+  diffBanner.style.display = 'none';
+}
+// Nếu người dùng tự sửa tay, tô màu không còn đáng tin cậy nữa -> ẩn đi
+ta.addEventListener('input', ()=>{
+  clearDiffHighlight(); markUnsaved();
+  if(targetSpan){ targetSpan = null; targetChip.style.display = 'none'; }
+});
+
+/* ---------------- BÔI ĐEN ĐOẠN VĂN BẢN ĐỂ YÊU CẦU AI SỬA RIÊNG ĐOẠN ĐÓ ---------------- */
+let savedRange = null;
+let targetSpan = null;
+const selectTip = document.getElementById('selectTip');
+const targetChip = document.getElementById('targetChip');
+const targetChipText = document.getElementById('targetChipText');
+
+ta.addEventListener('mouseup', ()=>{
+  const sel = window.getSelection();
+  if(sel.isCollapsed || sel.toString().trim()===''){ selectTip.style.display='none'; return; }
+  if(!ta.contains(sel.anchorNode)){ selectTip.style.display='none'; return; }
+  const range = sel.getRangeAt(0);
+  savedRange = range.cloneRange();
+  const rect = range.getBoundingClientRect();
+  selectTip.style.left = Math.min(Math.max(rect.left + rect.width/2, 100), window.innerWidth - 100) + 'px';
+  selectTip.style.top = Math.max(rect.top - 10, 46) + 'px';
+  selectTip.style.display = 'block';
+});
+document.addEventListener('mousedown', (e)=>{
+  if(!selectTip.contains(e.target) && !ta.contains(e.target)) selectTip.style.display='none';
+});
+
+selectTip.addEventListener('click', ()=>{
+  if(!savedRange) return;
+  try{
+    const span = document.createElement('span');
+    span.className = 'ai-target';
+    span.appendChild(savedRange.extractContents());
+    savedRange.insertNode(span);
+    targetSpan = span;
+    targetChipText.textContent = 'Áp dụng cho đoạn đã chọn: “' + (span.textContent.trim().length>70 ? span.textContent.trim().slice(0,70)+'…' : span.textContent.trim()) + '”';
+    targetChip.style.display = 'flex';
+  }catch(err){ console.error(err); }
+  selectTip.style.display = 'none';
+  window.getSelection().removeAllRanges();
+  chatInput.focus();
+});
+
+document.getElementById('clearTargetBtn').onclick = ()=>{
+  if(targetSpan){ targetSpan.replaceWith(...targetSpan.childNodes); targetSpan = null; }
+  targetChip.style.display = 'none';
+};
+
+async function sendMessage(){
+  const q = chatInput.value.trim();
+  if(!q) return;
+  chatInput.value = '';
+  chatInput.style.height = 'auto';
+  sendBtn.disabled = true;
+  addMsg(q, 'user');
+
+  // ---- Trường hợp có đoạn văn bản đang được bôi đen chọn ----
+  if(targetSpan){
+    const thinking = addMsg('Đang chỉnh sửa đoạn bạn chọn…', 'ai');
+    const selectedText = targetSpan.textContent;
+    const fullContext = ta.innerText || ta.textContent;
+    try{
+      const data = await callBackend('suaDoan', {
+        noiDungHienTai: fullContext,
+        doanDuocChon: selectedText,
+        yeuCau: q,
+        monHoc: MON_HOC_HIEN_TAI,
+        lop: LOP_HIEN_TAI
+      });
+      const newText = data.noiDungMoi ? data.noiDungMoi.trim() : null;
+      thinking.remove();
+      if(newText){
+        const esc = newText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        targetSpan.innerHTML = esc.split(/\n+/).map(l=>l.trim()).filter(Boolean).join('<br>');
+        targetSpan.classList.remove('ai-target');
+        targetSpan.classList.add('diff-new');
+        diffCount.textContent = '🖍 AI vừa chỉnh sửa đoạn bạn chọn (tô vàng) — đọc lại trước khi lưu.';
+        diffBanner.style.display = 'flex';
+        addMsg('Đã cập nhật đúng đoạn bạn chọn.', 'ai');
+        markUnsaved();
+        autosaveDraft();
+      } else {
+        addMsg('Không nhận được phản hồi hợp lệ, thử lại nhé.', 'ai');
+      }
+    }catch(err){
+      thinking.remove();
+      addMsg('Có lỗi: ' + (err.message || 'thử lại sau.'), 'ai');
+      console.error(err);
+    } finally {
+      targetSpan = null;
+      targetChip.style.display = 'none';
+      sendBtn.disabled = false;
+    }
+    return;
+  }
+
+  // ---- Trường hợp không chọn đoạn nào — sửa toàn bộ giáo án như trước ----
+  const thinking = addMsg('Đang chỉnh sửa giáo án…', 'ai');
+
+  const currentText = ta.innerText || ta.textContent;
+
+  try{
+    const data = await callBackend('suaGiaoAn', {
+      noiDungHienTai: currentText,
+      yeuCau: q,
+      monHoc: MON_HOC_HIEN_TAI,
+      lop: LOP_HIEN_TAI
+    });
+    const newText = data.noiDungMoi ? data.noiDungMoi.trim() : null;
+    thinking.remove();
+    if(newText){
+      ta.classList.remove('placeholder');
+      const { html, changedCount } = textToParagraphs(newText, currentText);
+      ta.innerHTML = html;
+      if(changedCount > 0){
+        diffCount.textContent = `🖍 AI vừa chỉnh sửa ${changedCount} đoạn (tô vàng) — đọc lại trước khi lưu.`;
+        diffBanner.style.display = 'flex';
+      } else {
+        diffBanner.style.display = 'none';
+      }
+      addMsg('Đã cập nhật giáo án — phần vừa sửa được tô vàng để bạn dễ kiểm tra. (Lưu ý: bảng/hình ảnh gốc trong file Word chưa được AI xử lý lại ở bản demo này — chỉ áp dụng cho phần văn bản.)', 'ai');
+      markUnsaved();
+      autosaveDraft();
+    } else {
+      addMsg('Không nhận được phản hồi hợp lệ, thử lại nhé.', 'ai');
+    }
+  }catch(err){
+    thinking.remove();
+    addMsg('Có lỗi: ' + (err.message || 'thử lại sau.'), 'ai');
+    console.error(err);
+  } finally {
+    sendBtn.disabled = false;
+  }
+}
+
+/* ---------------- TABS ---------------- */
+const viewsWrap = document.getElementById('viewsWrap');
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    if(btn.dataset.view === 'split'){
+      viewsWrap.classList.add('split-mode');
+      document.querySelector('.app').classList.add('split-active');
+      document.getElementById('view-lib').classList.add('active');
+      document.getElementById('view-editor').classList.add('active');
+    } else {
+      viewsWrap.classList.remove('split-mode');
+      document.querySelector('.app').classList.remove('split-active');
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      document.getElementById('view-'+btn.dataset.view).classList.add('active');
+    }
+  };
+});
+
+/* export: giữ định dạng HTML (đậm/bảng/ảnh) khi mở lại bằng Word */
+document.getElementById('exportBtn').onclick = ()=>{
+  const bodyHtml = ta.classList.contains('placeholder')
+    ? '<pre style="font-family:Times New Roman;white-space:pre-wrap;">' + ta.textContent.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</pre>'
+    : ta.innerHTML;
+  const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+    <body style="font-family:'Times New Roman',serif;font-size:14pt;">${bodyHtml}</body></html>`;
+  const blob = new Blob(['\ufeff', doc], {type:'application/msword'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'giao-an.doc';
+  a.click();
+  markSaved();
+  uploadStatus.textContent = 'Đã xuất file — lần sau tải lại đúng file này để làm tiếp.';
+};
+</script>
+</body>
+</html>
