@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Công cụ chuyển tiếng nói sang văn bản</title>
+<style>
+  :root{
+    --bg: #eef1f4;
+    --panel: #ffffff;
+    --ink: #1b222a;
+    --muted: #66727e;
+    --line: #e1e6ea;
+    --accent: #036b76;
+    --accent-ink: #ffffff;
+    --rec: #c94a3f;
+    --rec-soft: #fbeceb;
+    --ok: #1f8a5f;
+    --warn-bg: #fff6e6;
+    --warn-ink: #7a5300;
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family: Inter, "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height:100vh;
+    padding:28px 16px 60px;
+  }
+  .wrap{max-width:920px;margin:0 auto;}
+  header{margin-bottom:20px;}
+  .eyebrow{
+    font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--accent); font-weight:700; margin-bottom:6px;
+  }
+  h1{font-size:24px; margin:0 0 4px; font-weight:800; letter-spacing:-0.01em;}
+  .sub{color:var(--muted); font-size:14px; line-height:1.5; margin:0;}
+
+  .banner{
+    border-radius: var(--radius);
+    padding:14px 16px;
+    font-size:13px;
+    line-height:1.55;
+    margin:16px 0;
+    display:none;
+  }
+  .banner.show{display:block;}
+  .banner.warn{background:var(--warn-bg); color:var(--warn-ink); border:1px solid #f0d99a;}
+  .banner.err{background:var(--rec-soft); color:#7a2a22; border:1px solid #f0c3bd;}
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius: var(--radius);
+    padding:24px;
+    margin-bottom:18px;
+    box-shadow: 0 1px 2px rgba(20,30,40,.04);
+  }
+
+  .control-row{
+    display:flex; align-items:center; gap:22px; flex-wrap:wrap;
+  }
+
+  .rec-button{
+    position:relative;
+    width:86px; height:86px;
+    border-radius:50%;
+    border:none;
+    background: var(--rec);
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition: transform .15s ease, box-shadow .2s ease;
+    box-shadow: 0 0 0 0 rgba(201,74,63,.4);
+    flex:none;
+  }
+  .rec-button:hover{transform:scale(1.03);}
+  .rec-button:active{transform:scale(.97);}
+  .rec-button .icon{width:26px;height:26px;background:#fff;border-radius:6px;}
+  .rec-button.idle .icon{border-radius:50%;}
+  .rec-button.recording{
+    animation: pulse 1.6s infinite;
+  }
+  .rec-button.paused{background:var(--muted);}
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(201,74,63,.45);}
+    70%{box-shadow:0 0 0 16px rgba(201,74,63,0);}
+    100%{box-shadow:0 0 0 0 rgba(201,74,63,0);}
+  }
+
+  .meta{flex:1; min-width:200px;}
+  .status{
+    font-weight:700; font-size:15px; margin-bottom:4px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);}
+  .dot.on{background:var(--rec);}
+  .dot.ok{background:var(--ok);}
+  .timer{
+    font-variant-numeric: tabular-nums;
+    font-size:28px; font-weight:800; letter-spacing:.02em;
+    color:var(--ink);
+  }
+
+  .btn-row{display:flex; gap:10px; flex-wrap:wrap;}
+  .btn{
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    padding:10px 16px;
+    border-radius:10px;
+    font-size:13.5px;
+    font-weight:600;
+    cursor:pointer;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  .btn:hover{background:#f5f7f9;}
+  .btn:disabled{opacity:.4; cursor:not-allowed;}
+  .btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
+  .btn.primary:hover{background:#025560;}
+  .btn.stop{background:var(--ink); color:#fff; border-color:var(--ink);}
+
+  .waveform{
+    display:flex; align-items:flex-end; gap:3px; height:34px; margin-left:auto;
+  }
+  .waveform span{
+    width:4px; background:var(--accent); border-radius:2px; height:6px;
+    animation: bar 1.1s ease-in-out infinite;
+    opacity:.35;
+  }
+  .waveform.active span{opacity:1;}
+  .waveform span:nth-child(1){animation-delay:0s;}
+  .waveform span:nth-child(2){animation-delay:.12s;}
+  .waveform span:nth-child(3){animation-delay:.24s;}
+  .waveform span:nth-child(4){animation-delay:.36s;}
+  .waveform span:nth-child(5){animation-delay:.48s;}
+  .waveform span:nth-child(6){animation-delay:.6s;}
+  @keyframes bar{
+    0%,100%{height:6px;}
+    50%{height:28px;}
+  }
+  .waveform:not(.active) span{animation-play-state:paused;}
+
+  .row2{display:flex; gap:22px; margin-top:20px; flex-wrap:wrap; align-items:center;}
+  .field{display:flex; flex-direction:column; gap:5px;}
+  .field label{font-size:12px; color:var(--muted); font-weight:600;}
+  select, input[type=text]{
+    border:1px solid var(--line); border-radius:8px; padding:7px 10px; font-size:13.5px;
+    font-family:inherit; background:#fff; color:var(--ink);
+  }
+  .toggle{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--muted);}
+
+  .panel-title{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:10px;
+  }
+  .panel-title h2{font-size:15px; margin:0; font-weight:800;}
+  .wordcount{font-size:12px; color:var(--muted);}
+
+  .transcript{
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:#fbfcfd;
+    padding:16px;
+    height:340px;
+    overflow-y:auto;
+    font-size:14.5px;
+    line-height:1.7;
+    white-space:pre-wrap;
+  }
+  .transcript .placeholder{color:var(--muted); font-style:italic;}
+  .transcript .interim{color:var(--muted);}
+  .seg-time{color:var(--accent); font-weight:700; font-size:12px; margin-right:6px;}
+  .gap-marker{color:var(--warn-ink); background:var(--warn-bg); border-radius:6px; padding:4px 8px; margin:4px 0;}
+  .gap-marker .seg-time{color:var(--warn-ink);}
+
+  .foot-actions{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;}
+
+  footer{color:var(--muted); font-size:12px; text-align:center; margin-top:26px; line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Công cụ nội bộ · Ban KSNB</div>
+    <h1>Công cụ chuyển tiếng nói sang văn bản</h1>
+    <p class="sub">Chuyển giọng nói sang văn bản trực tiếp trong buổi làm việc.</p>
+  </header>
+
+  <div id="bannerUnsupported" class="banner err">
+    <strong>Trình duyệt này chưa hỗ trợ chuyển giọng nói sang văn bản.</strong> Vẫn có thể sử dụng bình thường, nhưng phần văn bản sẽ trống. Nên mở lại bằng <strong>Google Chrome</strong> (máy tính hoặc Android) để dùng đầy đủ tính năng.
+  </div>
+  <div id="bannerInfo" class="banner warn show">
+    Công cụ này cần <strong>kết nối Internet liên tục</strong> trong lúc sử dụng để chuyển giọng nói sang văn bản (qua dịch vụ nhận dạng của trình duyệt).
+  </div>
+
+  <div class="card">
+    <div class="control-row">
+      <button id="recBtn" class="rec-button idle" title="Bắt đầu">
+        <div class="icon"></div>
+      </button>
+      <div class="meta">
+        <div class="status"><span id="statusDot" class="dot"></span><span id="statusText">Sẵn sàng</span></div>
+        <div id="timer" class="timer">00:00:00</div>
+      </div>
+      <div id="waveform" class="waveform">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>Ngôn ngữ nhận diện</label>
+        <select id="langSelect">
+          <option value="vi-VN" selected>Tiếng Việt</option>
+          <option value="en-US">English</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Tên buổi làm việc (đặt tên file)</label>
+        <input type="text" id="sessionName" placeholder="VD: BienBan_PGD_08-08-2026" />
+      </div>
+      <div class="toggle">
+        <input type="checkbox" id="autoBackup" checked />
+        <label for="autoBackup">Tự động tải file văn bản sao lưu mỗi 15 phút (đề phòng sự cố khi thực hiện trong thời gian dài)</label>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:18px;">
+      <button id="startBtn" class="btn primary">Bắt đầu</button>
+      <button id="pauseBtn" class="btn" disabled>Tạm dừng</button>
+      <button id="resumeBtn" class="btn" disabled style="display:none;">Tiếp tục</button>
+      <button id="stopBtn" class="btn stop" disabled>Kết thúc</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="panel-title">
+      <h2>Văn bản trực tiếp</h2>
+      <span class="wordcount" id="wordCount">0 từ</span>
+    </div>
+    <div id="transcript" class="transcript"><span class="placeholder">Văn bản sẽ hiện ra ở đây khi bắt đầu và có người nói...</span></div>
+    <div class="foot-actions">
+      <button id="downloadAudioBtn" class="btn" disabled>Tải file âm thanh (.webm)</button>
+      <button id="downloadTextBtn" class="btn" disabled>Tải file văn bản (.txt)</button>
+      <button id="clearBtn" class="btn" disabled>Làm mới, thực hiện buổi mới</button>
+    </div>
+  </div>
+
+  <footer>
+    Dữ liệu chỉ xử lý trong phiên làm việc này trên trình duyệt của bạn, không tự lưu lại sau khi đóng trang.<br />
+    Luôn đọc lại và đối chiếu văn bản do công cụ tạo ra với ghi chép tay trước khi đưa vào biên bản chính thức.
+  </footer>
+</div>
+
+<script>
+(function(){
+  const recBtn = document.getElementById('recBtn');
+  const startBtn = document.getElementById('startBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const timerEl = document.getElementById('timer');
+  const waveform = document.getElementById('waveform');
+  const transcriptEl = document.getElementById('transcript');
+  const wordCountEl = document.getElementById('wordCount');
+  const downloadAudioBtn = document.getElementById('downloadAudioBtn');
+  const downloadTextBtn = document.getElementById('downloadTextBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const langSelect = document.getElementById('langSelect');
+  const sessionNameInput = document.getElementById('sessionName');
+  const autoBackupChk = document.getElementById('autoBackup');
+  const bannerUnsupported = document.getElementById('bannerUnsupported');
+
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let audioBlob = null;
+  let stream = null;
+  let recognition = null;
+  let recognizing = false;
+  let shouldKeepRecognizing = false;
+  let finalSegments = []; // {time, text}
+  let interimText = '';
+  let state = 'idle'; // idle | recording | paused | stopped
+  let startTime = null;
+  let elapsedBeforePause = 0;
+  let timerInterval = null;
+  let backupInterval = null;
+
+  const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SpeechRecognitionCtor){
+    bannerUnsupported.classList.add('show');
+  }
+
+  function pad(n){return n.toString().padStart(2,'0');}
+  function fmtElapsed(ms){
+    const totalSec = Math.floor(ms/1000);
+    const h = Math.floor(totalSec/3600);
+    const m = Math.floor((totalSec%3600)/60);
+    const s = totalSec%60;
+    return pad(h)+':'+pad(m)+':'+pad(s);
+  }
+  function fmtClock(d){
+    return pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+  }
+
+  function setStatus(text, dotClass){
+    statusText.textContent = text;
+    statusDot.className = 'dot' + (dotClass ? ' '+dotClass : '');
+  }
+
+  function updateTimer(){
+    const now = Date.now();
+    const elapsed = elapsedBeforePause + (state==='recording' ? (now-startTime) : 0);
+    timerEl.textContent = fmtElapsed(elapsed);
+  }
+
+  function renderTranscript(){
+    if(finalSegments.length===0 && !interimText){
+      transcriptEl.innerHTML = '<span class="placeholder">Văn bản sẽ hiện ra ở đây khi bắt đầu và có người nói...</span>';
+      wordCountEl.textContent = '0 từ';
+      return;
+    }
+    let html = finalSegments.map(seg=>
+      '<div'+(seg.isGap ? ' class="gap-marker"' : '')+'><span class="seg-time">['+seg.time+']</span>'+escapeHtml(seg.text)+'</div>'
+    ).join('');
+    if(interimText){
+      html += '<div class="interim">'+escapeHtml(interimText)+'</div>';
+    }
+    transcriptEl.innerHTML = html;
+    transcriptEl.scrollTop = transcriptEl.scrollHeight;
+    const words = finalSegments.map(s=>s.text).join(' ').trim().split(/\s+/).filter(Boolean).length;
+    wordCountEl.textContent = words + ' từ';
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function buildTranscriptText(){
+    const header = 'VĂN BẢN CHUYỂN ĐỔI TỰ ĐỘNG (do AI chuyển giọng nói - CẦN ĐỐI CHIẾU, CHỈNH SỬA TRƯỚC KHI DÙNG CHÍNH THỨC)\n' +
+      'Buổi: ' + (sessionNameInput.value.trim() || '(chưa đặt tên)') + '\n' +
+      'Tạo lúc: ' + new Date().toLocaleString('vi-VN') + '\n' +
+      '----------------------------------------\n\n';
+    const body = finalSegments.map(seg => '['+seg.time+'] '+seg.text).join('\n\n');
+    return header + body + '\n';
+  }
+
+  function safeFileBase(){
+    const name = sessionNameInput.value.trim() || 'GhiAm_' + new Date().toISOString().slice(0,10);
+    return name.replace(/[^a-zA-Z0-9_\-]/g,'_');
+  }
+
+  function downloadBlob(blob, filename){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  }
+
+  function doBackupDownload(){
+    if(finalSegments.length===0) return;
+    const txt = buildTranscriptText();
+    const blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
+    downloadBlob(blob, safeFileBase()+'_saoluu_'+fmtClock(new Date()).replace(/:/g,'-')+'.txt');
+  }
+
+  function startRecognition(){
+    if(!SpeechRecognitionCtor) return;
+    recognition = new SpeechRecognitionCtor();
+    recognition.lang = langSelect.value;
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onresult = function(event){
+      let interim = '';
+      for(let i=event.resultIndex; i<event.results.length; i++){
+        const res = event.results[i];
+        if(res.isFinal){
+          finalSegments.push({time: fmtClock(new Date()), text: res[0].transcript.trim()});
+        } else {
+          interim += res[0].transcript;
+        }
+      }
+      interimText = interim;
+      renderTranscript();
+    };
+
+    recognition.onerror = function(e){
+      console.warn('Speech recognition error:', e.error);
+      // no-speech and network errors are common during long sessions; the onend handler restarts it.
+    };
+
+    recognition.onend = function(){
+      recognizing = false;
+      const gapStart = Date.now();
+      if(shouldKeepRecognizing){
+        // auto-restart to keep long sessions alive; mark the gap so it's visible, not silent
+        const markGap = function(){
+          const gapSec = Math.round((Date.now()-gapStart)/1000);
+          if(gapSec >= 1){
+            finalSegments.push({time: fmtClock(new Date()), text: '\u26A0 [Gián đoạn nhận diện khoảng ' + gapSec + ' giây - kiểm tra lại đoạn này trong file âm thanh nếu cần]', isGap:true});
+            renderTranscript();
+          }
+        };
+        try{ recognition.start(); recognizing = true; markGap(); }
+        catch(err){ setTimeout(()=>{ if(shouldKeepRecognizing){ try{recognition.start(); recognizing=true; markGap();}catch(e2){} } }, 400); }
+      }
+    };
+
+    try{ recognition.start(); recognizing = true; }catch(e){}
+  }
+
+  function stopRecognition(){
+    shouldKeepRecognizing = false;
+    if(recognition){
+      try{ recognition.stop(); }catch(e){}
+    }
+  }
+
+  async function startRecording(){
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    }catch(err){
+      alert('Không thể truy cập micro. Vui lòng cho phép quyền micro cho trang này rồi thử lại.');
+      return;
+    }
+    audioChunks = [];
+    audioBlob = null;
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = function(e){
+      if(e.data && e.data.size>0) audioChunks.push(e.data);
+    };
+    mediaRecorder.onstop = function(){
+      audioBlob = new Blob(audioChunks, {type:'audio/webm'});
+      downloadAudioBtn.disabled = false;
+    };
+    mediaRecorder.start(1000);
+
+    shouldKeepRecognizing = true;
+    startRecognition();
+
+    state = 'recording';
+    startTime = Date.now();
+    elapsedBeforePause = 0;
+    finalSegments = [];
+    interimText = '';
+    renderTranscript();
+
+    recBtn.className = 'rec-button recording';
+    waveform.classList.add('active');
+    setStatus('Đang chuyển đổi', 'on');
+    startBtn.disabled = true;
+    pauseBtn.disabled = false;
+    pauseBtn.style.display = 'inline-block';
+    resumeBtn.style.display = 'none';
+    stopBtn.disabled = false;
+    downloadAudioBtn.disabled = true;
+    downloadTextBtn.disabled = true;
+    clearBtn.disabled = true;
+    langSelect.disabled = true;
+
+    timerInterval = setInterval(updateTimer, 500);
+
+    if(autoBackupChk.checked){
+      backupInterval = setInterval(doBackupDownload, 15*60*1000);
+    }
+  }
+
+  function pauseRecording(){
+    if(state!=='recording') return;
+    mediaRecorder.pause();
+    stopRecognition();
+    elapsedBeforePause += Date.now()-startTime;
+    state = 'paused';
+    recBtn.className = 'rec-button paused';
+    waveform.classList.remove('active');
+    setStatus('Tạm dừng', '');
+    pauseBtn.style.display = 'none';
+    resumeBtn.style.display = 'inline-block';
+    resumeBtn.disabled = false;
+    clearInterval(timerInterval);
+  }
+
+  function resumeRecording(){
+    if(state!=='paused') return;
+    mediaRecorder.resume();
+    shouldKeepRecognizing = true;
+    startRecognition();
+    startTime = Date.now();
+    state = 'recording';
+    recBtn.className = 'rec-button recording';
+    waveform.classList.add('active');
+    setStatus('Đang chuyển đổi', 'on');
+    pauseBtn.style.display = 'inline-block';
+    resumeBtn.style.display = 'none';
+    timerInterval = setInterval(updateTimer, 500);
+  }
+
+  function stopRecording(){
+    if(state==='idle' || state==='stopped') return;
+    if(state==='recording'){ elapsedBeforePause += Date.now()-startTime; }
+    clearInterval(timerInterval);
+    clearInterval(backupInterval);
+    stopRecognition();
+    interimText='';
+    renderTranscript();
+    if(mediaRecorder && mediaRecorder.state!=='inactive'){ mediaRecorder.stop(); }
+    if(stream){ stream.getTracks().forEach(t=>t.stop()); }
+
+    state = 'stopped';
+    recBtn.className = 'rec-button idle';
+    waveform.classList.remove('active');
+    setStatus('Đã kết thúc - tải file bên dưới', 'ok');
+    startBtn.disabled = true;
+    pauseBtn.disabled = true; pauseBtn.style.display='inline-block'; resumeBtn.style.display='none';
+    stopBtn.disabled = true;
+    downloadTextBtn.disabled = (finalSegments.length===0);
+    clearBtn.disabled = false;
+  }
+
+  function resetAll(){
+    state='idle'; finalSegments=[]; interimText=''; audioChunks=[]; audioBlob=null;
+    elapsedBeforePause=0; timerEl.textContent='00:00:00';
+    renderTranscript();
+    recBtn.className='rec-button idle';
+    setStatus('Sẵn sàng','');
+    startBtn.disabled=false; pauseBtn.disabled=true; stopBtn.disabled=true;
+    downloadAudioBtn.disabled=true; downloadTextBtn.disabled=true; clearBtn.disabled=true;
+    langSelect.disabled=false;
+    pauseBtn.style.display='inline-block'; resumeBtn.style.display='none';
+  }
+
+  startBtn.addEventListener('click', startRecording);
+  pauseBtn.addEventListener('click', pauseRecording);
+  resumeBtn.addEventListener('click', resumeRecording);
+  stopBtn.addEventListener('click', stopRecording);
+  recBtn.addEventListener('click', function(){
+    if(state==='idle' || state==='stopped') startRecording();
+    else if(state==='recording') pauseRecording();
+    else if(state==='paused') resumeRecording();
+  });
+  downloadAudioBtn.addEventListener('click', function(){
+    if(audioBlob) downloadBlob(audioBlob, safeFileBase()+'.webm');
+  });
+  downloadTextBtn.addEventListener('click', function(){
+    const blob = new Blob([buildTranscriptText()], {type:'text/plain;charset=utf-8'});
+    downloadBlob(blob, safeFileBase()+'.txt');
+  });
+  clearBtn.addEventListener('click', resetAll);
+
+  window.addEventListener('beforeunload', function(e){
+    if(state==='recording' || state==='paused'){
+      e.preventDefault(); e.returnValue='';
+    }
+  });
+})();
+</script>
+</body>
+</html>
