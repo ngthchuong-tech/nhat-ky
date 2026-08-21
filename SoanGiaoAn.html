@@ -146,11 +146,11 @@
   .book-row .book-del{
     position:static;flex-shrink:0;width:18px;height:18px;border-radius:50%;
     background:rgba(0,0,0,.25);color:#fff;border:none;font-size:10.5px;line-height:1;cursor:pointer;
-    display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s ease,background .15s ease;
+    display:flex;align-items:center;justify-content:center;opacity:.55;transition:opacity .15s ease,background .15s ease;
   }
   .book-row:hover .book-del{opacity:1;}
   .book-row.selected .book-del{background:rgba(255,255,255,.3);}
-  .book-row .book-del:hover{background:var(--clay);}
+  .book-row .book-del:hover{background:var(--clay);opacity:1;}
 
   .toc-panel{
     flex:1;min-height:0;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
@@ -546,7 +546,7 @@
 <script>
 /* ---------------- DATA ---------------- */
 // Dán URL Web App (Google Apps Script) của bạn vào đây sau khi Deploy — xem hướng dẫn trong Code.gs
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzVM4Xx81azwYTMA1xyKfTK_JNDH9jUtkR34czDS5c_XKTyrOaEi34c0d0qWKie3BURxA/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzvo3C0cJrE_tR77bTHA4Ixr30ysscy4ter-8Jj47D5aF4EaIsgyYm6-mP4ysLGtablfg/exec";
 // Đặt đúng môn/lớp đang soạn để backend tra đúng tài liệu tham khảo trong Thư viện
 const MON_HOC_HIEN_TAI = "Toán";
 const LOP_HIEN_TAI = "2";
@@ -731,8 +731,12 @@ function base64ToBlobUrl(base64, mime){
 
 async function ensureBookPdfBlobUrl(book){
   if(pdfBlobCache[book.driveFileId]) return pdfBlobCache[book.driveFileId];
-  const res = await callBackend('layPdfBytes', { driveFileId: book.driveFileId });
-  const url = base64ToBlobUrl(res.base64Pdf, 'application/pdf');
+  // Tải nhị phân trực tiếp (GET, không qua JSON/base64) — nhanh hơn nhiều so với gọi callBackend('layPdfBytes',...)
+  const res = await fetch(GAS_URL + '?pdf=' + encodeURIComponent(book.driveFileId));
+  if(!res.ok) throw new Error('Không tải được PDF (mã lỗi ' + res.status + ')');
+  const buf = await res.arrayBuffer();
+  const blob = new Blob([buf], {type:'application/pdf'});
+  const url = URL.createObjectURL(blob);
   pdfBlobCache[book.driveFileId] = url;
   return url;
 }
