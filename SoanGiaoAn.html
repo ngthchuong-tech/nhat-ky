@@ -546,7 +546,7 @@
 <script>
 /* ---------------- DATA ---------------- */
 // Dán URL Web App (Google Apps Script) của bạn vào đây sau khi Deploy — xem hướng dẫn trong Code.gs
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzvo3C0cJrE_tR77bTHA4Ixr30ysscy4ter-8Jj47D5aF4EaIsgyYm6-mP4ysLGtablfg/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyAf8N0Z26AQLMedb3PK-RNoPBsTnsdyLPS4DwuMGpegTVy4QFFPCfLzPIY96YlbH_BkA/exec";
 // Đặt đúng môn/lớp đang soạn để backend tra đúng tài liệu tham khảo trong Thư viện
 const MON_HOC_HIEN_TAI = "Toán";
 const LOP_HIEN_TAI = "2";
@@ -731,12 +731,8 @@ function base64ToBlobUrl(base64, mime){
 
 async function ensureBookPdfBlobUrl(book){
   if(pdfBlobCache[book.driveFileId]) return pdfBlobCache[book.driveFileId];
-  // Tải nhị phân trực tiếp (GET, không qua JSON/base64) — nhanh hơn nhiều so với gọi callBackend('layPdfBytes',...)
-  const res = await fetch(GAS_URL + '?pdf=' + encodeURIComponent(book.driveFileId));
-  if(!res.ok) throw new Error('Không tải được PDF (mã lỗi ' + res.status + ')');
-  const buf = await res.arrayBuffer();
-  const blob = new Blob([buf], {type:'application/pdf'});
-  const url = URL.createObjectURL(blob);
+  const res = await callBackend('layPdfBytes', { driveFileId: book.driveFileId });
+  const url = base64ToBlobUrl(res.base64Pdf, 'application/pdf');
   pdfBlobCache[book.driveFileId] = url;
   return url;
 }
@@ -896,11 +892,8 @@ async function selectBai(el, bai, book){
       if(wrap) wrap.innerHTML = `<iframe src="${blobUrl}#page=${bai.trang||1}&view=FitV"></iframe>`;
     }catch(err){
       if(myToken !== selectBaiToken) return;
-      // fetch() bị chặn (thường do CORS) — phương án dự phòng: nhúng thẳng URL backend vào iframe,
-      // để trình duyệt tự tải (không đi qua JS fetch nên không bị chặn kiểu này). Sẽ không lưu tạm được nữa.
       const wrap = document.getElementById('pdfFrameWrap');
-      const directUrl = GAS_URL + '?pdf=' + encodeURIComponent(book.driveFileId) + '#page=' + (bai.trang||1) + '&view=FitV';
-      if(wrap) wrap.innerHTML = `<iframe src="${directUrl}"></iframe>`;
+      if(wrap) wrap.innerHTML = `<div class="empty-state" style="height:100%;"><div class="glyph">⚠️</div><p>Không tải được PDF: ${err.message}</p></div>`;
     }
     return;
   }
