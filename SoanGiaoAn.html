@@ -52,9 +52,9 @@
   .brand p{margin:2px 0 0;font-size:12.5px;color:var(--ink-soft);}
   nav.tabs{display:flex;gap:6px;background:#F0EADA;padding:4px;border-radius:999px;}
   nav.tabs button{
-    border:none;background:transparent;padding:9px 18px;border-radius:999px;
-    font-family:inherit;font-size:14px;font-weight:600;color:var(--ink-soft);cursor:pointer;
-    transition:all .15s ease;
+    border:none;background:transparent;padding:9px 15px;border-radius:999px;
+    font-family:inherit;font-size:13px;font-weight:600;color:var(--ink-soft);cursor:pointer;
+    transition:all .15s ease;white-space:nowrap;
   }
   nav.tabs button.active{background:var(--leaf);color:#fff;box-shadow:0 2px 6px rgba(44,78,55,.25);}
 
@@ -74,6 +74,15 @@
   .views-wrap.split-mode .editor-stack .pane.chat-pane{flex:0 0 300px;}
   @media (max-width:1100px){
     .views-wrap.split-mode{grid-template-columns:1fr;}
+  }
+
+  .views-wrap.ref-mode{
+    display:grid;grid-template-columns:400px 1fr;gap:22px;align-items:stretch;
+  }
+  .views-wrap.ref-mode section.view{display:flex !important;flex-direction:column;height:100%;}
+  .views-wrap.ref-mode .editor-stack .pane.chat-pane{flex:0 0 300px;}
+  @media (max-width:1100px){
+    .views-wrap.ref-mode{grid-template-columns:1fr;}
   }
 
   /* ---------- THƯ VIỆN ---------- */
@@ -128,6 +137,56 @@
   }
   .content-panel .eyebrow{font-size:12px;color:var(--clay);font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
   .content-panel h2{font-family:'Fraunces',serif;font-size:24px;margin:4px 0 14px;}
+
+  /* ---------- TÀI LIỆU THAM KHẢO ---------- */
+  .ref-body{display:flex;flex-direction:column;gap:14px;flex:1;min-height:0;}
+  .ref-toolbar{
+    flex-shrink:0;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:12px 14px;
+  }
+  .ref-toolbar .ref-title{font-size:13px;font-weight:700;margin:0 0 8px;}
+  .ref-list-panel{
+    flex-shrink:0;max-height:190px;overflow-y:auto;background:var(--card);
+    border:1px solid var(--line);border-radius:var(--radius);
+  }
+  .ref-list-panel .empty{padding:16px;font-size:12.5px;color:var(--ink-soft);}
+  .ref-item{
+    display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;font-size:13px;
+    border-bottom:1px solid var(--line);
+  }
+  .ref-item:last-child{border-bottom:none;}
+  .ref-item:hover{background:#F0EADA;}
+  .ref-item.active{background:var(--leaf);color:#fff;}
+  .ref-item .ficon{flex-shrink:0;font-size:15px;}
+  .ref-item .fname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ref-item .fremove{flex-shrink:0;background:none;border:none;color:inherit;opacity:.55;cursor:pointer;font-size:13px;}
+  .ref-item .fremove:hover{opacity:1;}
+  .ref-viewer-panel{
+    flex:1;min-height:0;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    display:flex;flex-direction:column;overflow:hidden;
+  }
+  .ref-viewer-head{
+    flex-shrink:0;padding:10px 14px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+  }
+  .ref-viewer-head .fname{font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ref-viewer-body{flex:1;min-height:0;overflow-y:auto;padding:18px 22px;font-size:13.5px;line-height:1.7;}
+  .ref-viewer-body iframe{width:100%;height:100%;border:none;min-height:400px;}
+  .ref-viewer-body p{margin:0 0 10px;}
+  .ref-viewer-body table{border-collapse:collapse;width:100%;margin:10px 0;}
+  .ref-viewer-body table td,.ref-viewer-body table th{border:1px solid #999;padding:5px 7px;font-size:12.5px;}
+  .ref-viewer-body img{max-width:100%;height:auto;display:block;margin:8px auto;}
+  .btn-tiny{
+    background:var(--leaf-deep);color:#fff;border:none;border-radius:7px;padding:5px 11px;
+    font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;
+  }
+  .btn-tiny.active-source{background:var(--clay);}
+  .source-chip{
+    display:none;align-items:center;gap:10px;background:#EAF1EC;border:1px solid #CFE0D3;
+    border-radius:8px;padding:7px 12px;margin:0 16px 8px;font-size:12px;color:var(--leaf-deep);flex-shrink:0;
+  }
+  .source-chip span{flex:1;font-weight:600;}
+  .source-chip button{border:none;background:transparent;color:var(--ink-soft);cursor:pointer;font-size:15px;font-weight:700;line-height:1;}
   .muctieu-box{
     background:#F5F0DF;border-left:3px solid var(--gold);border-radius:0 8px 8px 0;
     padding:12px 16px;margin-bottom:18px;font-size:14px;
@@ -261,7 +320,8 @@
     <nav class="tabs">
       <button class="tab-btn active" data-view="lib">📚 Thư viện</button>
       <button class="tab-btn" data-view="editor">📝 Soạn giáo án</button>
-      <button class="tab-btn" data-view="split">🖥️ Xem cùng lúc</button>
+      <button class="tab-btn" data-view="split">🖥️ + Thư viện</button>
+      <button class="tab-btn" data-view="ref">📎 + Tài liệu tham khảo</button>
     </nav>
   </header>
 
@@ -280,6 +340,34 @@
         <div class="empty-state">
           <div class="glyph">📖</div>
           <p>Chọn một cuốn sách ở trên, sau đó bấm vào một bài trong mục lục để xem nội dung.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TÀI LIỆU THAM KHẢO ============ -->
+  <section class="view" id="view-ref">
+    <div class="ref-body">
+      <div class="ref-toolbar">
+        <p class="ref-title">📎 Tài liệu tham khảo (chỉ trong phiên làm việc này)</p>
+        <label class="btn-secondary" style="cursor:pointer;display:inline-block;">
+          ⬆ Tải tài liệu lên (chọn được nhiều file)
+          <input type="file" id="refUploadInput" accept=".docx,.txt,.pdf" multiple style="display:none;">
+        </label>
+      </div>
+      <div class="ref-list-panel" id="refListPanel">
+        <div class="empty">Chưa có tài liệu nào — tải lên để bắt đầu.</div>
+      </div>
+      <div class="ref-viewer-panel">
+        <div class="ref-viewer-head">
+          <span class="fname" id="refViewerName">Chưa chọn tài liệu</span>
+          <button class="btn-tiny" id="toggleSourceBtn" style="display:none;">📎 Dùng làm nguồn cho AI</button>
+        </div>
+        <div class="ref-viewer-body" id="refViewerBody">
+          <div class="empty-state" style="height:100%;">
+            <div class="glyph">📎</div>
+            <p>Tải tài liệu lên rồi bấm vào tên tài liệu trong danh sách để xem nội dung tại đây.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -326,6 +414,10 @@
           <span id="targetChipText"></span>
           <button id="clearTargetBtn" title="Bỏ chọn đoạn này">✕</button>
         </div>
+        <div class="source-chip" id="sourceChip">
+          <span id="sourceChipText"></span>
+          <button id="clearSourceBtn" title="Bỏ dùng tài liệu này">✕</button>
+        </div>
         <div class="chat-input-row">
           <textarea id="chatInput" placeholder="Ví dụ: bổ sung nội dung tích hợp giáo dục địa phương vào phần Chuẩn bị..."></textarea>
           <button class="send-btn" id="sendBtn">Gửi</button>
@@ -340,11 +432,12 @@
 </div>
 
 <button id="selectTip" class="select-tip">✏️ Yêu cầu AI sửa đoạn này</button>
+<button id="insertTip" class="select-tip">➕ Chèn vào giáo án</button>
 
 <script>
 /* ---------------- DATA ---------------- */
 // Dán URL Web App (Google Apps Script) của bạn vào đây sau khi Deploy — xem hướng dẫn trong Code.gs
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwhNymrijBs9aKPTGwZoxRlHDBVjWOCDve1-N8ywiUGCcj8io0XNXvg9rckS40We5xtfQ/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwKqIRcN2hGa9HFMezjSmkZP8Srezudg0KTnWBqD5dlOvjPLcSlr3QcoUQRX1MCyFkyJg/exec";
 // Đặt đúng môn/lớp đang soạn để backend tra đúng tài liệu tham khảo trong Thư viện
 const MON_HOC_HIEN_TAI = "Toán";
 const LOP_HIEN_TAI = "2";
@@ -710,6 +803,206 @@ uploadInput.addEventListener('change', async (e)=>{
   uploadInput.value = '';
 });
 
+/* ---------------- TÀI LIỆU THAM KHẢO ---------------- */
+let refDocs = [];       // {id, name, type:'docx'|'txt'|'pdf', text, html, blobUrl, base64}
+let activeRefId = null; // đang xem
+let sourceRefId = null; // đang dùng làm nguồn cho AI
+
+const refUploadInput = document.getElementById('refUploadInput');
+const refListPanel = document.getElementById('refListPanel');
+const refViewerName = document.getElementById('refViewerName');
+const refViewerBody = document.getElementById('refViewerBody');
+const toggleSourceBtn = document.getElementById('toggleSourceBtn');
+const sourceChip = document.getElementById('sourceChip');
+const sourceChipText = document.getElementById('sourceChipText');
+
+function arrayBufferToBase64(buffer){
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const chunk = 0x8000;
+  for(let i=0; i<bytes.length; i+=chunk){
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i+chunk));
+  }
+  return btoa(binary);
+}
+
+refUploadInput.addEventListener('change', async (e)=>{
+  const files = Array.from(e.target.files || []);
+  for(const file of files){
+    const id = 'ref_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+    const lower = file.name.toLowerCase();
+    try{
+      if(lower.endsWith('.docx')){
+        const buf = await file.arrayBuffer();
+        const result = await mammoth.convertToHtml(
+          { arrayBuffer: buf },
+          { convertImage: mammoth.images.imgElement(image =>
+              image.read('base64').then(b64 => ({ src: 'data:' + image.contentType + ';base64,' + b64 }))
+            )
+          }
+        );
+        const textResult = await mammoth.extractRawText({ arrayBuffer: buf });
+        refDocs.push({ id, name: file.name, type: 'docx', html: result.value, text: textResult.value });
+      } else if(lower.endsWith('.txt')){
+        const text = await file.text();
+        refDocs.push({ id, name: file.name, type: 'txt', text, html: null });
+      } else if(lower.endsWith('.pdf')){
+        const buf = await file.arrayBuffer();
+        const base64 = arrayBufferToBase64(buf);
+        const blobUrl = URL.createObjectURL(new Blob([buf], { type: 'application/pdf' }));
+        // Không có thư viện trích chữ PDF trong bản demo này -> không hỗ trợ bôi đen/chèn thủ công,
+        // nhưng vẫn gửi được nguyên file cho AI đọc (xem hàm suaGiaoAn/suaDoan có kèm taiLieuPdfBase64).
+        refDocs.push({ id, name: file.name, type: 'pdf', base64, blobUrl, text: null });
+      } else {
+        continue;
+      }
+    }catch(err){
+      console.error('Lỗi đọc tài liệu tham khảo:', err);
+    }
+  }
+  refUploadInput.value = '';
+  renderRefList();
+  if(refDocs.length && !activeRefId) selectRefDoc(refDocs[refDocs.length-1].id);
+});
+
+function renderRefList(){
+  if(refDocs.length === 0){
+    refListPanel.innerHTML = '<div class="empty">Chưa có tài liệu nào — tải lên để bắt đầu.</div>';
+    return;
+  }
+  refListPanel.innerHTML = '';
+  refDocs.forEach(doc=>{
+    const icon = doc.type === 'pdf' ? '📕' : (doc.type === 'docx' ? '📘' : '📄');
+    const item = document.createElement('div');
+    item.className = 'ref-item' + (doc.id === activeRefId ? ' active' : '');
+    item.innerHTML = `<span class="ficon">${icon}</span><span class="fname">${doc.name}</span><button class="fremove" title="Xoá tài liệu">✕</button>`;
+    item.querySelector('.fname').onclick = () => selectRefDoc(doc.id);
+    item.querySelector('.ficon').onclick = () => selectRefDoc(doc.id);
+    item.onclick = (e) => { if(e.target.className !== 'fremove') selectRefDoc(doc.id); };
+    item.querySelector('.fremove').onclick = (e) => { e.stopPropagation(); removeRefDoc(doc.id); };
+    refListPanel.appendChild(item);
+  });
+}
+
+function removeRefDoc(id){
+  refDocs = refDocs.filter(d => d.id !== id);
+  if(activeRefId === id) activeRefId = null;
+  if(sourceRefId === id){ sourceRefId = null; updateSourceChip(); }
+  renderRefList();
+  if(refDocs.length){
+    selectRefDoc(refDocs[refDocs.length-1].id);
+  } else {
+    refViewerName.textContent = 'Chưa chọn tài liệu';
+    toggleSourceBtn.style.display = 'none';
+    refViewerBody.innerHTML = `<div class="empty-state" style="height:100%;"><div class="glyph">📎</div><p>Tải tài liệu lên rồi bấm vào tên tài liệu trong danh sách để xem nội dung tại đây.</p></div>`;
+  }
+}
+
+function selectRefDoc(id){
+  activeRefId = id;
+  renderRefList();
+  const doc = refDocs.find(d => d.id === id);
+  if(!doc) return;
+  refViewerName.textContent = doc.name;
+  toggleSourceBtn.style.display = 'inline-block';
+  toggleSourceBtn.textContent = (sourceRefId === id) ? '✓ Đang dùng làm nguồn' : '📎 Dùng làm nguồn cho AI';
+  toggleSourceBtn.classList.toggle('active-source', sourceRefId === id);
+
+  if(doc.type === 'pdf'){
+    refViewerBody.innerHTML = `<iframe src="${doc.blobUrl}"></iframe>
+      <p style="margin-top:8px;font-size:12px;color:var(--ink-soft);">📕 File PDF — không tự bôi-đen-chèn được (trình duyệt tự vẽ PDF). Bạn có thể chọn/copy chữ trực tiếp trong khung trên rồi dán tay (Ctrl+V) vào giáo án, hoặc bấm "Dùng làm nguồn cho AI" để AI tự đọc cả file.</p>`;
+  } else if(doc.type === 'docx'){
+    refViewerBody.innerHTML = doc.html || '<p><em>(Không đọc được nội dung)</em></p>';
+  } else {
+    const esc = (doc.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    refViewerBody.innerHTML = esc.split(/\n+/).map(l=>`<p>${l.trim()}</p>`).join('');
+  }
+}
+
+toggleSourceBtn.onclick = ()=>{
+  if(sourceRefId === activeRefId){
+    sourceRefId = null;
+  } else {
+    sourceRefId = activeRefId;
+  }
+  selectRefDoc(activeRefId);
+  updateSourceChip();
+};
+
+function updateSourceChip(){
+  const doc = refDocs.find(d => d.id === sourceRefId);
+  if(!doc){ sourceChip.style.display = 'none'; return; }
+  sourceChipText.textContent = '📎 AI sẽ tham khảo tài liệu: "' + doc.name + '"';
+  sourceChip.style.display = 'flex';
+}
+document.getElementById('clearSourceBtn').onclick = ()=>{
+  sourceRefId = null;
+  if(activeRefId) selectRefDoc(activeRefId);
+  updateSourceChip();
+};
+
+/* ---- Bôi đen trong tài liệu tham khảo -> chèn vào giáo án (giống copy/paste trong Word) ---- */
+let savedRefRange = null;
+let taCaretRange = null; // vị trí con trỏ gần nhất trong khung giáo án, để biết chèn vào đâu
+
+document.addEventListener('selectionchange', ()=>{
+  const sel = window.getSelection();
+  if(sel.rangeCount && ta.contains(sel.anchorNode)){
+    taCaretRange = sel.getRangeAt(0).cloneRange();
+  }
+});
+
+refViewerBody.addEventListener('mouseup', ()=>{
+  const sel = window.getSelection();
+  if(sel.isCollapsed || sel.toString().trim()===''){ insertTip.style.display='none'; return; }
+  if(!refViewerBody.contains(sel.anchorNode)){ insertTip.style.display='none'; return; }
+  const range = sel.getRangeAt(0);
+  savedRefRange = range.cloneRange();
+  const rect = range.getBoundingClientRect();
+  insertTip.style.left = Math.min(Math.max(rect.left + rect.width/2, 100), window.innerWidth - 100) + 'px';
+  insertTip.style.top = Math.max(rect.top - 10, 46) + 'px';
+  insertTip.style.display = 'block';
+});
+document.addEventListener('mousedown', (e)=>{
+  if(!insertTip.contains(e.target) && !refViewerBody.contains(e.target)) insertTip.style.display='none';
+});
+
+const insertTip = document.getElementById('insertTip');
+insertTip.addEventListener('click', ()=>{
+  if(!savedRefRange) return;
+  const text = savedRefRange.toString();
+  if(!text.trim()){ insertTip.style.display='none'; return; }
+  const esc = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const html = esc.split(/\n+/).map(l=>l.trim()).filter(Boolean).map(l=>`<p class="diff-new">${l}</p>`).join('');
+  insertHtmlAtCaret(html);
+  diffCount.textContent = '🖍 Vừa chèn nội dung từ tài liệu tham khảo (tô vàng) — đọc lại trước khi lưu.';
+  diffBanner.style.display = 'flex';
+  insertTip.style.display = 'none';
+  window.getSelection().removeAllRanges();
+});
+
+function insertHtmlAtCaret(html){
+  ta.classList.remove('placeholder');
+  let range = taCaretRange;
+  if(!range || !ta.contains(range.startContainer)){
+    range = document.createRange();
+    range.selectNodeContents(ta);
+    range.collapse(false);
+  }
+  range.deleteContents();
+  const frag = range.createContextualFragment(html);
+  const lastNode = frag.lastChild;
+  range.insertNode(frag);
+  if(lastNode){
+    const newRange = document.createRange();
+    newRange.setStartAfter(lastNode);
+    newRange.collapse(true);
+    taCaretRange = newRange.cloneRange();
+  }
+  markUnsaved();
+  autosaveDraft();
+}
+
 const chatLog = document.getElementById('chatLog');
 const chatInput = document.getElementById('chatInput');
 const sendBtn = document.getElementById('sendBtn');
@@ -839,6 +1132,15 @@ document.getElementById('clearTargetBtn').onclick = ()=>{
   targetChip.style.display = 'none';
 };
 
+function getActiveRefPayload(){
+  const doc = refDocs.find(d => d.id === sourceRefId);
+  if(!doc) return {};
+  if(doc.type === 'pdf'){
+    return { taiLieuTen: doc.name, taiLieuPdfBase64: doc.base64 };
+  }
+  return { taiLieuTen: doc.name, taiLieuThamKhao: doc.text };
+}
+
 async function sendMessage(){
   const q = chatInput.value.trim();
   if(!q) return;
@@ -858,7 +1160,8 @@ async function sendMessage(){
         doanDuocChon: selectedText,
         yeuCau: q,
         monHoc: MON_HOC_HIEN_TAI,
-        lop: LOP_HIEN_TAI
+        lop: LOP_HIEN_TAI,
+        ...getActiveRefPayload()
       });
       const newText = data.noiDungMoi ? data.noiDungMoi.trim() : null;
       thinking.remove();
@@ -897,7 +1200,8 @@ async function sendMessage(){
       noiDungHienTai: currentText,
       yeuCau: q,
       monHoc: MON_HOC_HIEN_TAI,
-      lop: LOP_HIEN_TAI
+      lop: LOP_HIEN_TAI,
+      ...getActiveRefPayload()
     });
     const newText = data.noiDungMoi ? data.noiDungMoi.trim() : null;
     thinking.remove();
@@ -932,16 +1236,23 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.onclick = ()=>{
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    if(btn.dataset.view === 'split'){
+    const mode = btn.dataset.view;
+    viewsWrap.classList.remove('split-mode', 'ref-mode');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+
+    if(mode === 'split'){
       viewsWrap.classList.add('split-mode');
       document.querySelector('.app').classList.add('split-active');
       document.getElementById('view-lib').classList.add('active');
       document.getElementById('view-editor').classList.add('active');
+    } else if(mode === 'ref'){
+      viewsWrap.classList.add('ref-mode');
+      document.querySelector('.app').classList.add('split-active');
+      document.getElementById('view-ref').classList.add('active');
+      document.getElementById('view-editor').classList.add('active');
     } else {
-      viewsWrap.classList.remove('split-mode');
       document.querySelector('.app').classList.remove('split-active');
-      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-      document.getElementById('view-'+btn.dataset.view).classList.add('active');
+      document.getElementById('view-'+mode).classList.add('active');
     }
   };
 });
