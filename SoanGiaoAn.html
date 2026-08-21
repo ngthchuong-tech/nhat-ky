@@ -896,8 +896,11 @@ async function selectBai(el, bai, book){
       if(wrap) wrap.innerHTML = `<iframe src="${blobUrl}#page=${bai.trang||1}&view=FitV"></iframe>`;
     }catch(err){
       if(myToken !== selectBaiToken) return;
+      // fetch() bị chặn (thường do CORS) — phương án dự phòng: nhúng thẳng URL backend vào iframe,
+      // để trình duyệt tự tải (không đi qua JS fetch nên không bị chặn kiểu này). Sẽ không lưu tạm được nữa.
       const wrap = document.getElementById('pdfFrameWrap');
-      if(wrap) wrap.innerHTML = `<div class="empty-state" style="height:100%;"><div class="glyph">⚠️</div><p>Không tải được PDF: ${err.message}</p></div>`;
+      const directUrl = GAS_URL + '?pdf=' + encodeURIComponent(book.driveFileId) + '#page=' + (bai.trang||1) + '&view=FitV';
+      if(wrap) wrap.innerHTML = `<iframe src="${directUrl}"></iframe>`;
     }
     return;
   }
