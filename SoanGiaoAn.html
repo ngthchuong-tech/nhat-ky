@@ -92,7 +92,7 @@
   .lib-status{font-size:12.5px;color:var(--ink-soft);}
   .add-book-panel{
     flex-shrink:0;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-    padding:18px 20px;margin-bottom:18px;
+    padding:18px 20px;margin-bottom:18px;max-height:min(560px,60vh);overflow-y:auto;
   }
   .add-book-panel h4{margin:0 0 12px;font-family:'Fraunces',serif;font-size:17px;}
   .ab-row{display:flex;gap:14px;margin-bottom:12px;flex-wrap:wrap;align-items:center;}
@@ -101,7 +101,10 @@
     font-family:inherit;font-size:13.5px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
     background:#fff;color:var(--ink);min-width:140px;
   }
-  .ab-actions{display:flex;gap:10px;align-items:center;margin-top:6px;}
+  .ab-actions{
+    display:flex;gap:10px;align-items:center;margin-top:6px;
+    position:sticky;bottom:-18px;background:var(--card);padding:10px 0 18px;
+  }
   .add-book-panel .sub{font-size:12px;color:var(--ink-soft);margin:8px 0 0;}
   .toc-review-table{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:6px;}
   .toc-review-head, .toc-review-row{
@@ -523,7 +526,7 @@
 <script>
 /* ---------------- DATA ---------------- */
 // Dán URL Web App (Google Apps Script) của bạn vào đây sau khi Deploy — xem hướng dẫn trong Code.gs
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxqAwbMAXBh2MjRauK965sawBrmQLF8WqtmIIE8An9XF3aUtAxeeTEJwGnPy-brRPeQjw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbweMnXAwtvFwcUoKrshkeNVrOXoJr4dlboNp_sYQo8Mjs_D0A38-zyMEuFy4mB3ta2fTQ/exec";
 // Đặt đúng môn/lớp đang soạn để backend tra đúng tài liệu tham khảo trong Thư viện
 const MON_HOC_HIEN_TAI = "Toán";
 const LOP_HIEN_TAI = "2";
