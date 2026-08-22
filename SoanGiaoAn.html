@@ -214,6 +214,25 @@
   }
   .pdf-lightbox-bar button:hover{background:#F0EADA;}
   .pdf-lightbox-panel iframe{flex:1;border:none;width:100%;}
+
+  .help-lightbox-panel{
+    background:var(--card);border-radius:14px;width:min(760px,100%);max-height:100%;
+    display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4);
+  }
+  .help-lightbox-body{padding:22px 26px;overflow-y:auto;font-size:13.5px;line-height:1.65;}
+  .help-lightbox-body h3{
+    font-family:'Fraunces',serif;font-size:16px;margin:22px 0 8px;color:var(--leaf);
+  }
+  .help-lightbox-body h3:first-child{margin-top:0;}
+  .help-lightbox-body h4{font-size:13.5px;margin:14px 0 4px;}
+  .help-lightbox-body p{margin:0 0 8px;}
+  .help-lightbox-body ul, .help-lightbox-body ol{margin:0 0 8px;padding-left:20px;}
+  .help-lightbox-body li{margin-bottom:4px;}
+  .help-lightbox-body .warn-box{
+    background:#FBF0E4;border:1px solid #E9C99A;border-radius:10px;padding:10px 14px;margin:10px 0;
+  }
+  .help-lightbox-body .warn-box strong{color:var(--clay);}
+  .help-lightbox-body code{background:#F0EADA;padding:1px 5px;border-radius:4px;font-size:12.5px;}
   .content-panel .eyebrow{font-size:12px;color:var(--clay);font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
   .content-panel h2{font-family:'Fraunces',serif;font-size:24px;margin:4px 0 14px;}
 
@@ -261,11 +280,16 @@
   }
   .btn-tiny.active-source{background:var(--clay);}
   .source-chip{
-    display:none;align-items:center;gap:10px;background:#EAF1EC;border:1px solid #CFE0D3;
-    border-radius:8px;padding:7px 12px;margin:0 16px 8px;font-size:12px;color:var(--leaf-deep);flex-shrink:0;
+    display:none;flex-direction:column;gap:4px;background:#EAF1EC;border:1px solid #CFE0D3;
+    border-radius:8px;padding:8px 12px;margin:0 16px 8px;font-size:12px;color:var(--leaf-deep);flex-shrink:0;
   }
-  .source-chip span{flex:1;font-weight:600;}
-  .source-chip button{border:none;background:transparent;color:var(--ink-soft);cursor:pointer;font-size:15px;font-weight:700;line-height:1;}
+  .source-chip-row{display:flex;align-items:center;gap:8px;}
+  .source-chip-row span{flex:1;font-weight:600;}
+  .source-chip-row button{border:none;background:transparent;color:var(--ink-soft);cursor:pointer;font-size:14px;font-weight:700;line-height:1;}
+  #clearSourceBtn{
+    align-self:flex-end;border:none;background:transparent;color:var(--clay);cursor:pointer;
+    font-size:11px;font-weight:700;margin-top:2px;padding:0;
+  }
   .muctieu-box{
     background:#F5F0DF;border-left:3px solid var(--gold);border-radius:0 8px 8px 0;
     padding:12px 16px;margin-bottom:18px;font-size:14px;
@@ -401,6 +425,7 @@
       <button class="tab-btn" data-view="editor">📝 Soạn giáo án</button>
       <button class="tab-btn" data-view="split">🖥️ + Thư viện</button>
       <button class="tab-btn" data-view="ref">📎 + Tài liệu tham khảo</button>
+      <button id="helpBtn" title="Hướng dẫn sử dụng">❓ Hướng dẫn</button>
     </nav>
   </header>
 
@@ -554,8 +579,8 @@
           <button id="clearTargetBtn" title="Bỏ chọn đoạn này">✕</button>
         </div>
         <div class="source-chip" id="sourceChip">
-          <span id="sourceChipText"></span>
-          <button id="clearSourceBtn" title="Bỏ dùng tài liệu này">✕</button>
+          <div id="sourceChipText"></div>
+          <button id="clearSourceBtn" title="Bỏ dùng tất cả nguồn">✕ Bỏ hết nguồn</button>
         </div>
         <div class="chat-input-row">
           <textarea id="chatInput" placeholder="Ví dụ: bổ sung nội dung tích hợp giáo dục địa phương vào phần Chuẩn bị..."></textarea>
@@ -576,7 +601,7 @@
 <script>
 /* ---------------- DATA ---------------- */
 // Dán URL Web App (Google Apps Script) của bạn vào đây sau khi Deploy — xem hướng dẫn trong Code.gs
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzYPqK06ZkYsx6TmVSYYyD4xxYtMqqLqsdw89_Utv9URpQRn2sTz4jm7qGN0L5vS5J-Zw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbylSf9NPpcc_a5dKp21iRUFrb4RbKoegA2BhEan8wiKhrmQ26qaEdY-NcmvXmW09Sli2g/exec";
 // Đặt đúng môn/lớp đang soạn để backend tra đúng tài liệu tham khảo trong Thư viện
 const MON_HOC_HIEN_TAI = "Toán";
 const LOP_HIEN_TAI = "2";
@@ -750,7 +775,7 @@ let books = DEMO_BOOKS;      // nguồn dữ liệu đang dùng để render —
 let usingRealLibrary = false;
 const pdfBlobCache = {};     // driveFileId -> blob: URL (tải 1 lần/sách, dùng lại khi đổi bài trong cùng sách)
 let lastPdfContext = null;   // {book, bai} của trang PDF đang xem — dùng cho nút "⤢ Phóng to"
-let activeLibrarySource = null; // {driveFileId, tenSach, tenBai, trang} — bài trong Thư viện đang dùng làm nguồn cho AI khi soạn giáo án
+let librarySources = []; // [{driveFileId, tenSach, tenBai, trang}] — CÁC bài trong Thư viện đang dùng làm nguồn cho AI (chọn được nhiều)
 
 async function openPdfLightbox(){
   if(!lastPdfContext) return;
@@ -1268,7 +1293,7 @@ uploadInput.addEventListener('change', async (e)=>{
 /* ---------------- TÀI LIỆU THAM KHẢO ---------------- */
 let refDocs = [];       // {id, name, type:'docx'|'txt'|'pdf', text, html, blobUrl, base64}
 let activeRefId = null; // đang xem
-let sourceRefId = null; // đang dùng làm nguồn cho AI
+let sourceRefIds = new Set(); // các tài liệu tham khảo (docx/txt/pdf) đang dùng làm nguồn cho AI (chọn được nhiều)
 
 const refUploadInput = document.getElementById('refUploadInput');
 const refListPanel = document.getElementById('refListPanel');
@@ -1349,7 +1374,7 @@ function renderRefList(){
 function removeRefDoc(id){
   refDocs = refDocs.filter(d => d.id !== id);
   if(activeRefId === id) activeRefId = null;
-  if(sourceRefId === id){ sourceRefId = null; updateSourceChip(); }
+  if(sourceRefIds.has(id)){ sourceRefIds.delete(id); updateSourceChip(); }
   renderRefList();
   if(refDocs.length){
     selectRefDoc(refDocs[refDocs.length-1].id);
@@ -1367,8 +1392,8 @@ function selectRefDoc(id){
   if(!doc) return;
   refViewerName.textContent = doc.name;
   toggleSourceBtn.style.display = 'inline-block';
-  toggleSourceBtn.textContent = (sourceRefId === id) ? '✓ Đang dùng làm nguồn' : '📎 Dùng làm nguồn cho AI';
-  toggleSourceBtn.classList.toggle('active-source', sourceRefId === id);
+  toggleSourceBtn.textContent = sourceRefIds.has(id) ? '✓ Đang dùng làm nguồn' : '📎 Dùng làm nguồn cho AI';
+  toggleSourceBtn.classList.toggle('active-source', sourceRefIds.has(id));
 
   if(doc.type === 'pdf'){
     refViewerBody.innerHTML = `<iframe src="${doc.blobUrl}"></iframe>
@@ -1382,27 +1407,46 @@ function selectRefDoc(id){
 }
 
 toggleSourceBtn.onclick = ()=>{
-  if(sourceRefId === activeRefId){
-    sourceRefId = null;
+  if(sourceRefIds.has(activeRefId)){
+    sourceRefIds.delete(activeRefId);
   } else {
-    sourceRefId = activeRefId;
+    sourceRefIds.add(activeRefId);
   }
   selectRefDoc(activeRefId);
   updateSourceChip();
 };
 
 function updateSourceChip(){
-  const lines = [];
-  const doc = refDocs.find(d => d.id === sourceRefId);
-  if(doc) lines.push('📎 AI sẽ tham khảo tài liệu: "' + doc.name + '"');
-  if(activeLibrarySource) lines.push('📚 AI sẽ tham khảo: "' + activeLibrarySource.tenBai + '" (Thư viện — ' + activeLibrarySource.tenSach + ')');
-  if(lines.length === 0){ sourceChip.style.display = 'none'; return; }
-  sourceChipText.innerHTML = lines.join('<br>');
+  const rows = [];
+  refDocs.forEach(doc=>{
+    if(sourceRefIds.has(doc.id)){
+      rows.push({ label: '📎 "' + doc.name + '"', onRemove: ()=>{ sourceRefIds.delete(doc.id); if(activeRefId===doc.id) selectRefDoc(doc.id); updateSourceChip(); } });
+    }
+  });
+  librarySources.forEach(src=>{
+    rows.push({ label: '📚 "' + src.tenBai + '" (Thư viện — ' + src.tenSach + ')', onRemove: ()=>{ removeLibrarySource(src); updateSourceChip(); } });
+  });
+  if(rows.length === 0){ sourceChip.style.display = 'none'; return; }
+  sourceChipText.innerHTML = '';
+  rows.forEach(r=>{
+    const row = document.createElement('div');
+    row.className = 'source-chip-row';
+    const span = document.createElement('span');
+    span.textContent = 'AI sẽ tham khảo: ' + r.label;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = '✕';
+    btn.title = 'Bỏ dùng nguồn này';
+    btn.onclick = r.onRemove;
+    row.appendChild(span);
+    row.appendChild(btn);
+    sourceChipText.appendChild(row);
+  });
   sourceChip.style.display = 'flex';
 }
 document.getElementById('clearSourceBtn').onclick = ()=>{
-  sourceRefId = null;
-  activeLibrarySource = null;
+  sourceRefIds.clear();
+  librarySources = [];
   if(activeRefId) selectRefDoc(activeRefId);
   document.querySelectorAll('.lib-source-btn').forEach(btn=>{
     btn.textContent = '📌 Dùng bài này làm nguồn cho AI';
@@ -1412,19 +1456,23 @@ document.getElementById('clearSourceBtn').onclick = ()=>{
 };
 
 function isActiveLibrarySource(book, bai){
-  return !!activeLibrarySource && activeLibrarySource.driveFileId === book.driveFileId && String(activeLibrarySource.trang) === String(bai.trang);
+  return librarySources.some(s => s.driveFileId === book.driveFileId && String(s.trang) === String(bai.trang));
+}
+function removeLibrarySource(src){
+  librarySources = librarySources.filter(s => !(s.driveFileId === src.driveFileId && String(s.trang) === String(src.trang)));
 }
 function toggleLibrarySource(){
   if(!lastPdfContext) return;
   const { book, bai } = lastPdfContext;
-  if(isActiveLibrarySource(book, bai)){
-    activeLibrarySource = null;
+  const active = isActiveLibrarySource(book, bai);
+  if(active){
+    removeLibrarySource({ driveFileId: book.driveFileId, trang: bai.trang });
   } else {
-    activeLibrarySource = { driveFileId: book.driveFileId, tenSach: book.subject, tenBai: bai.ten, trang: bai.trang };
+    librarySources.push({ driveFileId: book.driveFileId, tenSach: book.subject, tenBai: bai.ten, trang: bai.trang });
   }
   document.querySelectorAll('.lib-source-btn').forEach(btn=>{
-    btn.textContent = activeLibrarySource ? '✓ Đang dùng làm nguồn cho AI' : '📌 Dùng bài này làm nguồn cho AI';
-    btn.classList.toggle('active', !!activeLibrarySource);
+    btn.textContent = !active ? '✓ Đang dùng làm nguồn cho AI' : '📌 Dùng bài này làm nguồn cho AI';
+    btn.classList.toggle('active', !active);
   });
   updateSourceChip();
 }
@@ -1621,24 +1669,29 @@ document.getElementById('clearTargetBtn').onclick = ()=>{
 };
 
 function getActiveRefPayload(){
-  const doc = refDocs.find(d => d.id === sourceRefId);
-  if(!doc) return {};
-  if(doc.type === 'pdf'){
-    return { taiLieuTen: doc.name, taiLieuPdfBase64: doc.base64 };
-  }
-  return { taiLieuTen: doc.name, taiLieuThamKhao: doc.text };
+  return {};
 }
 
-// Bài trong Thư viện đang được chọn "dùng làm nguồn cho AI" — chỉ gửi driveFileId (rất nhẹ),
-// backend (Code.gs) sẽ tự tải file PDF từ Drive khi cần, KHÔNG tải file vào bộ nhớ trình duyệt
-// (giữ đúng nguyên tắc tránh nặng máy đã sửa ở phần xem PDF).
+// Gộp TẤT CẢ nguồn đang bật (nhiều tài liệu tham khảo + nhiều bài Thư viện) thành 1 mảng gửi cho backend.
+// Với bài Thư viện chỉ gửi driveFileId (rất nhẹ) — backend tự tải PDF từ Drive khi cần.
 function getActiveLibrarySourcePayload(){
-  if(!activeLibrarySource) return {};
-  return {
-    thuVienDriveFileId: activeLibrarySource.driveFileId,
-    thuVienTenBai: activeLibrarySource.tenBai,
-    thuVienTrang: activeLibrarySource.trang
-  };
+  const danhSachNguon = [];
+  refDocs.forEach(doc=>{
+    if(!sourceRefIds.has(doc.id)) return;
+    if(doc.type === 'pdf'){
+      danhSachNguon.push({ ten: doc.name, pdfBase64: doc.base64 });
+    } else {
+      danhSachNguon.push({ ten: doc.name, text: doc.text });
+    }
+  });
+  librarySources.forEach(src=>{
+    danhSachNguon.push({
+      ten: src.tenBai + (src.trang ? (' (trang ' + src.trang + ')') : ''),
+      driveFileId: src.driveFileId,
+      trang: src.trang
+    });
+  });
+  return danhSachNguon.length ? { danhSachNguon } : {};
 }
 
 async function sendMessage(){
@@ -1734,6 +1787,84 @@ async function sendMessage(){
 
 /* ---------------- TABS ---------------- */
 const viewsWrap = document.getElementById('viewsWrap');
+
+/* ---------------- HƯỚNG DẪN SỬ DỤNG ---------------- */
+const HUONG_DAN_HTML = `
+<h3>1. Tổng quan 4 khu vực làm việc</h3>
+<p>App có 4 nút ở góc trên bên phải, mỗi nút là 1 cách sắp xếp màn hình khác nhau — không phải 4 app riêng biệt, dữ liệu (thư viện, giáo án đang soạn) dùng chung cho cả 4:</p>
+<ul>
+  <li><strong>📚 Thư viện</strong> — xem/quản lý các cuốn SGK/SGV đã tải lên, xem trọn màn hình.</li>
+  <li><strong>📝 Soạn giáo án</strong> — nơi soạn/sửa giáo án, có AI hỗ trợ chỉnh sửa, chiếm toàn màn hình.</li>
+  <li><strong>🖥️ + Thư viện</strong> — soạn giáo án và xem thư viện cùng lúc (tách đôi màn hình), tiện đối chiếu SGK khi soạn.</li>
+  <li><strong>📎 + Tài liệu tham khảo</strong> — soạn giáo án kèm khung tài liệu tự tải lên (kế hoạch giáo dục, KHGD hoà nhập...), khác với Thư viện SGK.</li>
+</ul>
+
+<h3>2. Tab Thư viện — thêm và xem sách</h3>
+<h4>Thêm sách mới</h4>
+<ol>
+  <li>Bấm "＋ Thêm sách mới (PDF)" ở góc trên phải.</li>
+  <li>Điền Môn học, Lớp, Loại tài liệu (SGK/SGV/KHGD/Hoà nhập), Tên hiển thị.</li>
+  <li>Chọn file PDF từ máy, bấm "Tải lên & nhờ AI trích mục lục".</li>
+  <li>Chờ AI đọc và liệt kê mục lục (tuần/bài/trang) — <strong>bắt buộc phải xem lại</strong> vì AI có thể trích sai hoặc thiếu, sửa trực tiếp trong bảng trước khi bấm "✓ Lưu mục lục".</li>
+</ol>
+<div class="warn-box">⚠️ <strong>Sách càng dài, bước trích mục lục càng lâu</strong> (có thể vài phút với sách 100+ trang). Nếu báo lỗi "Deadline expired", đó là Gemini tạm thời quá tải — app tự thử lại 1 lần, nếu vẫn lỗi thì bấm thử lại tay.</div>
+<div class="warn-box">⚠️ <strong>File PDF quá 50MB sẽ không tải lên được.</strong> Nếu sách scan nặng vượt mức này, cần cắt file thành 2-3 phần nhỏ hơn rồi tải lên như các "cuốn" riêng (AI vẫn đọc đúng trang vì tính theo số trang nội bộ của từng file, không lệch nhau).</div>
+
+<h4>Xem nội dung sách</h4>
+<p>Bấm 1 bài trong mục lục để xem đúng trang đó. Có nút "⤢ Phóng to" để xem to hơn (mở lớp phủ toàn màn hình), và "↗ Mở trang này trong tab mới" để xem hẳn ở tab trình duyệt riêng.</p>
+
+<h4>Xoá sách khỏi thư viện</h4>
+<p>Mỗi dòng sách trong danh sách "Tài liệu" có nút ✕ ở cuối dòng — dùng khi tải nhầm hoặc trích mục lục bị lỗi, muốn tải lại từ đầu.</p>
+<div class="warn-box">⚠️ Xoá ở đây <strong>chỉ gỡ khỏi danh sách thư viện của app</strong> (xoá dòng trong Google Sheet) — <strong>không xoá file PDF gốc</strong> đang lưu trên Google Drive (folder "ThuVien_SoanGiaoAn_PDF"). Muốn xoá hẳn file phải vào Drive xoá tay.</div>
+
+<h3>3. Tab Soạn giáo án</h3>
+<ul>
+  <li><strong>Tải giáo án mẫu lên:</strong> nút "↑ Tải giáo án mẫu lên" để nạp file .docx có sẵn vào khung soạn thảo.</li>
+  <li><strong>Sửa tay:</strong> gõ trực tiếp vào khung như Word bình thường.</li>
+  <li><strong>Sửa bằng AI (toàn bộ):</strong> gõ yêu cầu ở khung chat bên phải rồi bấm Gửi — AI sửa cả giáo án, phần thay đổi được tô vàng để xem lại.</li>
+  <li><strong>Sửa bằng AI (1 đoạn):</strong> bôi đen đoạn cần sửa trong giáo án, sẽ hiện nút "✏️ Yêu cầu AI sửa đoạn này" — chỉ đoạn đó bị đổi, phần còn lại giữ nguyên.</li>
+  <li><strong>Xuất file Word:</strong> nút "⬇ Xuất file Word" tải về máy dạng .doc (mở được bằng Word bình thường).</li>
+  <li><strong>Khôi phục bản demo:</strong> nút "↺ Khôi phục bản demo".</li>
+</ul>
+<div class="warn-box">⚠️ <strong>"Khôi phục bản demo" xoá ngay nội dung đang soạn, KHÔNG hỏi xác nhận trước.</strong> Chỉ dùng khi thực sự muốn bỏ hết và bắt đầu lại từ mẫu demo — nếu lỡ bấm nhầm, nội dung đã mất sẽ không khôi phục lại được.</div>
+<div class="warn-box">⚠️ <strong>Giáo án tự lưu nháp theo trình duyệt đang dùng</strong> (không đồng bộ giữa các máy khác nhau). Nếu chuyển sang máy khác hoặc trình duyệt khác, nháp lần trước sẽ không tự hiện lại — cần chủ động xuất file Word hoặc tải giáo án mẫu đó lên lại.</div>
+<div class="warn-box">⚠️ Đóng tab/trình duyệt khi đang có thay đổi chưa xuất file sẽ hiện cảnh báo — nhưng vẫn nên chủ động xuất Word định kỳ, tránh phụ thuộc hoàn toàn vào tự lưu nháp.</div>
+
+<h3>4. Tab 🖥️ + Thư viện (kết hợp)</h3>
+<p>Cột trái là thư viện thu nhỏ, giữa là khung soạn giáo án, phải là chat AI. Bấm 1 bài trong mục lục để xem PDF ngay trong cột trái, không cần đổi tab.</p>
+<div class="warn-box">⚠️ Ở chế độ này, PDF hiển thị qua trình xem của Google (khác với khung xem đầy đủ ở tab Thư viện riêng) — có thể phải <strong>cuộn/zoom trong khung</strong> để thấy hết nội dung trang, không tự "vừa khít trang" được. Đây là đánh đổi cố ý để máy không bị treo khi chạy cùng lúc soạn thảo + xem PDF.</div>
+<p>Có nút "📌 Dùng bài này làm nguồn cho AI" — bật lên thì các yêu cầu chỉnh sửa gửi cho AI sau đó sẽ kèm theo đúng nội dung trang SGK này để AI đối chiếu.</p>
+
+<h3>5. Tab 📎 + Tài liệu tham khảo</h3>
+<p>Tải lên các file .docx/.txt/.pdf khác (không phải sách trong Thư viện) — ví dụ kế hoạch giáo dục tích hợp, kế hoạch hoà nhập. Bôi đen đoạn trong tài liệu để chèn thẳng vào giáo án, hoặc bấm "Dùng làm nguồn cho AI" để AI đọc và tham khảo khi chỉnh sửa.</p>
+<div class="warn-box">⚠️ Với file .docx/.txt, bôi đen chèn được trực tiếp. Với file .pdf, KHÔNG bôi đen chèn được (app không trích chữ từ PDF phía trình duyệt) — chỉ dùng được qua "Dùng làm nguồn cho AI" (AI tự đọc PDF).</div>
+<div class="warn-box">⚠️ Có thể bật nguồn từ cả tài liệu tham khảo VÀ 1 bài trong Thư viện <strong>cùng lúc</strong> — cả hai sẽ hiện trong khung chat và đều được gửi cho AI. Nếu không muốn dùng nữa, nhớ bấm ✕ ở dòng thông báo để tắt, không tự tắt khi chuyển tab.</div>
+
+<h3>6. Một số giới hạn chung cần biết</h3>
+<ul>
+  <li>AI đôi khi trả lời sai hoặc thiếu — <strong>luôn đọc lại phần được tô vàng</strong> trước khi xuất file, không nên tin tuyệt đối.</li>
+  <li>Gemini API có hạn mức miễn phí theo tài khoản Google — nếu báo lỗi "hết credit/prepayment", cần vào <code>aistudio.google.com</code> kiểm tra, không phải lỗi do app.</li>
+  <li>App cần máy có kết nối mạng liên tục — không dùng offline được (mọi thao tác đều gọi qua Google Apps Script + Gemini).</li>
+  <li>Khi cần sửa code (Code.gs), sau khi sửa xong luôn phải Deploy lại bằng "New version" thì thay đổi mới có hiệu lực — chỉ bấm Save không đủ.</li>
+</ul>
+`;
+
+document.getElementById('helpBtn').onclick = ()=>{
+  const overlay = document.createElement('div');
+  overlay.className = 'pdf-lightbox-overlay';
+  overlay.innerHTML = `
+    <div class="help-lightbox-panel">
+      <div class="pdf-lightbox-bar">
+        <span>❓ Hướng dẫn sử dụng</span>
+        <button type="button">✕ Đóng</button>
+      </div>
+      <div class="help-lightbox-body">${HUONG_DAN_HTML}</div>
+    </div>
+  `;
+  overlay.querySelector('.pdf-lightbox-bar button').onclick = ()=>overlay.remove();
+  overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+};
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.onclick = ()=>{
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
