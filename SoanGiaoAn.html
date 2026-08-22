@@ -290,6 +290,12 @@
     align-self:flex-end;border:none;background:transparent;color:var(--clay);cursor:pointer;
     font-size:11px;font-weight:700;margin-top:2px;padding:0;
   }
+  #checkSourceBtn{
+    align-self:flex-end;border:1px solid var(--leaf);background:#fff;color:var(--leaf-deep);cursor:pointer;
+    font-size:11px;font-weight:700;margin-top:4px;padding:4px 9px;border-radius:20px;
+  }
+  #checkSourceBtn:hover{background:var(--leaf);color:#fff;}
+  #checkSourceBtn:disabled{opacity:.5;cursor:default;}
   .muctieu-box{
     background:#F5F0DF;border-left:3px solid var(--gold);border-radius:0 8px 8px 0;
     padding:12px 16px;margin-bottom:18px;font-size:14px;
@@ -581,6 +587,7 @@
         <div class="source-chip" id="sourceChip">
           <div id="sourceChipText"></div>
           <button id="clearSourceBtn" title="Bỏ dùng tất cả nguồn">✕ Bỏ hết nguồn</button>
+          <button id="checkSourceBtn" title="Nhờ AI rà lại xem giáo án hiện tại có chỗ nào thiếu căn cứ từ nguồn không">🔍 Kiểm tra căn cứ nguồn</button>
         </div>
         <div class="chat-input-row">
           <textarea id="chatInput" placeholder="Ví dụ: bổ sung nội dung tích hợp giáo dục địa phương vào phần Chuẩn bị..."></textarea>
@@ -601,7 +608,7 @@
 <script>
 /* ---------------- DATA ---------------- */
 // Dán URL Web App (Google Apps Script) của bạn vào đây sau khi Deploy — xem hướng dẫn trong Code.gs
-const GAS_URL = "https://script.google.com/macros/s/AKfycbylSf9NPpcc_a5dKp21iRUFrb4RbKoegA2BhEan8wiKhrmQ26qaEdY-NcmvXmW09Sli2g/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxrc6XqhRdOmrbz1P4LmEUoCYPWtEEwC3jNIr847kicnKSC98YGCb4KxoqTXg_a0mylKA/exec";
 // Đặt đúng môn/lớp đang soạn để backend tra đúng tài liệu tham khảo trong Thư viện
 const MON_HOC_HIEN_TAI = "Toán";
 const LOP_HIEN_TAI = "2";
@@ -855,7 +862,8 @@ async function loadLibraryFromBackend(){
         const chude = r.ChuDe || '(Chưa phân chủ đề)';
         if(!(chude in groupIdx)){ groupIdx[chude] = groups.length; groups.push({chude, bai:[]}); }
         groups[groupIdx[chude]].bai.push({
-          num: r.Bai, ten: r.TenBai, trang: r.Trang, tuan: r.Tuan
+          num: r.Bai, ten: r.TenBai, trang: r.Trang, tuan: r.Tuan,
+          mucLucId: r.ID, noiDung: r.NoiDungText || '' // NoiDungText: đã trích sẵn từ lần trước (nếu có) — dùng làm nguồn cho AI ngay không cần trích lại
         });
       });
       newBooks[tl.ID] = {
@@ -1455,24 +1463,76 @@ document.getElementById('clearSourceBtn').onclick = ()=>{
   updateSourceChip();
 };
 
+// Rà soát tuỳ chọn (không tự động) — nhờ AI kiểm tra lại xem giáo án hiện tại có chỗ nào thiếu căn cứ
+// rõ ràng từ các nguồn đang bật hay không. Tốn thêm 1 lượt gọi Gemini nên chỉ chạy khi bấm chủ động.
+document.getElementById('checkSourceBtn').onclick = async ()=>{
+  const btn = document.getElementById('checkSourceBtn');
+  const { danhSachNguon } = getActiveLibrarySourcePayload();
+  if(!danhSachNguon || danhSachNguon.length === 0){
+    addMsg('Chưa bật nguồn tham khảo nào để đối chiếu — bật ít nhất 1 nguồn rồi thử lại.', 'ai');
+    return;
+  }
+  btn.disabled = true;
+  const thinking = addMsg('Đang rà soát căn cứ nguồn…', 'ai');
+  try{
+    const noiDungGiaoAn = ta.innerText || ta.textContent;
+    const res = await callBackend('kiemTraCanCu', { noiDungGiaoAn, danhSachNguon });
+    thinking.remove();
+    addMsg('🔍 ' + (res.canhBao || 'Không có phản hồi.'), 'ai');
+  }catch(err){
+    thinking.remove();
+    addMsg('Có lỗi khi rà soát: ' + (err.message || 'thử lại sau.'), 'ai');
+  }finally{
+    btn.disabled = false;
+  }
+};
+
 function isActiveLibrarySource(book, bai){
   return librarySources.some(s => s.driveFileId === book.driveFileId && String(s.trang) === String(bai.trang));
 }
 function removeLibrarySource(src){
   librarySources = librarySources.filter(s => !(s.driveFileId === src.driveFileId && String(s.trang) === String(src.trang)));
 }
-function toggleLibrarySource(){
+async function toggleLibrarySource(){
   if(!lastPdfContext) return;
   const { book, bai } = lastPdfContext;
   const active = isActiveLibrarySource(book, bai);
+
   if(active){
     removeLibrarySource({ driveFileId: book.driveFileId, trang: bai.trang });
-  } else {
-    librarySources.push({ driveFileId: book.driveFileId, tenSach: book.subject, tenBai: bai.ten, trang: bai.trang });
+    document.querySelectorAll('.lib-source-btn').forEach(btn=>{
+      btn.textContent = '📌 Dùng bài này làm nguồn cho AI';
+      btn.classList.remove('active');
+    });
+    updateSourceChip();
+    return;
   }
+
+  // Bật nguồn: nếu bài này ĐÃ trích nội dung sẵn (từ lần trước) thì dùng luôn, không cần gọi lại backend.
+  // Nếu CHƯA có, trích 1 lần (lưu lại vào Sheet) — các lần dùng sau (kể cả sách khác, bài khác của cùng
+  // sách) không phải gửi lại cả PDF nữa, chỉ gửi đúng đoạn chữ đã lưu — nhẹ & nhanh hơn nhiều.
+  const btns = document.querySelectorAll('.lib-source-btn');
+  if(!bai.noiDung){
+    btns.forEach(btn=>{ btn.disabled = true; btn.textContent = '⏳ Đang trích nội dung (chỉ 1 lần)...'; });
+    try{
+      const res = await callBackend('trichNoiDungBai', {
+        mucLucId: bai.mucLucId, driveFileId: book.driveFileId, trang: bai.trang, tenBai: bai.ten
+      });
+      bai.noiDung = res.noiDung || '';
+    }catch(err){
+      btns.forEach(btn=>{ btn.disabled = false; btn.textContent = '📌 Dùng bài này làm nguồn cho AI'; });
+      alert('Không trích được nội dung bài này: ' + err.message);
+      return;
+    }
+    btns.forEach(btn=>{ btn.disabled = false; });
+  }
+
+  librarySources.push({
+    driveFileId: book.driveFileId, tenSach: book.subject, tenBai: bai.ten, trang: bai.trang, text: bai.noiDung
+  });
   document.querySelectorAll('.lib-source-btn').forEach(btn=>{
-    btn.textContent = !active ? '✓ Đang dùng làm nguồn cho AI' : '📌 Dùng bài này làm nguồn cho AI';
-    btn.classList.toggle('active', !active);
+    btn.textContent = '✓ Đang dùng làm nguồn cho AI';
+    btn.classList.add('active');
   });
   updateSourceChip();
 }
@@ -1673,7 +1733,8 @@ function getActiveRefPayload(){
 }
 
 // Gộp TẤT CẢ nguồn đang bật (nhiều tài liệu tham khảo + nhiều bài Thư viện) thành 1 mảng gửi cho backend.
-// Với bài Thư viện chỉ gửi driveFileId (rất nhẹ) — backend tự tải PDF từ Drive khi cần.
+// Bài Thư viện giờ gửi ĐÚNG ĐOẠN CHỮ đã trích sẵn (bai.noiDung, xem toggleLibrarySource) — không còn
+// gửi driveFileId/PDF nữa, nên rất nhẹ, nhanh, và không còn đụng giới hạn dung lượng PDF nữa.
 function getActiveLibrarySourcePayload(){
   const danhSachNguon = [];
   refDocs.forEach(doc=>{
@@ -1685,11 +1746,13 @@ function getActiveLibrarySourcePayload(){
     }
   });
   librarySources.forEach(src=>{
-    danhSachNguon.push({
-      ten: src.tenBai + (src.trang ? (' (trang ' + src.trang + ')') : ''),
-      driveFileId: src.driveFileId,
-      trang: src.trang
-    });
+    const ten = src.tenBai + (src.trang ? (' (trang ' + src.trang + ')') : '') + ' — ' + src.tenSach;
+    if(src.text){
+      danhSachNguon.push({ ten, text: src.text });
+    } else {
+      // Phòng hờ trường hợp chưa trích được nội dung (hiếm khi xảy ra) — vẫn gửi kèm driveFileId để không mất nguồn
+      danhSachNguon.push({ ten, driveFileId: src.driveFileId, trang: src.trang });
+    }
   });
   return danhSachNguon.length ? { danhSachNguon } : {};
 }
@@ -1833,12 +1896,14 @@ const HUONG_DAN_HTML = `
 <h3>4. Tab 🖥️ + Thư viện (kết hợp)</h3>
 <p>Cột trái là thư viện thu nhỏ, giữa là khung soạn giáo án, phải là chat AI. Bấm 1 bài trong mục lục để xem PDF ngay trong cột trái, không cần đổi tab.</p>
 <div class="warn-box">⚠️ Ở chế độ này, PDF hiển thị qua trình xem của Google (khác với khung xem đầy đủ ở tab Thư viện riêng) — có thể phải <strong>cuộn/zoom trong khung</strong> để thấy hết nội dung trang, không tự "vừa khít trang" được. Đây là đánh đổi cố ý để máy không bị treo khi chạy cùng lúc soạn thảo + xem PDF.</div>
-<p>Có nút "📌 Dùng bài này làm nguồn cho AI" — bật lên thì các yêu cầu chỉnh sửa gửi cho AI sau đó sẽ kèm theo đúng nội dung trang SGK này để AI đối chiếu.</p>
+<p>Có nút "📌 Dùng bài này làm nguồn cho AI" — bật lên thì các yêu cầu chỉnh sửa gửi cho AI sau đó sẽ kèm theo đúng nội dung bài này để AI đối chiếu. <strong>Lần đầu bật cho 1 bài</strong>, app cần vài giây để AI đọc và trích nội dung bài đó (chỉ 1 lần, hiện chữ "⏳ Đang trích nội dung"); từ lần sau (kể cả sau khi tắt rồi bật lại, hoặc lần dùng app sau) sẽ <strong>dùng lại ngay lập tức</strong>, không cần trích lại nữa vì đã lưu sẵn.</p>
+<p>Có thể bật nhiều bài, nhiều cuốn sách cùng lúc làm nguồn — vì chỉ gửi đúng đoạn chữ đã trích (rất nhẹ), không còn giới hạn dung lượng như khi gửi nguyên file PDF nữa.</p>
 
 <h3>5. Tab 📎 + Tài liệu tham khảo</h3>
 <p>Tải lên các file .docx/.txt/.pdf khác (không phải sách trong Thư viện) — ví dụ kế hoạch giáo dục tích hợp, kế hoạch hoà nhập. Bôi đen đoạn trong tài liệu để chèn thẳng vào giáo án, hoặc bấm "Dùng làm nguồn cho AI" để AI đọc và tham khảo khi chỉnh sửa.</p>
 <div class="warn-box">⚠️ Với file .docx/.txt, bôi đen chèn được trực tiếp. Với file .pdf, KHÔNG bôi đen chèn được (app không trích chữ từ PDF phía trình duyệt) — chỉ dùng được qua "Dùng làm nguồn cho AI" (AI tự đọc PDF).</div>
-<div class="warn-box">⚠️ Có thể bật nguồn từ cả tài liệu tham khảo VÀ 1 bài trong Thư viện <strong>cùng lúc</strong> — cả hai sẽ hiện trong khung chat và đều được gửi cho AI. Nếu không muốn dùng nữa, nhớ bấm ✕ ở dòng thông báo để tắt, không tự tắt khi chuyển tab.</div>
+<div class="warn-box">⚠️ Có thể bật nhiều nguồn cùng lúc (nhiều bài Thư viện + nhiều tài liệu tham khảo) — tất cả hiện trong khung chat, mỗi dòng có ✕ riêng để tắt, hoặc "✕ Bỏ hết nguồn" để tắt tất cả 1 lần. Không tự tắt khi chuyển tab.</div>
+<p>Có nút "🔍 Kiểm tra căn cứ nguồn" cạnh đó — bấm để nhờ AI tự rà lại giáo án hiện tại, chỉ ra phần nào có vẻ không có căn cứ rõ trong các nguồn đang bật (AI có thể tự suy diễn thêm khi soạn). Không chạy tự động vì tốn thêm 1 lượt gọi AI — chỉ bấm khi cần độ tin cậy cao hơn cho giáo án quan trọng.</p>
 
 <h3>6. Một số giới hạn chung cần biết</h3>
 <ul>
