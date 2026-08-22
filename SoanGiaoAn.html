@@ -190,6 +190,12 @@
     border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;white-space:nowrap;
   }
   .pdf-expand-btn:hover{background:#F0EADA;}
+  .lib-source-btn{
+    font-family:inherit;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:20px;
+    border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;white-space:nowrap;
+  }
+  .lib-source-btn:hover{background:#F0EADA;}
+  .lib-source-btn.active{background:var(--leaf);border-color:var(--leaf);color:#fff;}
   .pdf-lightbox-overlay{
     position:fixed;inset:0;background:rgba(20,16,8,.72);z-index:9999;
     display:flex;align-items:center;justify-content:center;padding:22px;
@@ -570,7 +576,7 @@
 <script>
 /* ---------------- DATA ---------------- */
 // Dán URL Web App (Google Apps Script) của bạn vào đây sau khi Deploy — xem hướng dẫn trong Code.gs
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyAf8N0Z26AQLMedb3PK-RNoPBsTnsdyLPS4DwuMGpegTVy4QFFPCfLzPIY96YlbH_BkA/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzYPqK06ZkYsx6TmVSYYyD4xxYtMqqLqsdw89_Utv9URpQRn2sTz4jm7qGN0L5vS5J-Zw/exec";
 // Đặt đúng môn/lớp đang soạn để backend tra đúng tài liệu tham khảo trong Thư viện
 const MON_HOC_HIEN_TAI = "Toán";
 const LOP_HIEN_TAI = "2";
@@ -744,6 +750,7 @@ let books = DEMO_BOOKS;      // nguồn dữ liệu đang dùng để render —
 let usingRealLibrary = false;
 const pdfBlobCache = {};     // driveFileId -> blob: URL (tải 1 lần/sách, dùng lại khi đổi bài trong cùng sách)
 let lastPdfContext = null;   // {book, bai} của trang PDF đang xem — dùng cho nút "⤢ Phóng to"
+let activeLibrarySource = null; // {driveFileId, tenSach, tenBai, trang} — bài trong Thư viện đang dùng làm nguồn cho AI khi soạn giáo án
 
 async function openPdfLightbox(){
   if(!lastPdfContext) return;
@@ -935,6 +942,31 @@ async function selectBai(el, bai, book){
     panel.classList.add('pdf-mode');
     lastPdfContext = { book, bai };
     const openUrl = book.driveUrl + '#page=' + (bai.trang || 1);
+    const dangOChedoKetHop = viewsWrap.classList.contains('split-mode'); // tab "🖥️ + Thư viện" — soạn giáo án chạy song song
+
+    // Ở chế độ kết hợp soạn thảo: dùng Trình xem Drive (Google Drive Viewer) thay vì tự tải cả file
+    // PDF vào bộ nhớ của tab app — Drive Viewer chạy ở tiến trình riêng của trình duyệt (khác nguồn
+    // gốc drive.google.com) nên không cộng RAM vào tab đang soạn giáo án, đỡ treo máy. Đánh đổi: có
+    // thể phải cuộn/zoom trong khung (Drive Viewer tự chọn mức zoom, không tuỳ chỉnh "vừa khít trang"
+    // được như bản xem đầy đủ ở tab Thư viện riêng).
+    if(dangOChedoKetHop){
+      const embedUrl = 'https://drive.google.com/file/d/' + book.driveFileId + '/preview#page=' + (bai.trang || 1);
+      panel.innerHTML = `
+        <div class="pdf-head">
+          <div class="eyebrow">${bai.tuan ? ('Tuần '+bai.tuan+' · ') : ''}Bài ${bai.num||''} · Trang ${bai.trang||'?'}</div>
+          <h2 style="margin:2px 0 4px;font-size:18px;">${bai.ten||''}</h2>
+          <p class="sub" style="margin:0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <a href="${openUrl}" target="_blank" rel="noopener">↗ Mở trang này trong tab mới (PDF gốc)</a>
+            <button class="lib-source-btn${isActiveLibrarySource(book,bai)?' active':''}" onclick="toggleLibrarySource()">${isActiveLibrarySource(book,bai) ? '✓ Đang dùng làm nguồn cho AI' : '📌 Dùng bài này làm nguồn cho AI'}</button>
+          </p>
+        </div>
+        <div class="pdf-frame-wrap">
+          <iframe src="${embedUrl}"></iframe>
+        </div>
+      `;
+      return;
+    }
+
     panel.innerHTML = `
       <div class="pdf-head">
         <div class="eyebrow">${bai.tuan ? ('Tuần '+bai.tuan+' · ') : ''}Bài ${bai.num||''} · Trang ${bai.trang||'?'}</div>
@@ -942,6 +974,7 @@ async function selectBai(el, bai, book){
         <p class="sub" style="margin:0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <a href="${openUrl}" target="_blank" rel="noopener">↗ Mở trang này trong tab mới (PDF gốc)</a>
           <button class="pdf-expand-btn" onclick="openPdfLightbox()">⤢ Phóng to</button>
+          <button class="lib-source-btn${isActiveLibrarySource(book,bai)?' active':''}" onclick="toggleLibrarySource()">${isActiveLibrarySource(book,bai) ? '✓ Đang dùng làm nguồn cho AI' : '📌 Dùng bài này làm nguồn cho AI'}</button>
         </p>
       </div>
       <div class="pdf-frame-wrap" id="pdfFrameWrap">
@@ -1359,16 +1392,42 @@ toggleSourceBtn.onclick = ()=>{
 };
 
 function updateSourceChip(){
+  const lines = [];
   const doc = refDocs.find(d => d.id === sourceRefId);
-  if(!doc){ sourceChip.style.display = 'none'; return; }
-  sourceChipText.textContent = '📎 AI sẽ tham khảo tài liệu: "' + doc.name + '"';
+  if(doc) lines.push('📎 AI sẽ tham khảo tài liệu: "' + doc.name + '"');
+  if(activeLibrarySource) lines.push('📚 AI sẽ tham khảo: "' + activeLibrarySource.tenBai + '" (Thư viện — ' + activeLibrarySource.tenSach + ')');
+  if(lines.length === 0){ sourceChip.style.display = 'none'; return; }
+  sourceChipText.innerHTML = lines.join('<br>');
   sourceChip.style.display = 'flex';
 }
 document.getElementById('clearSourceBtn').onclick = ()=>{
   sourceRefId = null;
+  activeLibrarySource = null;
   if(activeRefId) selectRefDoc(activeRefId);
+  document.querySelectorAll('.lib-source-btn').forEach(btn=>{
+    btn.textContent = '📌 Dùng bài này làm nguồn cho AI';
+    btn.classList.remove('active');
+  });
   updateSourceChip();
 };
+
+function isActiveLibrarySource(book, bai){
+  return !!activeLibrarySource && activeLibrarySource.driveFileId === book.driveFileId && String(activeLibrarySource.trang) === String(bai.trang);
+}
+function toggleLibrarySource(){
+  if(!lastPdfContext) return;
+  const { book, bai } = lastPdfContext;
+  if(isActiveLibrarySource(book, bai)){
+    activeLibrarySource = null;
+  } else {
+    activeLibrarySource = { driveFileId: book.driveFileId, tenSach: book.subject, tenBai: bai.ten, trang: bai.trang };
+  }
+  document.querySelectorAll('.lib-source-btn').forEach(btn=>{
+    btn.textContent = activeLibrarySource ? '✓ Đang dùng làm nguồn cho AI' : '📌 Dùng bài này làm nguồn cho AI';
+    btn.classList.toggle('active', !!activeLibrarySource);
+  });
+  updateSourceChip();
+}
 
 /* ---- Bôi đen trong tài liệu tham khảo -> chèn vào giáo án (giống copy/paste trong Word) ---- */
 let savedRefRange = null;
@@ -1570,6 +1629,18 @@ function getActiveRefPayload(){
   return { taiLieuTen: doc.name, taiLieuThamKhao: doc.text };
 }
 
+// Bài trong Thư viện đang được chọn "dùng làm nguồn cho AI" — chỉ gửi driveFileId (rất nhẹ),
+// backend (Code.gs) sẽ tự tải file PDF từ Drive khi cần, KHÔNG tải file vào bộ nhớ trình duyệt
+// (giữ đúng nguyên tắc tránh nặng máy đã sửa ở phần xem PDF).
+function getActiveLibrarySourcePayload(){
+  if(!activeLibrarySource) return {};
+  return {
+    thuVienDriveFileId: activeLibrarySource.driveFileId,
+    thuVienTenBai: activeLibrarySource.tenBai,
+    thuVienTrang: activeLibrarySource.trang
+  };
+}
+
 async function sendMessage(){
   const q = chatInput.value.trim();
   if(!q) return;
@@ -1590,7 +1661,8 @@ async function sendMessage(){
         yeuCau: q,
         monHoc: MON_HOC_HIEN_TAI,
         lop: LOP_HIEN_TAI,
-        ...getActiveRefPayload()
+        ...getActiveRefPayload(),
+        ...getActiveLibrarySourcePayload()
       });
       const newText = data.noiDungMoi ? data.noiDungMoi.trim() : null;
       thinking.remove();
@@ -1630,7 +1702,8 @@ async function sendMessage(){
       yeuCau: q,
       monHoc: MON_HOC_HIEN_TAI,
       lop: LOP_HIEN_TAI,
-      ...getActiveRefPayload()
+      ...getActiveRefPayload(),
+      ...getActiveLibrarySourcePayload()
     });
     const newText = data.noiDungMoi ? data.noiDungMoi.trim() : null;
     thinking.remove();
