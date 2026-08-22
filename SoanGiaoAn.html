@@ -608,7 +608,7 @@
 <script>
 /* ---------------- DATA ---------------- */
 // Dán URL Web App (Google Apps Script) của bạn vào đây sau khi Deploy — xem hướng dẫn trong Code.gs
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxrc6XqhRdOmrbz1P4LmEUoCYPWtEEwC3jNIr847kicnKSC98YGCb4KxoqTXg_a0mylKA/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzeDQyasGh0i_FnlLAR3dCmzopBEZLIlum81mcg-GP7Nm1lgmc3r-jbOZimLQXBbdyx5Q/exec";
 // Đặt đúng môn/lớp đang soạn để backend tra đúng tài liệu tham khảo trong Thư viện
 const MON_HOC_HIEN_TAI = "Toán";
 const LOP_HIEN_TAI = "2";
@@ -1811,10 +1811,12 @@ async function sendMessage(){
   const thinking = addMsg('Đang chỉnh sửa giáo án…', 'ai');
 
   const currentText = ta.innerText || ta.textContent;
+  const currentHtml = ta.innerHTML;
+  const coBang = /<table/i.test(currentHtml); // giáo án đang có bảng -> chuyển sang chế độ giữ định dạng (gửi/nhận HTML)
 
   try{
     const data = await callBackend('suaGiaoAn', {
-      noiDungHienTai: currentText,
+      ...(coBang ? { noiDungHienTaiHTML: currentHtml, giuDinhDang: true } : { noiDungHienTai: currentText }),
       yeuCau: q,
       monHoc: MON_HOC_HIEN_TAI,
       lop: LOP_HIEN_TAI,
@@ -1825,15 +1827,23 @@ async function sendMessage(){
     thinking.remove();
     if(newText){
       ta.classList.remove('placeholder');
-      const { html, changedCount } = textToParagraphs(newText, currentText);
-      ta.innerHTML = html;
-      if(changedCount > 0){
-        diffCount.textContent = `🖍 AI vừa chỉnh sửa ${changedCount} đoạn (tô vàng) — đọc lại trước khi lưu.`;
-        diffBanner.style.display = 'flex';
-      } else {
+      if(coBang){
+        // Chế độ giữ định dạng: áp thẳng HTML AI trả về (giữ bảng), không tô vàng theo từng đoạn được
+        // (cơ chế tô vàng dựa trên so sánh văn bản thuần, không dùng được khi có bảng).
+        ta.innerHTML = newText;
         diffBanner.style.display = 'none';
+        addMsg('Đã cập nhật giáo án, giữ nguyên bảng biểu — chế độ này KHÔNG tô vàng phần thay đổi được, đọc kỹ lại toàn bộ trước khi lưu.', 'ai');
+      } else {
+        const { html, changedCount } = textToParagraphs(newText, currentText);
+        ta.innerHTML = html;
+        if(changedCount > 0){
+          diffCount.textContent = `🖍 AI vừa chỉnh sửa ${changedCount} đoạn (tô vàng) — đọc lại trước khi lưu.`;
+          diffBanner.style.display = 'flex';
+        } else {
+          diffBanner.style.display = 'none';
+        }
+        addMsg('Đã cập nhật giáo án — phần vừa sửa được tô vàng để bạn dễ kiểm tra.', 'ai');
       }
-      addMsg('Đã cập nhật giáo án — phần vừa sửa được tô vàng để bạn dễ kiểm tra. (Lưu ý: bảng/hình ảnh gốc trong file Word chưa được AI xử lý lại ở bản demo này — chỉ áp dụng cho phần văn bản.)', 'ai');
       markUnsaved();
       autosaveDraft();
     } else {
@@ -1889,6 +1899,7 @@ const HUONG_DAN_HTML = `
   <li><strong>Xuất file Word:</strong> nút "⬇ Xuất file Word" tải về máy dạng .doc (mở được bằng Word bình thường).</li>
   <li><strong>Khôi phục bản demo:</strong> nút "↺ Khôi phục bản demo".</li>
 </ul>
+<div class="warn-box">⚠️ Nếu giáo án hiện tại có <strong>bảng biểu</strong> (vd tải lên từ file mẫu dạng bảng), app tự chuyển sang "chế độ giữ định dạng" khi bạn dùng AI sửa toàn bộ giáo án — giữ nguyên được bảng, nhưng đổi lại <strong>KHÔNG tô vàng được phần vừa sửa</strong> (cơ chế tô vàng chỉ hoạt động với văn bản thuần). Vì vậy phải đọc kỹ lại toàn bộ giáo án sau mỗi lần sửa, không chỉ dựa vào phần tô vàng như bình thường.</div>
 <div class="warn-box">⚠️ <strong>"Khôi phục bản demo" xoá ngay nội dung đang soạn, KHÔNG hỏi xác nhận trước.</strong> Chỉ dùng khi thực sự muốn bỏ hết và bắt đầu lại từ mẫu demo — nếu lỡ bấm nhầm, nội dung đã mất sẽ không khôi phục lại được.</div>
 <div class="warn-box">⚠️ <strong>Giáo án tự lưu nháp theo trình duyệt đang dùng</strong> (không đồng bộ giữa các máy khác nhau). Nếu chuyển sang máy khác hoặc trình duyệt khác, nháp lần trước sẽ không tự hiện lại — cần chủ động xuất file Word hoặc tải giáo án mẫu đó lên lại.</div>
 <div class="warn-box">⚠️ Đóng tab/trình duyệt khi đang có thay đổi chưa xuất file sẽ hiện cảnh báo — nhưng vẫn nên chủ động xuất Word định kỳ, tránh phụ thuộc hoàn toàn vào tự lưu nháp.</div>
