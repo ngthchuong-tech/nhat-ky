@@ -753,10 +753,15 @@ async function computeStudentFee(sid, ym){
   const s = students.find(x=>x.id===sid);
   const joinYm = s && s.joinDate ? s.joinDate.slice(0,7) : '';
   const tutorJoinYm = s && s.tutorJoinDate ? s.tutorJoinDate.slice(0,7) : '';
-  const banTruActive = !!joinYm && ym>=joinYm;
-  const tutorActive = !!tutorJoinYm && ym>=tutorJoinYm;
+  // hasBanTru/hasTutor = học sinh CÓ TỪNG tham gia (status active/withdrawn),
+  // độc lập với việc có điền "ngày tham gia" hay chưa — học sinh cũ (thêm
+  // trước khi có trường ngày tham gia) vẫn phải tính phí bình thường.
+  const hasBanTru = s ? isBanTru(s) || s.status==='withdrawn' : false;
+  const hasTutor = s ? isTutor(s) || s.tutorStatus==='withdrawn' : false;
+  const banTruActive = hasBanTru && (!joinYm || ym>=joinYm);
+  const tutorActive = hasTutor && (!tutorJoinYm || ym>=tutorJoinYm);
   const st = pickSettingsForMonth(ym); // bảng giá đúng theo tháng này, không phải giá hiện tại
-  const isFirstBanTruMonth = banTruActive && ym===joinYm;
+  const isFirstBanTruMonth = banTruActive && !!joinYm && ym===joinYm;
   const att = await getAttendance(ym);
   const presentDays = Object.values(att[sid]||{}).filter(v=>v==='present').length;
   const sv = svcOf(sid);
