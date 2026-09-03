@@ -568,7 +568,15 @@ function setConn(ok, text){
 
 /* ========================= ZALO ========================= */
 function zaloPhone(phone){ let p=String(phone||'').replace(/[^0-9]/g,''); if(p.startsWith('0')) p='84'+p.slice(1); return p; }
-function contactZalo(phone){ const p=zaloPhone(phone); if(!p){showToast('Chưa có số điện thoại Zalo');return;} window.open('https://zalo.me/'+p,'_blank'); }
+function isMobileDevice(){ return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
+function contactZalo(phone){
+  const p=zaloPhone(phone); if(!p){showToast('Chưa có số điện thoại Zalo');return;}
+  // Trên điện thoại: điều hướng cùng tab để hệ điều hành bàn giao sang app
+  // Zalo, không mở tab mới — mở tab mới nhiều lần liên tiếp trên di động dễ
+  // gây hiện tượng "nhảy ra nhảy vào" liên tục giữa trình duyệt và Zalo.
+  if(isMobileDevice()) window.location.href = 'https://zalo.me/'+p;
+  else window.open('https://zalo.me/'+p,'_blank');
+}
 async function copyText(text){ try{ await navigator.clipboard.writeText(text); return true; }catch(e){ return false; } }
 async function zaloNotify(phone, message){
   const ok = await copyText(message);
@@ -1601,7 +1609,7 @@ async function sendUnpaidZaloMessage(sid, ym){
   const msg = lines.join('\n');
   const ok = await copyText(msg); // sao chép TRƯỚC khi mở Zalo, lúc trang còn đang focus
   showToast(ok?'Đã sao chép nội dung — dán vào khung chat Zalo':'Đang mở Zalo — vui lòng soạn tin nhắn thủ công');
-  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isMobile = isMobileDevice();
   if(isMobile){
     // Trên điện thoại, điều hướng cùng tab: hệ điều hành sẽ tự bàn giao sang
     // app Zalo mà không làm mất trang web đang mở (khác desktop).
