@@ -27,11 +27,31 @@
   }
   header h1 { margin: 0; font-size: 18px; font-weight: 600; }
   header p { margin: 2px 0 0; font-size: 12px; opacity: 0.85; }
-  main { max-width: 560px; margin: 0 auto; padding: 16px; }
+
+  .layout {
+    display: grid;
+    grid-template-areas: "form" "browse" "analyze";
+    grid-template-columns: 1fr;
+    gap: 16px;
+    max-width: 560px; margin: 0 auto; padding: 16px;
+  }
+  @media (min-width: 1000px) {
+    .layout {
+      grid-template-areas: "browse form analyze";
+      grid-template-columns: 1fr 1fr 1fr;
+      max-width: 1400px;
+      align-items: start;
+    }
+  }
+  .col-form { grid-area: form; }
+  .col-browse { grid-area: browse; }
+  .col-analyze { grid-area: analyze; }
+
   .card {
     background: #fff; border-radius: var(--radius);
     padding: 16px; margin-bottom: 14px; border: 1px solid var(--border);
   }
+  .col-title { font-size: 15px; font-weight: 700; margin: 0 0 10px; color: var(--text); }
   label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 6px; color: var(--text); }
   label:first-child { margin-top: 0; }
   .hint { font-size: 11px; color: var(--text-muted); font-weight: 400; margin-top: 2px; }
@@ -48,7 +68,7 @@
   .chip.selected { background: var(--primary); border-color: var(--primary); color: #fff; }
   .segmented { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
   .segmented button {
-    flex: 1; padding: 10px; border: none; background: #fff; font-size: 14px;
+    flex: 1; padding: 10px; border: none; background: #fff; font-size: 13px;
     cursor: pointer; border-right: 1px solid var(--border);
   }
   .segmented button:last-child { border-right: none; }
@@ -69,6 +89,33 @@
   .status { text-align: center; font-size: 13px; margin-top: 10px; min-height: 18px; }
   .status.ok { color: var(--primary); }
   .status.err { color: var(--danger); }
+
+  /* Entry browser */
+  .entry-card {
+    border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px;
+  }
+  .entry-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 12px; color: var(--text-muted); }
+  .entry-id { font-weight: 700; color: var(--text); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; background: var(--primary-light); color: var(--primary); font-weight: 600; }
+  .entry-content { font-size: 14px; margin: 8px 0; white-space: pre-wrap; }
+  .entry-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .entry-block { font-size: 12px; background: var(--bg); border-radius: 6px; padding: 8px; margin-top: 6px; white-space: pre-wrap; }
+  .entry-detail-toggle {
+    background: none; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px;
+    font-size: 12px; cursor: pointer; color: var(--text); margin-top: 8px;
+  }
+  .entry-detail { display: none; margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 10px; }
+  .entry-detail.open { display: block; }
+  .entry-detail label { font-size: 12px; margin: 8px 0 4px; }
+  .entry-detail textarea { min-height: 50px; font-size: 13px; }
+  .mini-btn {
+    padding: 8px 12px; background: var(--primary); color: #fff; border: none;
+    border-radius: 6px; font-size: 13px; cursor: pointer; margin-top: 6px;
+  }
+  .mini-btn.secondary { background: #1c2733; }
+  .mini-row { display: flex; gap: 6px; align-items: center; }
+  .mini-row select { flex: 1; }
+  .empty-msg { font-size: 13px; color: var(--text-muted); text-align: center; padding: 20px 0; }
 </style>
 </head>
 <body>
@@ -78,112 +125,148 @@
   <p>Ghi nhận thông tin, chỉ đạo, sự vụ hàng ngày</p>
 </header>
 
-<main>
-  <form id="entryForm">
+<div class="layout">
+
+  <!-- ===== CỘT TRÁI: DUYỆT ENTRY ===== -->
+  <div class="col-browse">
     <div class="card">
-      <label>Loại entry</label>
-      <div class="segmented" id="loaiEntry">
-        <button type="button" data-v="Thu thập thông tin" class="selected">Thu thập</button>
-        <button type="button" data-v="Chỉ đạo-yêu cầu">Chỉ đạo</button>
-        <button type="button" data-v="Sự vụ phát sinh">Sự vụ</button>
-        <button type="button" data-v="Cập nhật tiến độ">Cập nhật</button>
-        <button type="button" data-v="Ghi chú cá nhân">Ghi chú</button>
+      <p class="col-title">Duyệt entry</p>
+      <div class="segmented" id="browseScopeGroup">
+        <button type="button" data-v="recent" class="selected">Gần đây</button>
+        <button type="button" data-v="linhvuc">Lĩnh vực</button>
+        <button type="button" data-v="case">Vụ việc</button>
       </div>
-
-      <label>Nội dung</label>
-      <textarea id="noiDung" placeholder="Ghi lại thông tin, chỉ đạo hoặc sự vụ..." required></textarea>
-
-      <label>Cảng / phạm vi</label>
-      <select id="cangPhamVi">
-        <option>Gò Dầu</option>
-        <option>Long Bình Tân</option>
-        <option>Văn phòng</option>
-        <option>Toàn công ty</option>
-      </select>
-
-      <label>Ngày sự việc</label>
-      <input type="date" id="ngaySuViec">
+      <div id="browseScopeRecent">
+        <label>Số ngày gần nhất</label>
+        <input type="text" id="browseDays" value="14" inputmode="numeric">
+      </div>
+      <div id="browseScopeLinhVuc" style="display:none;">
+        <label>Chọn lĩnh vực</label>
+        <select id="browseLinhVuc"></select>
+      </div>
+      <div id="browseScopeCase" style="display:none;">
+        <label>Chọn vụ việc</label>
+        <select id="browseCase"></select>
+      </div>
+      <button type="button" class="submit-btn" id="browseLoadBtn" style="background:#1c2733;">Tải danh sách</button>
+      <div class="status" id="browseStatus"></div>
+      <div id="entryList" style="margin-top:12px;"></div>
     </div>
+  </div>
 
-    <div class="card">
-      <button type="button" class="toggle-extra" id="toggleExtra">
-        <span>Thêm chi tiết (tuỳ chọn)</span>
-        <span id="toggleIcon">▾</span>
-      </button>
-
-      <div id="extra">
-        <label>Lĩnh vực nghiệp vụ <span class="hint">— chọn 1 hoặc nhiều</span></label>
-        <div class="chip-group" id="linhVucGroup"></div>
-
-        <label>Mã QT tham chiếu <span class="hint">— chỉ điền nếu chắc chắn</span></label>
-        <input type="text" id="maQT" placeholder="VD: QB651">
-
-        <label>Nguồn thông tin</label>
-        <input type="text" id="nguonTT" placeholder="Ai / kênh nào cung cấp">
-
-        <label>Mức ưu tiên</label>
-        <div class="segmented" id="mucUuTien">
-          <button type="button" data-v="Thấp">Thấp</button>
-          <button type="button" data-v="Trung bình" class="selected">TB</button>
-          <button type="button" data-v="Cao">Cao</button>
+  <!-- ===== CỘT GIỮA: NHẬP NHẬT KÝ ===== -->
+  <div class="col-form">
+    <form id="entryForm">
+      <div class="card">
+        <p class="col-title">Nhập nhật ký</p>
+        <label>Loại entry</label>
+        <div class="segmented" id="loaiEntry">
+          <button type="button" data-v="Thu thập thông tin" class="selected">Thu thập</button>
+          <button type="button" data-v="Chỉ đạo-yêu cầu">Chỉ đạo</button>
+          <button type="button" data-v="Sự vụ phát sinh">Sự vụ</button>
+          <button type="button" data-v="Cập nhật tiến độ">Cập nhật</button>
+          <button type="button" data-v="Ghi chú cá nhân">Ghi chú</button>
         </div>
 
-        <label>Vụ việc liên kết <span class="hint">— để trống nếu là ghi nhận độc lập</span></label>
-        <select id="caseId"><option value="">— Không thuộc vụ việc nào —</option></select>
+        <label>Nội dung</label>
+        <textarea id="noiDung" placeholder="Ghi lại thông tin, chỉ đạo hoặc sự vụ..." required></textarea>
 
-        <label>Deadline</label>
-        <input type="date" id="deadline">
+        <label>Cảng / phạm vi</label>
+        <select id="cangPhamVi">
+          <option>Gò Dầu</option>
+          <option>Long Bình Tân</option>
+          <option>Văn phòng</option>
+          <option>Toàn công ty</option>
+        </select>
 
-        <label>Khó khăn gặp phải</label>
-        <div class="chip-group" id="khoKhanGroup"></div>
-
-        <label>Kỹ năng liên quan</label>
-        <div class="chip-group" id="kyNangGroup"></div>
+        <label>Ngày sự việc</label>
+        <input type="date" id="ngaySuViec">
       </div>
-    </div>
 
-    <button type="submit" class="submit-btn" id="submitBtn">Lưu nhật ký</button>
-    <div class="status" id="statusMsg"></div>
-  </form>
+      <div class="card">
+        <button type="button" class="toggle-extra" id="toggleExtra">
+          <span>Thêm chi tiết (tuỳ chọn)</span>
+          <span id="toggleIcon">▾</span>
+        </button>
 
-  <div class="card">
-    <label style="margin-top:0;">Phân tích AI</label>
-    <div class="segmented" id="scopeGroup">
-      <button type="button" data-v="recent" class="selected">Gần đây</button>
-      <button type="button" data-v="linhvuc">Theo lĩnh vực</button>
-      <button type="button" data-v="case">Theo vụ việc</button>
-    </div>
+        <div id="extra">
+          <label>Lĩnh vực nghiệp vụ <span class="hint">— chọn 1 hoặc nhiều</span></label>
+          <div class="chip-group" id="linhVucGroup"></div>
 
-    <div id="scopeRecent">
-      <label>Số ngày gần nhất</label>
-      <input type="text" id="recentDays" value="14" inputmode="numeric">
-    </div>
-    <div id="scopeLinhVuc" style="display:none;">
-      <label>Chọn lĩnh vực</label>
-      <select id="analyzeLinhVuc"></select>
-    </div>
-    <div id="scopeCase" style="display:none;">
-      <label>Chọn vụ việc</label>
-      <select id="analyzeCase"></select>
-    </div>
+          <label>Mã QT tham chiếu <span class="hint">— chỉ điền nếu chắc chắn</span></label>
+          <input type="text" id="maQT" placeholder="VD: QB651">
 
-    <button type="button" class="submit-btn" id="analyzeBtn" style="background:#1c2733;">Chạy phân tích</button>
-    <div class="status" id="analyzeStatus"></div>
-    <div id="analyzeResult" style="white-space:pre-wrap; font-size:14px; line-height:1.5; margin-top:12px;"></div>
+          <label>Nguồn thông tin</label>
+          <input type="text" id="nguonTT" placeholder="Ai / kênh nào cung cấp">
+
+          <label>Mức ưu tiên</label>
+          <div class="segmented" id="mucUuTien">
+            <button type="button" data-v="Thấp">Thấp</button>
+            <button type="button" data-v="Trung bình" class="selected">TB</button>
+            <button type="button" data-v="Cao">Cao</button>
+          </div>
+
+          <label>Vụ việc liên kết <span class="hint">— để trống nếu là ghi nhận độc lập</span></label>
+          <select id="caseId"><option value="">— Không thuộc vụ việc nào —</option></select>
+
+          <label>Deadline</label>
+          <input type="date" id="deadline">
+
+          <label>Khó khăn gặp phải</label>
+          <div class="chip-group" id="khoKhanGroup"></div>
+
+          <label>Kỹ năng liên quan</label>
+          <div class="chip-group" id="kyNangGroup"></div>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">Lưu nhật ký</button>
+      <div class="status" id="statusMsg"></div>
+    </form>
   </div>
-</main>
+
+  <!-- ===== CỘT PHẢI: PHÂN TÍCH ===== -->
+  <div class="col-analyze">
+    <div class="card">
+      <p class="col-title">Phân tích AI</p>
+      <div class="segmented" id="scopeGroup">
+        <button type="button" data-v="recent" class="selected">Gần đây</button>
+        <button type="button" data-v="linhvuc">Lĩnh vực</button>
+        <button type="button" data-v="case">Vụ việc</button>
+      </div>
+
+      <div id="scopeRecent">
+        <label>Số ngày gần nhất</label>
+        <input type="text" id="recentDays" value="14" inputmode="numeric">
+      </div>
+      <div id="scopeLinhVuc" style="display:none;">
+        <label>Chọn lĩnh vực</label>
+        <select id="analyzeLinhVuc"></select>
+      </div>
+      <div id="scopeCase" style="display:none;">
+        <label>Chọn vụ việc</label>
+        <select id="analyzeCase"></select>
+      </div>
+
+      <button type="button" class="submit-btn" id="analyzeBtn" style="background:#1c2733;">Chạy phân tích</button>
+      <div class="status" id="analyzeStatus"></div>
+      <div id="analyzeResult" style="white-space:pre-wrap; font-size:14px; line-height:1.5; margin-top:12px;"></div>
+    </div>
+  </div>
+
+</div>
 
 <script>
 // ==================== CẤU HÌNH ====================
-// Dán URL Web app (Apps Script) sau khi deploy vào đây, dạng kết thúc bằng /exec
-const API_URL = "https://script.google.com/macros/s/AKfycbx2N8QK9lqKEB2sR8KC-aya2IdBIJLZ-rb9Vk1rNQ2TZltLjjo-XmUmIzOWHUUTm5m8eA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbweat3BgJHykp8BHE59fY36rsNYHuPaVo8sX_eugTFoXqqlyUmyuReLqelkoEKq4qJdzQ/exec";
 
-// ==================== STATE ====================
+// ==================== STATE (form nhập) ====================
 let selectedLoai = "Thu thập thông tin";
 let selectedUuTien = "Trung bình";
 let selectedLinhVuc = new Set();
 let selectedKhoKhan = new Set();
 let selectedKyNang = new Set();
+let metaCache = { linh_vuc: [], kho_khan: [], ky_nang: [], open_cases: [] };
 
 // ==================== SEGMENTED BUTTONS ====================
 function setupSegmented(containerId, onSelect) {
@@ -207,14 +290,6 @@ document.getElementById('toggleExtra').addEventListener('click', () => {
 });
 
 // ==================== CHIP GROUPS ====================
-function renderSimpleMarkdown_(text) {
-  const escaped = text
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  return escaped
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, '<br>');
-}
-
 function renderChips(containerId, items, selectedSet) {
   const el = document.getElementById(containerId);
   el.innerHTML = '';
@@ -230,36 +305,109 @@ function renderChips(containerId, items, selectedSet) {
   });
 }
 
+function renderSimpleMarkdown_(text) {
+  const escaped = text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return escaped
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+}
+
+function fillCaseSelect_(selectEl, cases) {
+  selectEl.innerHTML = '<option value="">— Chọn vụ việc —</option>';
+  cases.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.case_id;
+    opt.textContent = c.case_id + ' — ' + c.ten;
+    selectEl.appendChild(opt);
+  });
+}
+
 // ==================== LOAD METADATA ====================
 async function loadMeta() {
   try {
     const res = await fetch(API_URL + '?action=meta');
     const data = await res.json();
+    metaCache = data;
+
     renderChips('linhVucGroup', data.linh_vuc || [], selectedLinhVuc);
     renderChips('khoKhanGroup', data.kho_khan || [], selectedKhoKhan);
     renderChips('kyNangGroup', data.ky_nang || [], selectedKyNang);
 
     const caseSelect = document.getElementById('caseId');
-    const analyzeCaseSelect = document.getElementById('analyzeCase');
     (data.open_cases || []).forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.case_id;
       opt.textContent = c.case_id + ' — ' + c.ten;
       caseSelect.appendChild(opt);
-      analyzeCaseSelect.appendChild(opt.cloneNode(true));
     });
 
     const linhVucSelect = document.getElementById('analyzeLinhVuc');
+    const browseLinhVucSelect = document.getElementById('browseLinhVuc');
     (data.linh_vuc || []).forEach(lv => {
-      const opt = document.createElement('option');
-      opt.value = lv; opt.textContent = lv;
-      linhVucSelect.appendChild(opt);
+      [linhVucSelect, browseLinhVucSelect].forEach(sel => {
+        const opt = document.createElement('option');
+        opt.value = lv; opt.textContent = lv;
+        sel.appendChild(opt);
+      });
     });
+
+    fillCaseSelect_(document.getElementById('analyzeCase'), data.open_cases || []);
+    fillCaseSelect_(document.getElementById('browseCase'), data.open_cases || []);
   } catch (err) {
     console.error('Không tải được metadata:', err);
   }
 }
 loadMeta();
+
+// ==================== SUBMIT NHẬP ENTRY ====================
+document.getElementById('entryForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const statusEl = document.getElementById('statusMsg');
+  const btn = document.getElementById('submitBtn');
+
+  const noiDung = document.getElementById('noiDung').value.trim();
+  if (!noiDung) { statusEl.textContent = 'Vui lòng nhập nội dung.'; statusEl.className = 'status err'; return; }
+
+  btn.disabled = true;
+  statusEl.textContent = 'Đang lưu...';
+  statusEl.className = 'status';
+
+  const payload = new URLSearchParams({
+    action: 'save_entry',
+    loai_entry: selectedLoai,
+    noi_dung_chinh: noiDung,
+    cang_pham_vi: document.getElementById('cangPhamVi').value,
+    ngay_su_viec: document.getElementById('ngaySuViec').value,
+    linh_vuc_nghiep_vu: Array.from(selectedLinhVuc).join(';'),
+    ma_qt_tham_chieu: document.getElementById('maQT').value.trim(),
+    nguon_thong_tin: document.getElementById('nguonTT').value.trim(),
+    muc_uu_tien: selectedUuTien,
+    case_id: document.getElementById('caseId').value,
+    deadline: document.getElementById('deadline').value,
+    kho_khan_gap_phai: Array.from(selectedKhoKhan).join(';'),
+    ky_nang_lien_quan: Array.from(selectedKyNang).join(';')
+  });
+
+  try {
+    const res = await fetch(API_URL, { method: 'POST', body: payload });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      statusEl.textContent = 'Đã lưu — mã ' + data.id;
+      statusEl.className = 'status ok';
+      document.getElementById('entryForm').reset();
+      selectedLinhVuc.clear(); selectedKhoKhan.clear(); selectedKyNang.clear();
+      document.querySelectorAll('.chip.selected').forEach(c => c.classList.remove('selected'));
+    } else {
+      throw new Error(data.error || 'Lỗi không xác định');
+    }
+  } catch (err) {
+    statusEl.textContent = 'Lỗi khi lưu: ' + err.message;
+    statusEl.className = 'status err';
+  } finally {
+    btn.disabled = false;
+  }
+});
 
 // ==================== PHÂN TÍCH AI ====================
 let analyzeScope = 'recent';
@@ -310,54 +458,153 @@ document.getElementById('analyzeBtn').addEventListener('click', async () => {
   }
 });
 
-// ==================== SUBMIT ====================
-document.getElementById('entryForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const statusEl = document.getElementById('statusMsg');
-  const btn = document.getElementById('submitBtn');
+// ==================== DUYỆT ENTRY ====================
+let browseScope = 'recent';
+setupSegmented('browseScopeGroup', v => {
+  browseScope = v;
+  document.getElementById('browseScopeRecent').style.display = v === 'recent' ? 'block' : 'none';
+  document.getElementById('browseScopeLinhVuc').style.display = v === 'linhvuc' ? 'block' : 'none';
+  document.getElementById('browseScopeCase').style.display = v === 'case' ? 'block' : 'none';
+});
 
-  const noiDung = document.getElementById('noiDung').value.trim();
-  if (!noiDung) { statusEl.textContent = 'Vui lòng nhập nội dung.'; statusEl.className = 'status err'; return; }
+function escapeHtml_(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 
-  btn.disabled = true;
-  statusEl.textContent = 'Đang lưu...';
-  statusEl.className = 'status';
+function renderEntryList_(entries) {
+  const listEl = document.getElementById('entryList');
+  if (!entries.length) {
+    listEl.innerHTML = '<div class="empty-msg">Không có entry nào trong phạm vi này.</div>';
+    return;
+  }
 
-  const payload = new URLSearchParams({
-    action: 'save_entry',
-    loai_entry: selectedLoai,
-    noi_dung_chinh: noiDung,
-    cang_pham_vi: document.getElementById('cangPhamVi').value,
-    ngay_su_viec: document.getElementById('ngaySuViec').value,
-    linh_vuc_nghiep_vu: Array.from(selectedLinhVuc).join(';'),
-    ma_qt_tham_chieu: document.getElementById('maQT').value.trim(),
-    nguon_thong_tin: document.getElementById('nguonTT').value.trim(),
-    muc_uu_tien: selectedUuTien,
-    case_id: document.getElementById('caseId').value,
-    deadline: document.getElementById('deadline').value,
-    kho_khan_gap_phai: Array.from(selectedKhoKhan).join(';'),
-    ky_nang_lien_quan: Array.from(selectedKyNang).join(';')
-  });
+  listEl.innerHTML = entries.map((en, idx) => {
+    const caseCasesOptions = (metaCache.open_cases || [])
+      .map(c => '<option value="' + escapeHtml_(c.case_id) + '">' + escapeHtml_(c.case_id + ' — ' + c.ten) + '</option>')
+      .join('');
 
+    return `
+      <div class="entry-card" data-id="${escapeHtml_(en.ID)}" data-idx="${idx}">
+        <div class="entry-top">
+          <span class="entry-id">${escapeHtml_(en.ID)}</span>
+          <span>${escapeHtml_(en.Ngay_su_viec ? new Date(en.Ngay_su_viec).toLocaleDateString('vi-VN') : '')}</span>
+        </div>
+        <div class="entry-meta">
+          <span class="badge">${escapeHtml_(en.Loai_entry)}</span>
+          ${en.Trang_thai ? ' <span class="badge">' + escapeHtml_(en.Trang_thai) + '</span>' : ''}
+          ${en.Case_ID ? ' <span class="badge">Case: ' + escapeHtml_(en.Case_ID) + '</span>' : ''}
+        </div>
+        <div class="entry-content">${escapeHtml_(en.Noi_dung_chinh)}</div>
+        ${en.Cap_nhat_tiep_noi ? '<div class="entry-block"><strong>Cập nhật:</strong>\n' + escapeHtml_(en.Cap_nhat_tiep_noi) + '</div>' : ''}
+        ${en.Ket_qua_cuoi ? '<div class="entry-block"><strong>Kết quả cuối:</strong>\n' + escapeHtml_(en.Ket_qua_cuoi) + '</div>' : ''}
+
+        <button type="button" class="entry-detail-toggle" data-action="toggle-detail">+ Cập nhật / liên kết case</button>
+        <div class="entry-detail">
+          <label>Thêm cập nhật tiếp nối</label>
+          <textarea data-field="cap_nhat_moi" placeholder="VD: đã liên hệ phòng X, chờ phản hồi..."></textarea>
+          <button type="button" class="mini-btn" data-action="add-update">Thêm cập nhật</button>
+
+          <label>Kết quả cuối (đánh dấu hoàn thành)</label>
+          <textarea data-field="ket_qua" placeholder="Kết quả xử lý cuối cùng..."></textarea>
+          <button type="button" class="mini-btn" data-action="save-result">Lưu kết quả &amp; đánh dấu hoàn thành</button>
+
+          <label>Liên kết vào vụ việc (case)</label>
+          <div class="mini-row">
+            <select data-field="case_select">
+              <option value="">— Chọn vụ việc có sẵn —</option>
+              ${caseCasesOptions}
+            </select>
+          </div>
+          <input type="text" data-field="new_case_name" placeholder="Hoặc gõ tên vụ việc mới để tạo case mới" style="margin-top:6px;">
+          <button type="button" class="mini-btn secondary" data-action="link-case">Liên kết vào case</button>
+
+          <div class="status" data-field="entry-status"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+document.getElementById('entryList').addEventListener('click', async (e) => {
+  const card = e.target.closest('.entry-card');
+  if (!card) return;
+  const id = card.dataset.id;
+
+  if (e.target.dataset.action === 'toggle-detail') {
+    card.querySelector('.entry-detail').classList.toggle('open');
+    return;
+  }
+
+  const statusEl = card.querySelector('[data-field="entry-status"]');
+
+  if (e.target.dataset.action === 'add-update') {
+    const val = card.querySelector('[data-field="cap_nhat_moi"]').value.trim();
+    if (!val) { statusEl.textContent = 'Nhập nội dung cập nhật trước.'; statusEl.className = 'status err'; return; }
+    await sendUpdate_(id, { cap_nhat_moi: val }, statusEl, card, 'cap_nhat_moi');
+  }
+
+  if (e.target.dataset.action === 'save-result') {
+    const val = card.querySelector('[data-field="ket_qua"]').value.trim();
+    if (!val) { statusEl.textContent = 'Nhập kết quả trước.'; statusEl.className = 'status err'; return; }
+    await sendUpdate_(id, { ket_qua: val }, statusEl, card, 'ket_qua');
+  }
+
+  if (e.target.dataset.action === 'link-case') {
+    const selectVal = card.querySelector('[data-field="case_select"]').value;
+    const newName = card.querySelector('[data-field="new_case_name"]').value.trim();
+    if (!selectVal && !newName) { statusEl.textContent = 'Chọn case có sẵn hoặc nhập tên case mới.'; statusEl.className = 'status err'; return; }
+    const caseId = selectVal || ('CASE-' + Date.now());
+    await sendUpdate_(id, { case_id: caseId, case_name: newName }, statusEl, card, null);
+  }
+});
+
+async function sendUpdate_(id, extraParams, statusEl, card, clearField) {
+  statusEl.textContent = 'Đang lưu...'; statusEl.className = 'status';
   try {
-    const res = await fetch(API_URL, { method: 'POST', body: payload });
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: new URLSearchParams(Object.assign({ action: 'update_entry', id: id }, extraParams))
+    });
     const data = await res.json();
     if (data.status === 'ok') {
-      statusEl.textContent = 'Đã lưu — mã ' + data.id;
-      statusEl.className = 'status ok';
-      document.getElementById('entryForm').reset();
-      selectedLinhVuc.clear(); selectedKhoKhan.clear(); selectedKyNang.clear();
-      document.querySelectorAll('.chip.selected').forEach(c => c.classList.remove('selected'));
+      statusEl.textContent = 'Đã lưu.'; statusEl.className = 'status ok';
+      if (clearField) card.querySelector('[data-field="' + clearField + '"]').value = '';
+      loadEntryList_(); // tải lại để thấy cập nhật mới nhất
+      loadMeta(); // vụ việc mới có thể vừa được tạo
     } else {
       throw new Error(data.error || 'Lỗi không xác định');
     }
   } catch (err) {
-    statusEl.textContent = 'Lỗi khi lưu: ' + err.message;
-    statusEl.className = 'status err';
-  } finally {
-    btn.disabled = false;
+    statusEl.textContent = 'Lỗi: ' + err.message; statusEl.className = 'status err';
   }
-});
+}
+
+async function loadEntryList_() {
+  const statusEl = document.getElementById('browseStatus');
+  let value = '14';
+  if (browseScope === 'recent') value = document.getElementById('browseDays').value.trim() || '14';
+  if (browseScope === 'linhvuc') value = document.getElementById('browseLinhVuc').value;
+  if (browseScope === 'case') value = document.getElementById('browseCase').value;
+
+  if ((browseScope === 'linhvuc' || browseScope === 'case') && !value) {
+    statusEl.textContent = 'Vui lòng chọn giá trị lọc.'; statusEl.className = 'status err'; return;
+  }
+
+  statusEl.textContent = 'Đang tải...'; statusEl.className = 'status';
+  try {
+    const res = await fetch(API_URL + '?action=list_entries&scope=' + encodeURIComponent(browseScope) + '&value=' + encodeURIComponent(value));
+    const data = await res.json();
+    if (data.status === 'ok') {
+      statusEl.textContent = data.entries.length + ' entry.'; statusEl.className = 'status ok';
+      renderEntryList_(data.entries);
+    } else {
+      throw new Error(data.error || 'Lỗi không xác định');
+    }
+  } catch (err) {
+    statusEl.textContent = 'Lỗi: ' + err.message; statusEl.className = 'status err';
+  }
+}
+document.getElementById('browseLoadBtn').addEventListener('click', loadEntryList_);
 </script>
 </body>
 </html>
