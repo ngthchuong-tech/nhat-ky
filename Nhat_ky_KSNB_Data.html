@@ -116,6 +116,18 @@
   .mini-row { display: flex; gap: 6px; align-items: center; }
   .mini-row select { flex: 1; }
   .empty-msg { font-size: 13px; color: var(--text-muted); text-align: center; padding: 20px 0; }
+
+  #entryList, #analyzeResult {
+    max-height: 65vh;
+    overflow-y: auto;
+    padding-right: 6px;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+  #entryList::-webkit-scrollbar, #analyzeResult::-webkit-scrollbar { width: 6px; }
+  #entryList::-webkit-scrollbar-thumb, #analyzeResult::-webkit-scrollbar-thumb {
+    background: var(--border); border-radius: 3px;
+  }
 </style>
 </head>
 <body>
