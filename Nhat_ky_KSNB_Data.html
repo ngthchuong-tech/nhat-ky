@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nhật ký KSNB</title>
+<style>
+  :root {
+    --primary: #0f5c3f;
+    --primary-light: #e6f2ec;
+    --border: #d8dee3;
+    --text: #1c2733;
+    --text-muted: #62727d;
+    --bg: #f5f7f8;
+    --danger: #b3261e;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text);
+  }
+  header {
+    background: var(--primary); color: #fff;
+    padding: 16px 20px; position: sticky; top: 0; z-index: 10;
+  }
+  header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  header p { margin: 2px 0 0; font-size: 12px; opacity: 0.85; }
+  main { max-width: 560px; margin: 0 auto; padding: 16px; }
+  .card {
+    background: #fff; border-radius: var(--radius);
+    padding: 16px; margin-bottom: 14px; border: 1px solid var(--border);
+  }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 6px; color: var(--text); }
+  label:first-child { margin-top: 0; }
+  .hint { font-size: 11px; color: var(--text-muted); font-weight: 400; margin-top: 2px; }
+  input[type=text], input[type=date], textarea, select {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 15px; font-family: inherit; background: #fff; color: var(--text);
+  }
+  textarea { min-height: 80px; resize: vertical; }
+  .chip-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .chip {
+    padding: 7px 12px; border-radius: 999px; border: 1px solid var(--border);
+    font-size: 13px; cursor: pointer; background: #fff; user-select: none;
+  }
+  .chip.selected { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .segmented { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .segmented button {
+    flex: 1; padding: 10px; border: none; background: #fff; font-size: 14px;
+    cursor: pointer; border-right: 1px solid var(--border);
+  }
+  .segmented button:last-child { border-right: none; }
+  .segmented button.selected { background: var(--primary); color: #fff; }
+  .toggle-extra {
+    display: flex; align-items: center; justify-content: space-between;
+    background: none; border: none; width: 100%; padding: 4px 0;
+    font-size: 14px; font-weight: 600; color: var(--primary); cursor: pointer;
+  }
+  #extra { display: none; }
+  #extra.open { display: block; }
+  .submit-btn {
+    width: 100%; padding: 14px; background: var(--primary); color: #fff;
+    border: none; border-radius: var(--radius); font-size: 16px; font-weight: 600;
+    cursor: pointer; margin-top: 4px;
+  }
+  .submit-btn:disabled { opacity: 0.6; }
+  .status { text-align: center; font-size: 13px; margin-top: 10px; min-height: 18px; }
+  .status.ok { color: var(--primary); }
+  .status.err { color: var(--danger); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Nhật ký KSNB</h1>
+  <p>Ghi nhận thông tin, chỉ đạo, sự vụ hàng ngày</p>
+</header>
+
+<main>
+  <form id="entryForm">
+    <div class="card">
+      <label>Loại entry</label>
+      <div class="segmented" id="loaiEntry">
+        <button type="button" data-v="Thu thập thông tin" class="selected">Thu thập</button>
+        <button type="button" data-v="Chỉ đạo-yêu cầu">Chỉ đạo</button>
+        <button type="button" data-v="Sự vụ phát sinh">Sự vụ</button>
+        <button type="button" data-v="Cập nhật tiến độ">Cập nhật</button>
+        <button type="button" data-v="Ghi chú cá nhân">Ghi chú</button>
+      </div>
+
+      <label>Nội dung</label>
+      <textarea id="noiDung" placeholder="Ghi lại thông tin, chỉ đạo hoặc sự vụ..." required></textarea>
+
+      <label>Cảng / phạm vi</label>
+      <select id="cangPhamVi">
+        <option>Gò Dầu</option>
+        <option>Long Bình Tân</option>
+        <option>Văn phòng</option>
+        <option>Toàn công ty</option>
+      </select>
+
+      <label>Ngày sự việc</label>
+      <input type="date" id="ngaySuViec">
+    </div>
+
+    <div class="card">
+      <button type="button" class="toggle-extra" id="toggleExtra">
+        <span>Thêm chi tiết (tuỳ chọn)</span>
+        <span id="toggleIcon">▾</span>
+      </button>
+
+      <div id="extra">
+        <label>Lĩnh vực nghiệp vụ <span class="hint">— chọn 1 hoặc nhiều</span></label>
+        <div class="chip-group" id="linhVucGroup"></div>
+
+        <label>Mã QT tham chiếu <span class="hint">— chỉ điền nếu chắc chắn</span></label>
+        <input type="text" id="maQT" placeholder="VD: QB651">
+
+        <label>Nguồn thông tin</label>
+        <input type="text" id="nguonTT" placeholder="Ai / kênh nào cung cấp">
+
+        <label>Mức ưu tiên</label>
+        <div class="segmented" id="mucUuTien">
+          <button type="button" data-v="Thấp">Thấp</button>
+          <button type="button" data-v="Trung bình" class="selected">TB</button>
+          <button type="button" data-v="Cao">Cao</button>
+        </div>
+
+        <label>Vụ việc liên kết <span class="hint">— để trống nếu là ghi nhận độc lập</span></label>
+        <select id="caseId"><option value="">— Không thuộc vụ việc nào —</option></select>
+
+        <label>Deadline</label>
+        <input type="date" id="deadline">
+
+        <label>Khó khăn gặp phải</label>
+        <div class="chip-group" id="khoKhanGroup"></div>
+
+        <label>Kỹ năng liên quan</label>
+        <div class="chip-group" id="kyNangGroup"></div>
+      </div>
+    </div>
+
+    <button type="submit" class="submit-btn" id="submitBtn">Lưu nhật ký</button>
+    <div class="status" id="statusMsg"></div>
+  </form>
+</main>
+
+<script>
+// ==================== CẤU HÌNH ====================
+// Dán URL Web app (Apps Script) sau khi deploy vào đây, dạng kết thúc bằng /exec
+const API_URL = "https://script.google.com/macros/s/AKfycbzSt3u4PtHuYe2A80c4kJ9hZniUdIOkH1rl_kTCDmXvMn9kCEOD4uyH5qZxh_8I5OJIjw/exec";
+
+// ==================== STATE ====================
+let selectedLoai = "Thu thập thông tin";
+let selectedUuTien = "Trung bình";
+let selectedLinhVuc = new Set();
+let selectedKhoKhan = new Set();
+let selectedKyNang = new Set();
+
+// ==================== SEGMENTED BUTTONS ====================
+function setupSegmented(containerId, onSelect) {
+  const el = document.getElementById(containerId);
+  el.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      el.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      onSelect(btn.dataset.v);
+    });
+  });
+}
+setupSegmented('loaiEntry', v => selectedLoai = v);
+setupSegmented('mucUuTien', v => selectedUuTien = v);
+
+// ==================== TOGGLE EXTRA ====================
+const extraEl = document.getElementById('extra');
+document.getElementById('toggleExtra').addEventListener('click', () => {
+  extraEl.classList.toggle('open');
+  document.getElementById('toggleIcon').textContent = extraEl.classList.contains('open') ? '▴' : '▾';
+});
+
+// ==================== CHIP GROUPS ====================
+function renderChips(containerId, items, selectedSet) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  items.forEach(item => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.textContent = item;
+    chip.addEventListener('click', () => {
+      if (selectedSet.has(item)) { selectedSet.delete(item); chip.classList.remove('selected'); }
+      else { selectedSet.add(item); chip.classList.add('selected'); }
+    });
+    el.appendChild(chip);
+  });
+}
+
+// ==================== LOAD METADATA ====================
+async function loadMeta() {
+  try {
+    const res = await fetch(API_URL + '?action=meta');
+    const data = await res.json();
+    renderChips('linhVucGroup', data.linh_vuc || [], selectedLinhVuc);
+    renderChips('khoKhanGroup', data.kho_khan || [], selectedKhoKhan);
+    renderChips('kyNangGroup', data.ky_nang || [], selectedKyNang);
+
+    const caseSelect = document.getElementById('caseId');
+    (data.open_cases || []).forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.case_id;
+      opt.textContent = c.case_id + ' — ' + c.ten;
+      caseSelect.appendChild(opt);
+    });
+  } catch (err) {
+    console.error('Không tải được metadata:', err);
+  }
+}
+loadMeta();
+
+// ==================== SUBMIT ====================
+document.getElementById('entryForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const statusEl = document.getElementById('statusMsg');
+  const btn = document.getElementById('submitBtn');
+
+  const noiDung = document.getElementById('noiDung').value.trim();
+  if (!noiDung) { statusEl.textContent = 'Vui lòng nhập nội dung.'; statusEl.className = 'status err'; return; }
+
+  btn.disabled = true;
+  statusEl.textContent = 'Đang lưu...';
+  statusEl.className = 'status';
+
+  const payload = new URLSearchParams({
+    loai_entry: selectedLoai,
+    noi_dung_chinh: noiDung,
+    cang_pham_vi: document.getElementById('cangPhamVi').value,
+    ngay_su_viec: document.getElementById('ngaySuViec').value,
+    linh_vuc_nghiep_vu: Array.from(selectedLinhVuc).join(';'),
+    ma_qt_tham_chieu: document.getElementById('maQT').value.trim(),
+    nguon_thong_tin: document.getElementById('nguonTT').value.trim(),
+    muc_uu_tien: selectedUuTien,
+    case_id: document.getElementById('caseId').value,
+    deadline: document.getElementById('deadline').value,
+    kho_khan_gap_phai: Array.from(selectedKhoKhan).join(';'),
+    ky_nang_lien_quan: Array.from(selectedKyNang).join(';')
+  });
+
+  try {
+    const res = await fetch(API_URL, { method: 'POST', body: payload });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      statusEl.textContent = 'Đã lưu — mã ' + data.id;
+      statusEl.className = 'status ok';
+      document.getElementById('entryForm').reset();
+      selectedLinhVuc.clear(); selectedKhoKhan.clear(); selectedKyNang.clear();
+      document.querySelectorAll('.chip.selected').forEach(c => c.classList.remove('selected'));
+    } else {
+      throw new Error(data.error || 'Lỗi không xác định');
+    }
+  } catch (err) {
+    statusEl.textContent = 'Lỗi khi lưu: ' + err.message;
+    statusEl.className = 'status err';
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
