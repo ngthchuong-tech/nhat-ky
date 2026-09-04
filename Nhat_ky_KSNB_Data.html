@@ -145,12 +145,38 @@
     <button type="submit" class="submit-btn" id="submitBtn">Lưu nhật ký</button>
     <div class="status" id="statusMsg"></div>
   </form>
+
+  <div class="card">
+    <label style="margin-top:0;">Phân tích AI</label>
+    <div class="segmented" id="scopeGroup">
+      <button type="button" data-v="recent" class="selected">Gần đây</button>
+      <button type="button" data-v="linhvuc">Theo lĩnh vực</button>
+      <button type="button" data-v="case">Theo vụ việc</button>
+    </div>
+
+    <div id="scopeRecent">
+      <label>Số ngày gần nhất</label>
+      <input type="text" id="recentDays" value="14" inputmode="numeric">
+    </div>
+    <div id="scopeLinhVuc" style="display:none;">
+      <label>Chọn lĩnh vực</label>
+      <select id="analyzeLinhVuc"></select>
+    </div>
+    <div id="scopeCase" style="display:none;">
+      <label>Chọn vụ việc</label>
+      <select id="analyzeCase"></select>
+    </div>
+
+    <button type="button" class="submit-btn" id="analyzeBtn" style="background:#1c2733;">Chạy phân tích</button>
+    <div class="status" id="analyzeStatus"></div>
+    <div id="analyzeResult" style="white-space:pre-wrap; font-size:14px; line-height:1.5; margin-top:12px;"></div>
+  </div>
 </main>
 
 <script>
 // ==================== CẤU HÌNH ====================
 // Dán URL Web app (Apps Script) sau khi deploy vào đây, dạng kết thúc bằng /exec
-const API_URL = "https://script.google.com/macros/s/AKfycbzSt3u4PtHuYe2A80c4kJ9hZniUdIOkH1rl_kTCDmXvMn9kCEOD4uyH5qZxh_8I5OJIjw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyoEN0A9lLPvT0DgRdwfGv3RZZDobKFNHiKWBpoweycmQOQEaPnskIpe2FyykNI9M6Djg/exec";
 
 // ==================== STATE ====================
 let selectedLoai = "Thu thập thông tin";
@@ -206,17 +232,75 @@ async function loadMeta() {
     renderChips('kyNangGroup', data.ky_nang || [], selectedKyNang);
 
     const caseSelect = document.getElementById('caseId');
+    const analyzeCaseSelect = document.getElementById('analyzeCase');
     (data.open_cases || []).forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.case_id;
       opt.textContent = c.case_id + ' — ' + c.ten;
       caseSelect.appendChild(opt);
+      analyzeCaseSelect.appendChild(opt.cloneNode(true));
+    });
+
+    const linhVucSelect = document.getElementById('analyzeLinhVuc');
+    (data.linh_vuc || []).forEach(lv => {
+      const opt = document.createElement('option');
+      opt.value = lv; opt.textContent = lv;
+      linhVucSelect.appendChild(opt);
     });
   } catch (err) {
     console.error('Không tải được metadata:', err);
   }
 }
 loadMeta();
+
+// ==================== PHÂN TÍCH AI ====================
+let analyzeScope = 'recent';
+setupSegmented('scopeGroup', v => {
+  analyzeScope = v;
+  document.getElementById('scopeRecent').style.display = v === 'recent' ? 'block' : 'none';
+  document.getElementById('scopeLinhVuc').style.display = v === 'linhvuc' ? 'block' : 'none';
+  document.getElementById('scopeCase').style.display = v === 'case' ? 'block' : 'none';
+});
+
+document.getElementById('analyzeBtn').addEventListener('click', async () => {
+  const statusEl = document.getElementById('analyzeStatus');
+  const resultEl = document.getElementById('analyzeResult');
+  const btn = document.getElementById('analyzeBtn');
+
+  let value = '14';
+  if (analyzeScope === 'recent') value = document.getElementById('recentDays').value.trim() || '14';
+  if (analyzeScope === 'linhvuc') value = document.getElementById('analyzeLinhVuc').value;
+  if (analyzeScope === 'case') value = document.getElementById('analyzeCase').value;
+
+  if ((analyzeScope === 'linhvuc' || analyzeScope === 'case') && !value) {
+    statusEl.textContent = 'Vui lòng chọn giá trị lọc.'; statusEl.className = 'status err'; return;
+  }
+
+  btn.disabled = true;
+  statusEl.textContent = 'Đang phân tích, có thể mất vài giây...';
+  statusEl.className = 'status';
+  resultEl.textContent = '';
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: new URLSearchParams({ action: 'analyze', scope: analyzeScope, value: value })
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      statusEl.textContent = data.so_luong_entry ? ('Dựa trên ' + data.so_luong_entry + ' entry.') : '';
+      statusEl.className = 'status ok';
+      resultEl.textContent = data.result;
+    } else {
+      throw new Error(data.error || 'Lỗi không xác định');
+    }
+  } catch (err) {
+    statusEl.textContent = 'Lỗi: ' + err.message;
+    statusEl.className = 'status err';
+  } finally {
+    btn.disabled = false;
+  }
+});
 
 // ==================== SUBMIT ====================
 document.getElementById('entryForm').addEventListener('submit', async (e) => {
@@ -232,6 +316,7 @@ document.getElementById('entryForm').addEventListener('submit', async (e) => {
   statusEl.className = 'status';
 
   const payload = new URLSearchParams({
+    action: 'save_entry',
     loai_entry: selectedLoai,
     noi_dung_chinh: noiDung,
     cang_pham_vi: document.getElementById('cangPhamVi').value,
