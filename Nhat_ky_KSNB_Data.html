@@ -176,7 +176,7 @@
 <script>
 // ==================== CẤU HÌNH ====================
 // Dán URL Web app (Apps Script) sau khi deploy vào đây, dạng kết thúc bằng /exec
-const API_URL = "https://script.google.com/macros/s/AKfycby-jrQxPVQjvXrQ14XwZUNWQN0k8cKQbWdokxd-yGa0Ifrtt_eKK-F5VsyK1iePjaWNHg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyUP_86kMEizRjM0mMLyRtq1dCuapXlLnVMe1tIU5aTwJt7pAcoJ0i8sB8OjvvtqNxbbA/exec";
 
 // ==================== STATE ====================
 let selectedLoai = "Thu thập thông tin";
@@ -207,6 +207,14 @@ document.getElementById('toggleExtra').addEventListener('click', () => {
 });
 
 // ==================== CHIP GROUPS ====================
+function renderSimpleMarkdown_(text) {
+  const escaped = text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return escaped
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+}
+
 function renderChips(containerId, items, selectedSet) {
   const el = document.getElementById(containerId);
   el.innerHTML = '';
@@ -290,7 +298,7 @@ document.getElementById('analyzeBtn').addEventListener('click', async () => {
     if (data.status === 'ok') {
       statusEl.textContent = data.so_luong_entry ? ('Dựa trên ' + data.so_luong_entry + ' entry.') : '';
       statusEl.className = 'status ok';
-      resultEl.textContent = data.result;
+      resultEl.innerHTML = renderSimpleMarkdown_(data.result);
     } else {
       throw new Error(data.error || 'Lỗi không xác định');
     }
