@@ -264,13 +264,25 @@
       <div class="status" id="analyzeStatus"></div>
       <div id="analyzeResult" style="white-space:pre-wrap; font-size:14px; line-height:1.5; margin-top:12px;"></div>
     </div>
+
+    <div class="card">
+      <p class="col-title">Báo cáo định kỳ</p>
+      <p class="hint" style="margin-bottom:10px;">Số liệu đếm/tính do code tính trực tiếp — luôn chính xác, AI chỉ viết phần nhận định.</p>
+      <div class="segmented" id="reportScopeGroup">
+        <button type="button" data-v="week" class="selected">Tuần (7 ngày)</button>
+        <button type="button" data-v="month">Tháng (30 ngày)</button>
+      </div>
+      <button type="button" class="submit-btn" id="reportBtn" style="background:#1c2733;">Tạo báo cáo</button>
+      <div class="status" id="reportStatus"></div>
+      <div id="reportResult" style="max-height:65vh; overflow-y:auto; padding-right:6px; margin-top:12px;"></div>
+    </div>
   </div>
 
 </div>
 
 <script>
 // ==================== CẤU HÌNH ====================
-const API_URL = "https://script.google.com/macros/s/AKfycbweat3BgJHykp8BHE59fY36rsNYHuPaVo8sX_eugTFoXqqlyUmyuReLqelkoEKq4qJdzQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxXfUgkLVUR25ruDgbL3W9NbLhdcqUXL5pGtSOKor5yb0bYBBWC2_Pc01wFgVrICK_Egg/exec";
 
 // ==================== STATE (form nhập) ====================
 let selectedLoai = "Thu thập thông tin";
@@ -617,6 +629,70 @@ async function loadEntryList_() {
   }
 }
 document.getElementById('browseLoadBtn').addEventListener('click', loadEntryList_);
+
+// ==================== BÁO CÁO ĐỊNH KỲ (Giai đoạn 3) ====================
+let reportScope = 'week';
+setupSegmented('reportScopeGroup', v => reportScope = v);
+
+function statBlock_(title, arr, showAvg) {
+  if (!arr || !arr.length) return '';
+  const items = arr.map(x => {
+    let extra = '';
+    if (showAvg && x.tb_ngay_xu_ly != null) extra = ' <span class="hint">(TB ' + x.tb_ngay_xu_ly + ' ngày)</span>';
+    return '<li>' + escapeHtml_(x.ten) + ': <strong>' + x.so_luong + '</strong>' + extra + '</li>';
+  }).join('');
+  return '<div class="entry-block"><strong>' + title + '</strong><ul style="margin:6px 0 0 18px; padding:0;">' + items + '</ul></div>';
+}
+
+function renderReport_(data) {
+  const el = document.getElementById('reportResult');
+  let html = '';
+  if (data.stats) {
+    html += statBlock_('Theo lĩnh vực nghiệp vụ', data.stats.by_linh_vuc, true);
+    html += statBlock_('Theo khó khăn gặp phải', data.stats.by_kho_khan);
+    html += statBlock_('Theo cảng', data.stats.by_cang);
+    html += statBlock_('Theo trạng thái', data.stats.by_trang_thai);
+    if (data.stats.kho_khan_theo_cang && data.stats.kho_khan_theo_cang.length) {
+      const rows = data.stats.kho_khan_theo_cang.slice(0, 10)
+        .map(x => '<li>' + escapeHtml_(x.kho_khan) + ' — ' + escapeHtml_(x.cang) + ': <strong>' + x.so_luong + '</strong></li>')
+        .join('');
+      html += '<div class="entry-block"><strong>Khó khăn theo từng cảng (đối chiếu)</strong><ul style="margin:6px 0 0 18px; padding:0;">' + rows + '</ul></div>';
+    }
+  }
+  html += '<div style="margin-top:10px; font-size:14px; line-height:1.5;">' + renderSimpleMarkdown_(data.result || '') + '</div>';
+  el.innerHTML = html;
+}
+
+document.getElementById('reportBtn').addEventListener('click', async () => {
+  const statusEl = document.getElementById('reportStatus');
+  const btn = document.getElementById('reportBtn');
+  const resultEl = document.getElementById('reportResult');
+
+  btn.disabled = true;
+  statusEl.textContent = 'Đang tổng hợp, có thể mất vài giây...';
+  statusEl.className = 'status';
+  resultEl.innerHTML = '';
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: new URLSearchParams({ action: 'analyze', scope: reportScope })
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      statusEl.textContent = data.period_label ? ('Dựa trên ' + data.so_luong_entry + ' entry — ' + data.period_label + '.') : '';
+      statusEl.className = 'status ok';
+      renderReport_(data);
+    } else {
+      throw new Error(data.error || 'Lỗi không xác định');
+    }
+  } catch (err) {
+    statusEl.textContent = 'Lỗi: ' + err.message;
+    statusEl.className = 'status err';
+  } finally {
+    btn.disabled = false;
+  }
+});
 </script>
 </body>
 </html>
