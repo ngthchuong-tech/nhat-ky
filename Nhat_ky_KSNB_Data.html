@@ -263,6 +263,11 @@
       <button type="button" class="submit-btn" id="analyzeBtn" style="background:#1c2733;">Chạy phân tích</button>
       <div class="status" id="analyzeStatus"></div>
       <div id="analyzeResult" style="white-space:pre-wrap; font-size:14px; line-height:1.5; margin-top:12px;"></div>
+
+      <label>Lưu bài học từ kết quả trên <span class="hint">— chọn/viết đúng câu bạn thấy giá trị</span></label>
+      <textarea id="lessonInputAnalyze" placeholder="Dán hoặc viết lại câu bài học cụ thể..."></textarea>
+      <button type="button" class="mini-btn secondary" id="lessonSaveAnalyze">Lưu vào Sổ kinh nghiệm</button>
+      <div class="status" id="lessonStatusAnalyze"></div>
     </div>
 
     <div class="card">
@@ -275,6 +280,17 @@
       <button type="button" class="submit-btn" id="reportBtn" style="background:#1c2733;">Tạo báo cáo</button>
       <div class="status" id="reportStatus"></div>
       <div id="reportResult" style="max-height:65vh; overflow-y:auto; padding-right:6px; margin-top:12px;"></div>
+
+      <label>Lưu bài học từ báo cáo trên</label>
+      <textarea id="lessonInputReport" placeholder="Dán hoặc viết lại câu bài học cụ thể..."></textarea>
+      <button type="button" class="mini-btn secondary" id="lessonSaveReport">Lưu vào Sổ kinh nghiệm</button>
+      <div class="status" id="lessonStatusReport"></div>
+    </div>
+
+    <div class="card">
+      <p class="col-title">Sổ kinh nghiệm đã lưu</p>
+      <button type="button" class="entry-detail-toggle" id="refreshLessonsBtn">Tải danh sách</button>
+      <div id="lessonList" style="margin-top:10px; max-height:40vh; overflow-y:auto;"></div>
     </div>
   </div>
 
@@ -282,7 +298,7 @@
 
 <script>
 // ==================== CẤU HÌNH ====================
-const API_URL = "https://script.google.com/macros/s/AKfycbxXfUgkLVUR25ruDgbL3W9NbLhdcqUXL5pGtSOKor5yb0bYBBWC2_Pc01wFgVrICK_Egg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwwpAVK3qZC0TDFUFnn_ENhLkfiMc0GD9-KKShOfaQ3fwHHIFyT5QMUi0XkxkSf6EFA2A/exec";
 
 // ==================== STATE (form nhập) ====================
 let selectedLoai = "Thu thập thông tin";
@@ -532,6 +548,10 @@ function renderEntryList_(entries) {
           <textarea data-field="ket_qua" placeholder="Kết quả xử lý cuối cùng..."></textarea>
           <button type="button" class="mini-btn" data-action="save-result">Lưu kết quả &amp; đánh dấu hoàn thành</button>
 
+          <label>Bài học rút ra <span class="hint">— sẽ lưu vào Sổ kinh nghiệm chung</span></label>
+          <textarea data-field="bai_hoc" placeholder="Lần sau gặp việc tương tự, cần làm khác gì..."></textarea>
+          <button type="button" class="mini-btn" data-action="save-lesson-entry">Lưu bài học</button>
+
           <label>Liên kết vào vụ việc (case)</label>
           <div class="mini-row">
             <select data-field="case_select">
@@ -571,6 +591,12 @@ document.getElementById('entryList').addEventListener('click', async (e) => {
     const val = card.querySelector('[data-field="ket_qua"]').value.trim();
     if (!val) { statusEl.textContent = 'Nhập kết quả trước.'; statusEl.className = 'status err'; return; }
     await sendUpdate_(id, { ket_qua: val }, statusEl, card, 'ket_qua');
+  }
+
+  if (e.target.dataset.action === 'save-lesson-entry') {
+    const val = card.querySelector('[data-field="bai_hoc"]').value.trim();
+    if (!val) { statusEl.textContent = 'Nhập bài học trước.'; statusEl.className = 'status err'; return; }
+    await sendUpdate_(id, { bai_hoc: val }, statusEl, card, 'bai_hoc');
   }
 
   if (e.target.dataset.action === 'link-case') {
@@ -693,6 +719,60 @@ document.getElementById('reportBtn').addEventListener('click', async () => {
     btn.disabled = false;
   }
 });
+
+// ==================== SỔ KINH NGHIỆM TÍCH LUỸ ====================
+async function saveLessonFrom_(inputId, statusId, nguonGoc) {
+  const inputEl = document.getElementById(inputId);
+  const statusEl = document.getElementById(statusId);
+  const val = inputEl.value.trim();
+  if (!val) { statusEl.textContent = 'Nhập nội dung bài học trước.'; statusEl.className = 'status err'; return; }
+
+  statusEl.textContent = 'Đang lưu...'; statusEl.className = 'status';
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: new URLSearchParams({ action: 'save_lesson', noi_dung: val, nguon_goc: nguonGoc })
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      statusEl.textContent = 'Đã lưu — mã ' + data.id;
+      statusEl.className = 'status ok';
+      inputEl.value = '';
+      loadLessonList_();
+    } else {
+      throw new Error(data.error || 'Lỗi không xác định');
+    }
+  } catch (err) {
+    statusEl.textContent = 'Lỗi: ' + err.message; statusEl.className = 'status err';
+  }
+}
+
+document.getElementById('lessonSaveAnalyze').addEventListener('click', () =>
+  saveLessonFrom_('lessonInputAnalyze', 'lessonStatusAnalyze', 'Chạy phân tích ngày ' + new Date().toLocaleDateString('vi-VN'))
+);
+document.getElementById('lessonSaveReport').addEventListener('click', () =>
+  saveLessonFrom_('lessonInputReport', 'lessonStatusReport', 'Báo cáo ' + (reportScope === 'month' ? 'tháng' : 'tuần') + ' ngày ' + new Date().toLocaleDateString('vi-VN'))
+);
+
+async function loadLessonList_() {
+  const el = document.getElementById('lessonList');
+  el.innerHTML = '<div class="empty-msg">Đang tải...</div>';
+  try {
+    const res = await fetch(API_URL + '?action=list_lessons&limit=30');
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.error || 'Lỗi không xác định');
+    if (!data.lessons.length) { el.innerHTML = '<div class="empty-msg">Chưa có bài học nào được lưu.</div>'; return; }
+    el.innerHTML = data.lessons.map(l => `
+      <div class="entry-block" style="margin-bottom:8px;">
+        <div class="hint">${escapeHtml_(l.Ngay_tao ? new Date(l.Ngay_tao).toLocaleDateString('vi-VN') : '')} ${l.Linh_vuc_lien_quan ? '· ' + escapeHtml_(l.Linh_vuc_lien_quan) : ''} ${l.Nguon_goc ? '· ' + escapeHtml_(l.Nguon_goc) : ''}</div>
+        <div>${escapeHtml_(l.Noi_dung)}</div>
+      </div>
+    `).join('');
+  } catch (err) {
+    el.innerHTML = '<div class="empty-msg">Lỗi: ' + escapeHtml_(err.message) + '</div>';
+  }
+}
+document.getElementById('refreshLessonsBtn').addEventListener('click', loadLessonList_);
 </script>
 </body>
 </html>
