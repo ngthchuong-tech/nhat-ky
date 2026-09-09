@@ -29,7 +29,7 @@
     min-height:100vh;
     padding:28px 16px 60px;
   }
-  .wrap{max-width:920px;margin:0 auto;}
+  .wrap{max-width:960px;margin:0 auto;}
   header{margin-bottom:20px;}
   .eyebrow{
     font-size:12px; letter-spacing:.14em; text-transform:uppercase;
@@ -115,12 +115,17 @@
     font-weight:600;
     cursor:pointer;
     transition: background .15s ease, border-color .15s ease;
+    text-decoration:none;
+    display:inline-block;
   }
   .btn:hover{background:#f5f7f9;}
   .btn:disabled{opacity:.4; cursor:not-allowed;}
   .btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
   .btn.primary:hover{background:#025560;}
   .btn.stop{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .btn.danger{color:#7a2a22; border-color:#f0c3bd;}
+  .btn.danger:hover{background:var(--rec-soft);}
+  .btn.small{padding:5px 10px; font-size:12px; border-radius:7px;}
 
   .waveform{
     display:flex; align-items:flex-end; gap:3px; height:34px; margin-left:auto;
@@ -155,7 +160,7 @@
 
   .panel-title{
     display:flex; align-items:center; justify-content:space-between;
-    margin-bottom:10px;
+    margin-bottom:10px; flex-wrap:wrap; gap:8px;
   }
   .panel-title h2{font-size:15px; margin:0; font-weight:800;}
   .wordcount{font-size:12px; color:var(--muted);}
@@ -177,6 +182,21 @@
 
   .foot-actions{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;}
 
+  .segments-list{margin-top:14px; display:flex; flex-direction:column; gap:6px;}
+  .seg-row{
+    border:1px solid var(--line); border-radius:8px; padding:8px 10px;
+    font-size:12.5px; background:#fbfcfd;
+  }
+  .seg-row .seg-row-top{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .seg-label{flex:1; color:var(--ink); font-weight:600; min-width:140px;}
+  .seg-time{color:var(--muted); font-weight:400;}
+  .seg-status{font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:999px;}
+  .seg-status.pending{background:#eef1f4; color:var(--muted);}
+  .seg-status.processing{background:#e7f3f4; color:var(--accent);}
+  .seg-status.done{background:#e7f5ee; color:var(--ok);}
+  .seg-status.error{background:var(--rec-soft); color:#7a2a22;}
+  .placeholder-text{font-style:italic;color:var(--muted); font-size:13px;}
+
   footer{color:var(--muted); font-size:12px; text-align:center; margin-top:26px; line-height:1.6;}
 </style>
 </head>
@@ -185,11 +205,11 @@
   <header>
     <div class="eyebrow">Công cụ nội bộ · Ban KSNB</div>
     <h1>Công cụ ghi âm và chuyển văn bản (Gemini AI)</h1>
-    <p class="sub">Ghi âm buổi làm việc trên máy này. Sau khi bấm "Kết thúc", có thể tải file âm thanh, và bấm nút để nhờ Gemini AI chuyển toàn bộ âm thanh thành văn bản.</p>
+    <p class="sub">Ghi âm buổi làm việc, tự động chia đoạn nhỏ, mỗi đoạn tự động chuyển sang văn bản và lưu vào cơ sở dữ liệu (Google Sheet + Drive) ngay trong lúc họp - không cần tải file thủ công.</p>
   </header>
 
   <div id="bannerInfo" class="banner warn show">
-    File âm thanh được ghi và lưu ngay trên trình duyệt của bạn (không cần Internet lúc ghi âm). Việc <strong>chuyển sang văn bản cần Internet và một Gemini API Key</strong> — audio sẽ được gửi tới máy chủ Google (Gemini) để xử lý sau khi bạn bấm nút chuyển văn bản. Nên thông báo rõ với người tham gia rằng âm thanh buổi làm việc sẽ được lưu lại, trước khi bắt đầu.
+    Âm thanh được ghi ngay trên trình duyệt của bạn, tự động chia thành từng đoạn. Mỗi đoạn ghi xong sẽ <strong>tự động được gửi tới Gemini để chuyển thành văn bản, rồi lưu vào Google Sheet/Drive của bạn qua Apps Script</strong> (cần cấu hình Gemini API Key và địa chỉ Apps Script Web App bên dưới trước khi bắt đầu). Nên thông báo rõ với người tham gia rằng âm thanh buổi làm việc sẽ được lưu lại, trước khi bắt đầu.
   </div>
   <div id="bannerRuntimeError" class="banner err"></div>
 
@@ -216,26 +236,38 @@
         </select>
       </div>
       <div class="field">
+        <label>Độ dài mỗi đoạn ghi âm</label>
+        <select id="segmentMinutesSelect">
+          <option value="10">10 phút</option>
+          <option value="15">15 phút</option>
+          <option value="20" selected>20 phút (khuyến nghị)</option>
+          <option value="30">30 phút</option>
+        </select>
+      </div>
+      <div class="field">
         <label>Tên buổi làm việc (đặt tên file)</label>
         <input type="text" id="sessionName" placeholder="VD: BienBan_PGD_08-08-2026" />
       </div>
-      <div class="field" style="min-width:260px;">
+      <div class="field" style="min-width:240px;">
         <label>Gemini API Key</label>
         <input type="password" id="apiKey" placeholder="Dán API key của bạn vào đây" autocomplete="off" />
-        <span class="hint">Chỉ lưu trong trình duyệt này (localStorage), không gửi đi đâu ngoài Google khi bạn bấm chuyển văn bản.</span>
       </div>
       <div class="field">
         <label>Model Gemini</label>
         <select id="modelSelect">
-          <option value="gemini-3.5-flash" selected>gemini-3.5-flash (nhanh, khuyến nghị)</option>
-          <option value="gemini-3.5-pro">gemini-3.5-pro (chính xác hơn, chậm hơn)</option>
+          <option value="gemini-3.5-flash" selected>gemini-3.5-flash (khuyến nghị)</option>
+          <option value="gemini-3.5-pro">gemini-3.5-pro (chính xác hơn)</option>
           <option value="gemini-2.5-flash">gemini-2.5-flash (bản cũ, dự phòng)</option>
         </select>
-        <span class="hint">Nếu Gemini báo lỗi "model not found", đổi thử sang lựa chọn khác trong danh sách này.</span>
+      </div>
+      <div class="field" style="min-width:320px;">
+        <label>Địa chỉ Google Apps Script Web App (backend lưu dữ liệu)</label>
+        <input type="text" id="backendUrl" placeholder="https://script.google.com/macros/s/XXXXX/exec" />
+        <span class="hint">Xem hướng dẫn tạo backend ở cuối trang. Bỏ trống thì vẫn ghi âm/tải file thủ công như trước, không tự lưu vào Sheet.</span>
       </div>
       <div class="toggle">
         <input type="checkbox" id="autoBackup" checked />
-        <label for="autoBackup">Tự động tải file âm thanh sao lưu mỗi 15 phút (đề phòng sự cố khi thực hiện trong thời gian dài)</label>
+        <label for="autoBackup">Ngoài lưu vào cơ sở dữ liệu, cũng tự tải ngay từng đoạn âm thanh về máy này (đề phòng sự cố)</label>
       </div>
     </div>
 
@@ -245,25 +277,36 @@
       <button id="resumeBtn" class="btn" disabled style="display:none;">Tiếp tục</button>
       <button id="stopBtn" class="btn stop" disabled>Kết thúc</button>
     </div>
+
+    <div id="segmentsList" class="segments-list"></div>
   </div>
 
   <div class="card">
     <div class="panel-title">
-      <h2>Văn bản (do Gemini AI chuyển từ âm thanh)</h2>
+      <h2>Văn bản của buổi đang thực hiện</h2>
       <span class="wordcount" id="wordCount">0 từ</span>
     </div>
-    <div id="transcript" class="transcript"><span class="placeholder">Ghi âm xong, bấm "Chuyển sang văn bản (Gemini AI)" bên dưới để xem văn bản ở đây...</span></div>
+    <div id="transcript" class="transcript"><span class="placeholder">Văn bản từng đoạn sẽ tự hiện ra ở đây khi xử lý xong...</span></div>
     <div class="transcribe-status" id="transcribeStatus"></div>
     <div class="foot-actions">
-      <button id="downloadAudioBtn" class="btn" disabled>Tải file âm thanh (.webm)</button>
-      <button id="transcribeBtn" class="btn primary" disabled>Chuyển sang văn bản (Gemini AI)</button>
+      <button id="downloadAllAudioBtn" class="btn" disabled>Tải tất cả các đoạn âm thanh (máy này)</button>
+      <button id="retryBtn" class="btn primary" disabled>Xử lý / thử lại đoạn chưa xong</button>
       <button id="downloadTextBtn" class="btn" disabled>Tải file văn bản (.txt)</button>
       <button id="clearBtn" class="btn" disabled>Làm mới, thực hiện buổi mới</button>
     </div>
   </div>
 
+  <div class="card">
+    <div class="panel-title">
+      <h2>Cơ sở dữ liệu (Google Sheet + Drive)</h2>
+      <button id="refreshDbBtn" class="btn small">Làm mới danh sách</button>
+    </div>
+    <div id="dbList" class="segments-list"><span class="placeholder-text">Nhập địa chỉ Apps Script Web App ở trên rồi bấm "Làm mới danh sách".</span></div>
+  </div>
+
   <footer>
-    Dữ liệu chỉ xử lý trong phiên làm việc này trên trình duyệt của bạn - nếu đóng trang mà chưa bấm "Kết thúc" và tải file, dữ liệu sẽ mất (trừ các file âm thanh sao lưu tự động đã tải trong lúc thực hiện, nếu có bật).<br />
+    Nếu chưa cấu hình Apps Script Web App, dữ liệu vẫn chỉ tồn tại trong trình duyệt cho tới khi bạn tải file - đóng trang trước khi tải sẽ mất dữ liệu.<br />
+    Khi đã cấu hình, mỗi đoạn tự động lưu vào Sheet/Drive ngay trong lúc họp, không phụ thuộc vào việc tải file thủ công nữa.<br />
     Luôn đọc lại và đối chiếu văn bản do AI tạo ra với ghi chép tay trước khi đưa vào biên bản chính thức.
   </footer>
 </div>
@@ -281,41 +324,56 @@
   const waveform = document.getElementById('waveform');
   const transcriptEl = document.getElementById('transcript');
   const wordCountEl = document.getElementById('wordCount');
-  const downloadAudioBtn = document.getElementById('downloadAudioBtn');
-  const transcribeBtn = document.getElementById('transcribeBtn');
+  const downloadAllAudioBtn = document.getElementById('downloadAllAudioBtn');
+  const retryBtn = document.getElementById('retryBtn');
   const downloadTextBtn = document.getElementById('downloadTextBtn');
   const clearBtn = document.getElementById('clearBtn');
   const langSelect = document.getElementById('langSelect');
+  const segmentMinutesSelect = document.getElementById('segmentMinutesSelect');
   const modelSelect = document.getElementById('modelSelect');
   const sessionNameInput = document.getElementById('sessionName');
   const apiKeyInput = document.getElementById('apiKey');
+  const backendUrlInput = document.getElementById('backendUrl');
   const autoBackupChk = document.getElementById('autoBackup');
   const bannerRuntimeError = document.getElementById('bannerRuntimeError');
   const transcribeStatusEl = document.getElementById('transcribeStatus');
+  const segmentsListEl = document.getElementById('segmentsList');
+  const refreshDbBtn = document.getElementById('refreshDbBtn');
+  const dbListEl = document.getElementById('dbList');
 
   let mediaRecorder = null;
-  let audioChunks = [];
-  let audioBlob = null;
   let stream = null;
+  let rotating = false;
+  let segments = []; // {index, blob, startMs, endMs, text, error, status, dbError}
+  let segmentIndex = 0;
+  let segmentMinutes = 20;
   let transcriptText = '';
   let state = 'idle'; // idle | recording | paused | stopped
   let startTime = null;
   let elapsedBeforePause = 0;
   let timerInterval = null;
-  let backupInterval = null;
+  let segmentTimer = null;
+  let processingQueue = [];
+  let queueRunning = false;
+  let dbTextCache = {};
 
-  // Khôi phục API key / model đã lưu trước đó trên trình duyệt này
+  // Khôi phục cấu hình đã lưu trước đó trên trình duyệt này
   try{
     const savedKey = localStorage.getItem('ksnb_gemini_api_key');
     if(savedKey) apiKeyInput.value = savedKey;
     const savedModel = localStorage.getItem('ksnb_gemini_model');
     if(savedModel) modelSelect.value = savedModel;
+    const savedBackend = localStorage.getItem('ksnb_backend_url');
+    if(savedBackend) backendUrlInput.value = savedBackend;
   }catch(e){}
   apiKeyInput.addEventListener('change', function(){
     try{ localStorage.setItem('ksnb_gemini_api_key', apiKeyInput.value.trim()); }catch(e){}
   });
   modelSelect.addEventListener('change', function(){
     try{ localStorage.setItem('ksnb_gemini_model', modelSelect.value); }catch(e){}
+  });
+  backendUrlInput.addEventListener('change', function(){
+    try{ localStorage.setItem('ksnb_backend_url', backendUrlInput.value.trim()); }catch(e){}
   });
 
   function pad(n){return n.toString().padStart(2,'0');}
@@ -326,8 +384,8 @@
     const s = totalSec%60;
     return pad(h)+':'+pad(m)+':'+pad(s);
   }
-  function fmtClock(d){
-    return pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+  function currentElapsedMs(){
+    return elapsedBeforePause + (state==='recording' ? (Date.now()-startTime) : 0);
   }
 
   function setStatus(text, dotClass){
@@ -343,16 +401,17 @@
     bannerRuntimeError.classList.remove('show');
     bannerRuntimeError.innerHTML = '';
   }
+  function escapeHtmlSimple(str){
+    const d = document.createElement('div'); d.textContent = str; return d.innerHTML;
+  }
 
   function updateTimer(){
-    const now = Date.now();
-    const elapsed = elapsedBeforePause + (state==='recording' ? (now-startTime) : 0);
-    timerEl.textContent = fmtElapsed(elapsed);
+    timerEl.textContent = fmtElapsed(currentElapsedMs());
   }
 
   function renderTranscript(){
     if(!transcriptText){
-      transcriptEl.innerHTML = '<span class="placeholder">Ghi âm xong, bấm "Chuyển sang văn bản (Gemini AI)" bên dưới để xem văn bản ở đây...</span>';
+      transcriptEl.innerHTML = '<span class="placeholder">Văn bản từng đoạn sẽ tự hiện ra ở đây khi xử lý xong...</span>';
       wordCountEl.textContent = '0 từ';
       return;
     }
@@ -360,6 +419,49 @@
     transcriptEl.scrollTop = transcriptEl.scrollHeight;
     const words = transcriptText.trim().split(/\s+/).filter(Boolean).length;
     wordCountEl.textContent = words + ' từ';
+  }
+
+  function renderCombinedTranscript(){
+    const parts = segments.slice().sort(function(a,b){return a.index-b.index;}).map(function(seg){
+      const label = 'Đoạn ' + (seg.index+1) + ' (' + fmtElapsed(seg.startMs) + ' – ' + fmtElapsed(seg.endMs) + ')';
+      if(seg.text) return '----- ' + label + ' -----\n' + seg.text;
+      if(seg.error) return '----- ' + label + ' -----\n[LỖI - chưa chuyển được: ' + seg.error + ']';
+      return '----- ' + label + ' -----\n[Chưa xử lý]';
+    });
+    transcriptText = parts.join('\n\n');
+    renderTranscript();
+  }
+
+  const STATUS_LABEL = {
+    pending: 'Chưa xử lý',
+    processing: 'Đang xử lý...',
+    done: 'Đã lưu vào CSDL',
+    error: 'Lỗi'
+  };
+
+  function renderSegmentsList(){
+    if(segments.length===0){ segmentsListEl.innerHTML=''; return; }
+    const rows = segments.slice().sort(function(a,b){return a.index-b.index;}).map(function(seg){
+      const label = 'Đoạn ' + (seg.index+1);
+      const timeLabel = fmtElapsed(seg.startMs) + ' – ' + fmtElapsed(seg.endMs);
+      const statusClass = seg.status || 'pending';
+      const statusLabel = STATUS_LABEL[statusClass] || statusClass;
+      const errNote = seg.error ? ('<div style="color:#7a2a22; margin-top:4px;">' + escapeHtmlSimple(seg.error) + '</div>') : '';
+      const dbErrNote = seg.dbError ? ('<div style="color:#7a2a22; margin-top:4px;">Chưa lưu được vào CSDL: ' + escapeHtmlSimple(seg.dbError) + '</div>') : '';
+      return '<div class="seg-row"><div class="seg-row-top">'+
+        '<span class="seg-label">'+label+'</span><span class="seg-time">'+timeLabel+'</span>'+
+        '<span class="seg-status '+statusClass+'">'+statusLabel+'</span>'+
+        '<button class="btn small" data-seg-download="'+seg.index+'">Tải âm thanh</button>'+
+        '</div>'+errNote+dbErrNote+'</div>';
+    }).join('');
+    segmentsListEl.innerHTML = rows;
+    segmentsListEl.querySelectorAll('[data-seg-download]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        const idx = parseInt(btn.getAttribute('data-seg-download'), 10);
+        const seg = segments.find(function(s){ return s.index===idx; });
+        if(seg) downloadBlob(seg.blob, safeFileBase()+'_doan'+String(idx+1).padStart(2,'0')+'.webm');
+      });
+    });
   }
 
   function buildTranscriptText(){
@@ -380,14 +482,64 @@
     const a = document.createElement('a');
     a.href = url; a.download = filename;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+    setTimeout(function(){URL.revokeObjectURL(url);}, 4000);
   }
 
-  function doBackupDownload(){
-    const stamp = fmtClock(new Date()).replace(/:/g,'-');
-    if(audioChunks.length>0){
-      const audioBlobBackup = new Blob(audioChunks, {type:'audio/webm'});
-      downloadBlob(audioBlobBackup, safeFileBase()+'_saoluu_'+stamp+'.webm');
+  function downloadAllSegments(){
+    segments.slice().sort(function(a,b){return a.index-b.index;}).forEach(function(seg, i){
+      setTimeout(function(){
+        downloadBlob(seg.blob, safeFileBase()+'_doan'+String(seg.index+1).padStart(2,'0')+'.webm');
+      }, i*400);
+    });
+  }
+
+  function blobToBase64(blob){
+    return new Promise(function(resolve, reject){
+      const reader = new FileReader();
+      reader.onloadend = function(){
+        const dataUrl = reader.result;
+        resolve(dataUrl.split(',')[1]);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  // ---------- Ghi âm theo từng đoạn (tự động xoay vòng MediaRecorder) ----------
+
+  function startNewSegmentRecorder(){
+    const chunks = [];
+    const rec = new MediaRecorder(stream);
+    const myIndex = segmentIndex;
+    const startMs = currentElapsedMs();
+    rec.ondataavailable = function(e){ if(e.data && e.data.size>0) chunks.push(e.data); };
+    rec.onstop = function(){
+      const blob = new Blob(chunks, {type:'audio/webm'});
+      const endMs = currentElapsedMs();
+      const segObj = {index: myIndex, blob, startMs, endMs, text:null, error:null, status:'pending', dbError:null};
+      segments.push(segObj);
+      renderSegmentsList();
+      if(autoBackupChk.checked){
+        downloadBlob(blob, safeFileBase()+'_doan'+String(myIndex+1).padStart(2,'0')+'.webm');
+      }
+      enqueueSegmentProcessing(segObj);
+      if(rotating){
+        rotating = false;
+        segmentIndex++;
+        startNewSegmentRecorder();
+      } else {
+        finalizeStoppedUI();
+      }
+    };
+    rec.start(1000);
+    mediaRecorder = rec;
+  }
+
+  function rotateSegment(){
+    if(state!=='recording') return;
+    if(mediaRecorder && mediaRecorder.state !== 'inactive'){
+      rotating = true;
+      mediaRecorder.stop();
     }
   }
 
@@ -398,25 +550,21 @@
       alert('Không thể truy cập micro. Vui lòng cho phép quyền micro cho trang này rồi thử lại.');
       return;
     }
-    audioChunks = [];
-    audioBlob = null;
+    segments = [];
+    segmentIndex = 0;
+    rotating = false;
     transcriptText = '';
     clearRuntimeError();
-    mediaRecorder = new MediaRecorder(stream);
-    mediaRecorder.ondataavailable = function(e){
-      if(e.data && e.data.size>0) audioChunks.push(e.data);
-    };
-    mediaRecorder.onstop = function(){
-      audioBlob = new Blob(audioChunks, {type:'audio/webm'});
-      downloadAudioBtn.disabled = false;
-      transcribeBtn.disabled = false;
-    };
-    mediaRecorder.start(1000);
+    segmentsListEl.innerHTML = '';
+
+    segmentMinutes = parseInt(segmentMinutesSelect.value, 10) || 20;
 
     state = 'recording';
     startTime = Date.now();
     elapsedBeforePause = 0;
     renderTranscript();
+
+    startNewSegmentRecorder();
 
     recBtn.className = 'rec-button recording';
     waveform.classList.add('active');
@@ -426,22 +574,20 @@
     pauseBtn.style.display = 'inline-block';
     resumeBtn.style.display = 'none';
     stopBtn.disabled = false;
-    downloadAudioBtn.disabled = true;
-    transcribeBtn.disabled = true;
+    downloadAllAudioBtn.disabled = true;
+    retryBtn.disabled = true;
     downloadTextBtn.disabled = true;
     clearBtn.disabled = true;
     langSelect.disabled = true;
+    segmentMinutesSelect.disabled = true;
 
     timerInterval = setInterval(updateTimer, 500);
-
-    if(autoBackupChk.checked){
-      backupInterval = setInterval(doBackupDownload, 15*60*1000);
-    }
+    segmentTimer = setInterval(rotateSegment, segmentMinutes*60*1000);
   }
 
   function pauseRecording(){
     if(state!=='recording') return;
-    mediaRecorder.pause();
+    if(mediaRecorder && mediaRecorder.state==='recording'){ mediaRecorder.pause(); }
     elapsedBeforePause += Date.now()-startTime;
     state = 'paused';
     recBtn.className = 'rec-button paused';
@@ -451,11 +597,12 @@
     resumeBtn.style.display = 'inline-block';
     resumeBtn.disabled = false;
     clearInterval(timerInterval);
+    clearInterval(segmentTimer);
   }
 
   function resumeRecording(){
     if(state!=='paused') return;
-    mediaRecorder.resume();
+    if(mediaRecorder && mediaRecorder.state==='paused'){ mediaRecorder.resume(); }
     startTime = Date.now();
     state = 'recording';
     recBtn.className = 'rec-button recording';
@@ -464,40 +611,52 @@
     pauseBtn.style.display = 'inline-block';
     resumeBtn.style.display = 'none';
     timerInterval = setInterval(updateTimer, 500);
+    segmentTimer = setInterval(rotateSegment, segmentMinutes*60*1000);
   }
 
   function stopRecording(){
     if(state==='idle' || state==='stopped') return;
     if(state==='recording'){ elapsedBeforePause += Date.now()-startTime; }
     clearInterval(timerInterval);
-    clearInterval(backupInterval);
-    if(mediaRecorder && mediaRecorder.state!=='inactive'){ mediaRecorder.stop(); }
-    if(stream){ stream.getTracks().forEach(t=>t.stop()); }
-
+    clearInterval(segmentTimer);
+    rotating = false;
+    const wasPaused = (state==='paused');
     state = 'stopped';
+    if(mediaRecorder && mediaRecorder.state!=='inactive'){
+      mediaRecorder.stop();
+    } else if(wasPaused){
+      finalizeStoppedUI();
+    }
+    if(stream){ stream.getTracks().forEach(function(t){t.stop();}); }
+  }
+
+  function finalizeStoppedUI(){
     recBtn.className = 'rec-button idle';
     waveform.classList.remove('active');
-    setStatus('Đã kết thúc - tải âm thanh hoặc chuyển sang văn bản bên dưới', 'ok');
+    setStatus('Đã kết thúc - các đoạn đang/đã được xử lý bên dưới', 'ok');
     startBtn.disabled = true;
     pauseBtn.disabled = true; pauseBtn.style.display='inline-block'; resumeBtn.style.display='none';
     stopBtn.disabled = true;
     clearBtn.disabled = false;
+    downloadAllAudioBtn.disabled = (segments.length===0);
+    retryBtn.disabled = (segments.length===0);
   }
 
   function resetAll(){
-    state='idle'; audioChunks=[]; audioBlob=null; transcriptText='';
+    state='idle'; segments=[]; segmentIndex=0; rotating=false; transcriptText='';
     elapsedBeforePause=0; timerEl.textContent='00:00:00';
-    clearRuntimeError(); transcribeStatusEl.textContent='';
+    clearRuntimeError(); transcribeStatusEl.textContent=''; segmentsListEl.innerHTML='';
+    processingQueue = [];
     renderTranscript();
     recBtn.className='rec-button idle';
     setStatus('Sẵn sàng','');
     startBtn.disabled=false; pauseBtn.disabled=true; stopBtn.disabled=true;
-    downloadAudioBtn.disabled=true; transcribeBtn.disabled=true; downloadTextBtn.disabled=true; clearBtn.disabled=true;
-    langSelect.disabled=false;
+    downloadAllAudioBtn.disabled=true; retryBtn.disabled=true; downloadTextBtn.disabled=true; clearBtn.disabled=true;
+    langSelect.disabled=false; segmentMinutesSelect.disabled=false;
     pauseBtn.style.display='inline-block'; resumeBtn.style.display='none';
   }
 
-  // ---------- Gọi Gemini API để chuyển âm thanh thành văn bản ----------
+  // ---------- Gemini: chuyển 1 đoạn âm thanh thành văn bản ----------
 
   async function geminiUploadFile(blob, apiKey, mimeType){
     const numBytes = blob.size;
@@ -513,7 +672,7 @@
       body: JSON.stringify({file:{display_name: 'ghiam_' + Date.now()}})
     });
     if(!startRes.ok){
-      const t = await startRes.text().catch(()=> '');
+      const t = await startRes.text().catch(function(){return '';});
       throw new Error('Không khởi tạo được phiên tải lên Gemini (HTTP '+startRes.status+'). ' + t.slice(0,200));
     }
     const uploadUrl = startRes.headers.get('X-Goog-Upload-URL');
@@ -528,7 +687,7 @@
       body: blob
     });
     if(!uploadRes.ok){
-      const t = await uploadRes.text().catch(()=> '');
+      const t = await uploadRes.text().catch(function(){return '';});
       throw new Error('Tải file lên Gemini thất bại (HTTP '+uploadRes.status+'). ' + t.slice(0,200));
     }
     const info = await uploadRes.json();
@@ -536,26 +695,26 @@
   }
 
   async function geminiWaitActive(fileName, apiKey){
-    let state = 'PROCESSING';
+    let st = 'PROCESSING';
     let info = null;
     let tries = 0;
-    while(state === 'PROCESSING' && tries < 60){
-      await new Promise(r=>setTimeout(r, 2500));
+    while(st === 'PROCESSING' && tries < 60){
+      await new Promise(function(r){setTimeout(r, 2500);});
       const res = await fetch('https://generativelanguage.googleapis.com/v1beta/' + fileName + '?key=' + encodeURIComponent(apiKey));
       if(!res.ok){
-        const t = await res.text().catch(()=> '');
+        const t = await res.text().catch(function(){return '';});
         throw new Error('Không kiểm tra được trạng thái file trên Gemini (HTTP '+res.status+'). ' + t.slice(0,200));
       }
       info = await res.json();
-      state = info.state;
+      st = info.state;
       tries++;
     }
-    if(state !== 'ACTIVE') throw new Error('File âm thanh chưa sẵn sàng trên Gemini (trạng thái: '+state+').');
+    if(st !== 'ACTIVE') throw new Error('File âm thanh chưa sẵn sàng trên Gemini (trạng thái: '+st+').');
     return info;
   }
 
   async function geminiTranscribe(fileUri, mimeType, apiKey, model, langLabel){
-    const prompt = 'Hãy phiên âm (transcribe) toàn bộ nội dung audio này thành văn bản ' + langLabel + ', đầy đủ, chính xác từng câu nói, theo đúng thứ tự thời gian. Nếu nghe được nhiều người nói khác nhau, hãy xuống dòng phân đoạn theo lượt nói (không cần ghi tên người nói nếu không xác định được). Không tóm tắt, không bỏ sót, không thêm bình luận hay nhận xét của bạn. Chỉ trả về đúng phần văn bản đã phiên âm, không thêm gì khác.';
+    const prompt = 'Hãy phiên âm (transcribe) toàn bộ nội dung audio này thành văn bản ' + langLabel + ', đầy đủ, chính xác từng câu nói, theo đúng thứ tự thời gian. Đây chỉ là MỘT đoạn trích trong một buổi họp dài hơn, có thể bắt đầu/kết thúc giữa câu - cứ phiên âm đúng những gì nghe được trong đoạn này. Nếu nghe được nhiều người nói khác nhau, hãy xuống dòng phân đoạn theo lượt nói (không cần ghi tên người nói nếu không xác định được). Không tóm tắt, không bỏ sót, không thêm bình luận hay nhận xét của bạn. Chỉ trả về đúng phần văn bản đã phiên âm, không thêm gì khác.';
     const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(apiKey), {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
@@ -569,52 +728,221 @@
       })
     });
     if(!res.ok){
-      const t = await res.text().catch(()=> '');
+      const t = await res.text().catch(function(){return '';});
       throw new Error('Gemini báo lỗi khi tạo văn bản (HTTP '+res.status+'). ' + t.slice(0,300));
     }
     const data = await res.json();
     const parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
-    const text = parts.map(p=>p.text||'').join('\n').trim();
+    const text = parts.map(function(p){return p.text||'';}).join('\n').trim();
     if(!text) throw new Error('Gemini không trả về văn bản (có thể do nội dung bị chặn, hoặc file quá dài/quá nặng).');
     return text;
   }
 
-  async function runTranscribe(){
-    const apiKey = apiKeyInput.value.trim();
-    if(!apiKey){ alert('Vui lòng nhập Gemini API Key trước.'); return; }
-    if(!audioBlob){ alert('Chưa có file âm thanh để chuyển.'); return; }
-    try{ localStorage.setItem('ksnb_gemini_api_key', apiKey); }catch(e){}
+  // ---------- Lưu 1 đoạn vào backend (Apps Script -> Sheet + Drive) ----------
 
-    const model = modelSelect.value;
-    const langLabel = langSelect.value === 'en' ? 'tiếng Anh' : 'tiếng Việt';
-    const mimeType = audioBlob.type || 'audio/webm';
-
-    transcribeBtn.disabled = true;
-    clearRuntimeError();
-    setStatus('Đang chuyển văn bản...', 'busy');
-
+  async function saveSegmentToDatabase(seg){
+    const backendUrl = backendUrlInput.value.trim();
+    if(!backendUrl){ seg.dbError = null; return; } // chưa cấu hình backend, bỏ qua, không tính là lỗi
     try{
-      transcribeStatusEl.textContent = 'Đang tải file âm thanh lên Gemini (' + (audioBlob.size/1024/1024).toFixed(1) + ' MB)...';
-      const fileInfo = await geminiUploadFile(audioBlob, apiKey, mimeType);
-
-      transcribeStatusEl.textContent = 'Đang xử lý âm thanh trên Gemini...';
-      const activeInfo = fileInfo.state === 'ACTIVE' ? fileInfo : await geminiWaitActive(fileInfo.name, apiKey);
-
-      transcribeStatusEl.textContent = 'Đang tạo văn bản...';
-      const text = await geminiTranscribe(activeInfo.uri, activeInfo.mimeType || mimeType, apiKey, model, langLabel);
-
-      transcriptText = text;
-      renderTranscript();
-      downloadTextBtn.disabled = false;
-      transcribeStatusEl.textContent = 'Hoàn tất.';
-      setStatus('Đã có văn bản - kiểm tra và tải file bên dưới', 'ok');
+      const base64 = await blobToBase64(seg.blob);
+      const payload = {
+        action: 'addSegment',
+        session: sessionNameInput.value.trim() || safeFileBase(),
+        segmentIndex: seg.index,
+        startLabel: fmtElapsed(seg.startMs),
+        endLabel: fmtElapsed(seg.endMs),
+        timestamp: new Date().toISOString(),
+        text: seg.text || '',
+        audioBase64: base64,
+        mimeType: seg.blob.type || 'audio/webm',
+        filename: safeFileBase() + '_doan' + String(seg.index+1).padStart(2,'0') + '.webm'
+      };
+      const res = await fetch(backendUrl, {
+        method: 'POST',
+        headers: {'Content-Type': 'text/plain;charset=utf-8'},
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if(!data.ok) throw new Error(data.error || 'Backend trả về lỗi không rõ');
+      seg.dbId = data.id;
+      seg.dbError = null;
     }catch(err){
-      console.error(err);
-      showRuntimeError('<strong>Chuyển văn bản thất bại.</strong> ' + (err && err.message ? err.message : String(err)));
-      transcribeStatusEl.textContent = 'Có lỗi, xem thông báo phía trên.';
-      setStatus('Đã kết thúc - tải âm thanh hoặc thử chuyển văn bản lại', 'ok');
-    }finally{
-      transcribeBtn.disabled = false;
+      console.error('Lưu CSDL thất bại cho đoạn '+(seg.index+1)+':', err);
+      seg.dbError = (err && err.message) ? err.message : String(err);
+    }
+  }
+
+  // ---------- Hàng đợi xử lý: mỗi đoạn ghi xong -> Gemini -> lưu CSDL, chạy tuần tự nền ----------
+
+  function enqueueSegmentProcessing(seg){
+    processingQueue.push(seg);
+    runQueue();
+  }
+
+  async function runQueue(){
+    if(queueRunning) return;
+    queueRunning = true;
+    while(processingQueue.length>0){
+      const seg = processingQueue.shift();
+      await processSegment(seg);
+    }
+    queueRunning = false;
+  }
+
+  async function processSegment(seg){
+    seg.status = 'processing';
+    renderSegmentsList();
+    transcribeStatusEl.textContent = 'Đang xử lý đoạn ' + (seg.index+1) + '...';
+
+    const apiKey = apiKeyInput.value.trim();
+    if(apiKey){
+      try{
+        const mimeType = seg.blob.type || 'audio/webm';
+        const model = modelSelect.value;
+        const langLabel = langSelect.value === 'en' ? 'tiếng Anh' : 'tiếng Việt';
+        const fileInfo = await geminiUploadFile(seg.blob, apiKey, mimeType);
+        const activeInfo = fileInfo.state === 'ACTIVE' ? fileInfo : await geminiWaitActive(fileInfo.name, apiKey);
+        seg.text = await geminiTranscribe(activeInfo.uri, activeInfo.mimeType || mimeType, apiKey, model, langLabel);
+        seg.error = null;
+      }catch(err){
+        console.error('Đoạn '+(seg.index+1)+' lỗi Gemini:', err);
+        seg.error = (err && err.message) ? err.message : String(err);
+      }
+    } else {
+      seg.error = 'Chưa nhập Gemini API Key nên chỉ lưu được âm thanh, chưa có văn bản.';
+    }
+    renderCombinedTranscript();
+
+    await saveSegmentToDatabase(seg);
+
+    seg.status = seg.error ? 'error' : (seg.dbError ? 'error' : 'done');
+    renderSegmentsList();
+    downloadTextBtn.disabled = !segments.some(function(s){ return s.text; });
+
+    const anyIssue = segments.some(function(s){ return s.error || s.dbError; });
+    if(anyIssue){
+      showRuntimeError('<strong>Một hoặc nhiều đoạn gặp lỗi.</strong> Xem chi tiết bên dưới từng đoạn. Bấm "Xử lý / thử lại đoạn chưa xong" để thử lại - đoạn đã xong sẽ không chạy lại.');
+    } else {
+      clearRuntimeError();
+    }
+    const doneCount = segments.filter(function(s){ return s.status==='done'; }).length;
+    transcribeStatusEl.textContent = doneCount + '/' + segments.length + ' đoạn đã xử lý xong.';
+  }
+
+  function retryUnfinishedSegments(){
+    const need = segments.filter(function(s){ return s.status !== 'done'; });
+    if(need.length===0){ alert('Tất cả các đoạn đã xử lý xong.'); return; }
+    need.forEach(function(s){ enqueueSegmentProcessing(s); });
+  }
+
+  // ---------- Bảng cơ sở dữ liệu (đọc từ Apps Script) ----------
+
+  async function fetchDbList(){
+    const backendUrl = backendUrlInput.value.trim();
+    if(!backendUrl){ dbListEl.innerHTML = '<span class="placeholder-text">Nhập địa chỉ Apps Script Web App ở trên rồi bấm "Làm mới danh sách".</span>'; return; }
+    dbListEl.innerHTML = '<span class="placeholder-text">Đang tải danh sách...</span>';
+    try{
+      const sep = backendUrl.indexOf('?') >= 0 ? '&' : '?';
+      const res = await fetch(backendUrl + sep + 'action=list');
+      const data = await res.json();
+      if(!data.ok) throw new Error(data.error || 'Lỗi không xác định');
+      renderDbList(data.items || []);
+    }catch(err){
+      dbListEl.innerHTML = '<span class="placeholder-text">Không tải được danh sách.</span>';
+      showRuntimeError('<strong>Không tải được danh sách cơ sở dữ liệu.</strong> ' + ((err&&err.message)||String(err)));
+    }
+  }
+
+  function renderDbList(items){
+    if(items.length===0){ dbListEl.innerHTML = '<span class="placeholder-text">Chưa có dữ liệu nào.</span>'; return; }
+    items.sort(function(a,b){ return new Date(b.timestamp) - new Date(a.timestamp); });
+    dbListEl.innerHTML = items.map(function(it){
+      const label = (it.session||'(chưa đặt tên)') + ' · Đoạn ' + (parseInt(it.segmentIndex,10)+1) + ' (' + it.startLabel + '–' + it.endLabel + ')';
+      const timeLabel = new Date(it.timestamp).toLocaleString('vi-VN');
+      const audioLink = it.driveFileUrl ? ('<a class="btn small" href="'+it.driveFileUrl+'" target="_blank" rel="noopener">Nghe/tải âm thanh</a>') : '';
+      return '<div class="seg-row" data-db-row="'+it.id+'">'+
+        '<div class="seg-row-top">'+
+          '<span class="seg-label">'+escapeHtmlSimple(label)+'</span><span class="seg-time">'+timeLabel+'</span>'+
+          '<button class="btn small" data-db-view="'+it.id+'">Xem</button>'+
+          audioLink+
+          '<button class="btn small danger" data-db-delete="'+it.id+'">Xóa</button>'+
+        '</div>'+
+        '<div class="db-detail" id="dbDetail_'+it.id+'" style="display:none; margin-top:8px;"></div>'+
+      '</div>';
+    }).join('');
+
+    dbListEl.querySelectorAll('[data-db-view]').forEach(function(btn){
+      btn.addEventListener('click', function(){ toggleDbDetail(btn.getAttribute('data-db-view')); });
+    });
+    dbListEl.querySelectorAll('[data-db-delete]').forEach(function(btn){
+      btn.addEventListener('click', function(){ deleteDbRow(btn.getAttribute('data-db-delete')); });
+    });
+  }
+
+  async function toggleDbDetail(id){
+    const el = document.getElementById('dbDetail_'+id);
+    if(!el) return;
+    if(el.style.display !== 'none'){ el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    if(dbTextCache[id] !== undefined){ el.innerHTML = renderDbDetailHtml(id); bindDbDetailButtons(id); return; }
+    el.innerHTML = '<span class="placeholder-text">Đang tải nội dung...</span>';
+    try{
+      const backendUrl = backendUrlInput.value.trim();
+      const res = await fetch(backendUrl, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({action:'getText', id: id})
+      });
+      const data = await res.json();
+      if(!data.ok) throw new Error(data.error || 'Lỗi không xác định');
+      dbTextCache[id] = data.text || '';
+      el.innerHTML = renderDbDetailHtml(id);
+      bindDbDetailButtons(id);
+    }catch(err){
+      el.innerHTML = '<span style="color:#7a2a22;">Lỗi tải nội dung: ' + escapeHtmlSimple((err&&err.message)||String(err)) + '</span>';
+    }
+  }
+
+  function renderDbDetailHtml(id){
+    const text = dbTextCache[id] || '';
+    return '<div class="transcript" style="height:180px;">'+ (text ? escapeHtmlSimple(text) : '<span class="placeholder">(Chưa có văn bản)</span>') +'</div>'+
+      '<div class="btn-row" style="margin-top:8px;">'+
+        '<button class="btn small" data-db-copy="'+id+'">Copy nội dung</button>'+
+        '<button class="btn small" data-db-download-text="'+id+'">Tải văn bản (.txt)</button>'+
+      '</div>';
+  }
+
+  function bindDbDetailButtons(id){
+    const el = document.getElementById('dbDetail_'+id);
+    const copyBtn = el.querySelector('[data-db-copy]');
+    const dlBtn = el.querySelector('[data-db-download-text]');
+    if(copyBtn) copyBtn.addEventListener('click', function(){
+      navigator.clipboard.writeText(dbTextCache[id]||'').then(function(){
+        copyBtn.textContent = 'Đã copy!';
+        setTimeout(function(){ copyBtn.textContent='Copy nội dung'; }, 1500);
+      }).catch(function(){ alert('Không copy được tự động, vui lòng bôi đen và copy thủ công.'); });
+    });
+    if(dlBtn) dlBtn.addEventListener('click', function(){
+      const blob = new Blob([dbTextCache[id]||''], {type:'text/plain;charset=utf-8'});
+      downloadBlob(blob, 'doan_'+id.slice(0,8)+'.txt');
+    });
+  }
+
+  async function deleteDbRow(id){
+    if(!confirm('Xóa vĩnh viễn đoạn này (cả văn bản trong Sheet và file âm thanh trên Drive)? Không thể hoàn tác.')) return;
+    try{
+      const backendUrl = backendUrlInput.value.trim();
+      const res = await fetch(backendUrl, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({action:'delete', id: id})
+      });
+      const data = await res.json();
+      if(!data.ok) throw new Error(data.error || 'Lỗi không xác định');
+      delete dbTextCache[id];
+      fetchDbList();
+    }catch(err){
+      showRuntimeError('<strong>Xóa thất bại.</strong> ' + escapeHtmlSimple((err&&err.message)||String(err)));
     }
   }
 
@@ -627,21 +955,22 @@
     else if(state==='recording') pauseRecording();
     else if(state==='paused') resumeRecording();
   });
-  downloadAudioBtn.addEventListener('click', function(){
-    if(audioBlob) downloadBlob(audioBlob, safeFileBase()+'.webm');
-  });
-  transcribeBtn.addEventListener('click', runTranscribe);
+  downloadAllAudioBtn.addEventListener('click', downloadAllSegments);
+  retryBtn.addEventListener('click', retryUnfinishedSegments);
   downloadTextBtn.addEventListener('click', function(){
     const blob = new Blob([buildTranscriptText()], {type:'text/plain;charset=utf-8'});
     downloadBlob(blob, safeFileBase()+'.txt');
   });
   clearBtn.addEventListener('click', resetAll);
+  refreshDbBtn.addEventListener('click', fetchDbList);
 
   window.addEventListener('beforeunload', function(e){
     if(state==='recording' || state==='paused'){
       e.preventDefault(); e.returnValue='';
     }
   });
+
+  if(backendUrlInput.value.trim()) fetchDbList();
 })();
 </script>
 </body>
