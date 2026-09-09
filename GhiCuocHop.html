@@ -194,6 +194,7 @@
   <div id="bannerInfo" class="banner warn show">
     Công cụ này cần <strong>kết nối Internet liên tục</strong> trong lúc sử dụng để chuyển giọng nói sang văn bản (qua dịch vụ nhận dạng của trình duyệt). File âm thanh gốc vẫn được lưu lại trên máy bạn. Nên thông báo rõ với người tham gia rằng âm thanh buổi làm việc sẽ được lưu lại, trước khi bắt đầu.
   </div>
+  <div id="bannerRuntimeError" class="banner err"></div>
 
   <div class="card">
     <div class="control-row">
@@ -274,6 +275,7 @@
   const sessionNameInput = document.getElementById('sessionName');
   const autoBackupChk = document.getElementById('autoBackup');
   const bannerUnsupported = document.getElementById('bannerUnsupported');
+  const bannerRuntimeError = document.getElementById('bannerRuntimeError');
 
   let mediaRecorder = null;
   let audioChunks = [];
@@ -289,6 +291,8 @@
   let elapsedBeforePause = 0;
   let timerInterval = null;
   let backupInterval = null;
+  let consecutiveRecErrors = 0;
+  let lastRecErrorCode = '';
 
   const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!SpeechRecognitionCtor){
@@ -310,6 +314,30 @@
   function setStatus(text, dotClass){
     statusText.textContent = text;
     statusDot.className = 'dot' + (dotClass ? ' '+dotClass : '');
+  }
+
+  function showRuntimeError(html){
+    bannerRuntimeError.innerHTML = html;
+    bannerRuntimeError.classList.add('show');
+  }
+  function clearRuntimeError(){
+    bannerRuntimeError.classList.remove('show');
+    bannerRuntimeError.innerHTML = '';
+  }
+
+  const REC_ERROR_MESSAGES = {
+    'network': 'Trình duyệt báo <strong>lỗi mạng (network)</strong> khi gọi dịch vụ nhận dạng giọng nói của Google. Nguyên nhân thường gặp nhất: <strong>không dùng bản Google Chrome chính thức</strong> (ví dụ Cốc Cốc, Brave, một số bản Chromium/Edge cũ không có sẵn dịch vụ này), hoặc <strong>mạng/proxy công ty đang chặn</strong> các địa chỉ của Google. Hãy thử: (1) mở đúng bằng Google Chrome tải từ google.com/chrome, (2) thử bằng mạng 4G/điện thoại cá nhân để loại trừ tường lửa cơ quan.',
+    'not-allowed': 'Trình duyệt báo <strong>không có quyền dùng micro</strong> cho tính năng nhận dạng giọng nói (khác với quyền ghi âm). Hãy vào biểu tượng ổ khóa cạnh địa chỉ trang &rarr; Quyền của trang &rarr; Microphone &rarr; chọn Cho phép, sau đó tải lại trang.',
+    'service-not-allowed': 'Dịch vụ nhận dạng giọng nói bị <strong>chặn bởi trình duyệt hoặc chính sách quản trị máy</strong> (thường gặp trên máy tính công ty do IT cấu hình). Có thể máy bạn (theo hồ sơ, không có quyền cài đặt phần mềm) đang dùng Chrome do IT quản lý và đã tắt tính năng này.',
+    'audio-capture': 'Không tìm thấy micro, hoặc micro đang được một ứng dụng khác chiếm dụng.',
+    'no-speech': ''
+  };
+
+  function handleRecognitionError(code){
+    if(code === 'no-speech' || code === 'aborted') return; // bình thường, không phải lỗi nghiêm trọng
+    if(code === lastRecErrorCode){ consecutiveRecErrors++; } else { consecutiveRecErrors = 1; lastRecErrorCode = code; }
+    const msg = REC_ERROR_MESSAGES[code] || ('Lỗi nhận dạng giọng nói: <strong>' + code + '</strong>. Âm thanh vẫn đang được ghi lại bình thường, chỉ phần chuyển thành chữ bị ảnh hưởng.');
+    if(msg) showRuntimeError(msg + '<br><span style="font-size:12px;">(Mã lỗi kỹ thuật: ' + code + ' — lặp lại ' + consecutiveRecErrors + ' lần)</span>');
   }
 
   function updateTimer(){
@@ -396,11 +424,13 @@
       }
       interimText = interim;
       renderTranscript();
+      consecutiveRecErrors = 0; lastRecErrorCode = '';
+      clearRuntimeError();
     };
 
     recognition.onerror = function(e){
       console.warn('Speech recognition error:', e.error);
-      // no-speech and network errors are common during long sessions; the onend handler restarts it.
+      handleRecognitionError(e.error);
     };
 
     recognition.onend = function(){
@@ -457,6 +487,9 @@
     elapsedBeforePause = 0;
     finalSegments = [];
     interimText = '';
+    consecutiveRecErrors = 0;
+    lastRecErrorCode = '';
+    clearRuntimeError();
     renderTranscript();
 
     recBtn.className = 'rec-button recording';
@@ -534,6 +567,7 @@
   function resetAll(){
     state='idle'; finalSegments=[]; interimText=''; audioChunks=[]; audioBlob=null;
     elapsedBeforePause=0; timerEl.textContent='00:00:00';
+    consecutiveRecErrors=0; lastRecErrorCode=''; clearRuntimeError();
     renderTranscript();
     recBtn.className='rec-button idle';
     setStatus('Sẵn sàng','');
