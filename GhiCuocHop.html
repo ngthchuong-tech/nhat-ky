@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Công cụ chuyển tiếng nói sang văn bản</title>
+<title>Công cụ ghi âm và chuyển văn bản (Gemini AI)</title>
 <style>
   :root{
     --bg: #eef1f4;
@@ -97,6 +97,7 @@
   .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);}
   .dot.on{background:var(--rec);}
   .dot.ok{background:var(--ok);}
+  .dot.busy{background:var(--accent);}
   .timer{
     font-variant-numeric: tabular-nums;
     font-size:28px; font-weight:800; letter-spacing:.02em;
@@ -142,10 +143,11 @@
   }
   .waveform:not(.active) span{animation-play-state:paused;}
 
-  .row2{display:flex; gap:22px; margin-top:20px; flex-wrap:wrap; align-items:center;}
+  .row2{display:flex; gap:22px; margin-top:20px; flex-wrap:wrap; align-items:flex-end;}
   .field{display:flex; flex-direction:column; gap:5px;}
   .field label{font-size:12px; color:var(--muted); font-weight:600;}
-  select, input[type=text]{
+  .field .hint{font-size:11px; color:var(--muted); font-weight:400;}
+  select, input[type=text], input[type=password]{
     border:1px solid var(--line); border-radius:8px; padding:7px 10px; font-size:13.5px;
     font-family:inherit; background:#fff; color:var(--ink);
   }
@@ -170,10 +172,8 @@
     white-space:pre-wrap;
   }
   .transcript .placeholder{color:var(--muted); font-style:italic;}
-  .transcript .interim{color:var(--muted);}
-  .seg-time{color:var(--accent); font-weight:700; font-size:12px; margin-right:6px;}
-  .gap-marker{color:var(--warn-ink); background:var(--warn-bg); border-radius:6px; padding:4px 8px; margin:4px 0;}
-  .gap-marker .seg-time{color:var(--warn-ink);}
+
+  .transcribe-status{font-size:12.5px; color:var(--accent); font-weight:600; min-height:18px; margin:6px 0 0;}
 
   .foot-actions{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;}
 
@@ -184,15 +184,12 @@
 <div class="wrap">
   <header>
     <div class="eyebrow">Công cụ nội bộ · Ban KSNB</div>
-    <h1>Công cụ chuyển tiếng nói sang văn bản</h1>
-    <p class="sub">Chuyển giọng nói sang văn bản trực tiếp trong buổi làm việc. Khi kết thúc, tải về cả file âm thanh và file văn bản để đối chiếu, chỉnh sửa.</p>
+    <h1>Công cụ ghi âm và chuyển văn bản (Gemini AI)</h1>
+    <p class="sub">Ghi âm buổi làm việc trên máy này. Sau khi bấm "Kết thúc", có thể tải file âm thanh, và bấm nút để nhờ Gemini AI chuyển toàn bộ âm thanh thành văn bản.</p>
   </header>
 
-  <div id="bannerUnsupported" class="banner err">
-    <strong>Trình duyệt này chưa hỗ trợ chuyển giọng nói sang văn bản.</strong> Vẫn có thể sử dụng bình thường, nhưng phần văn bản sẽ trống. Nên mở lại bằng <strong>Google Chrome</strong> (máy tính hoặc Android) để dùng đầy đủ tính năng.
-  </div>
   <div id="bannerInfo" class="banner warn show">
-    Công cụ này cần <strong>kết nối Internet liên tục</strong> trong lúc sử dụng để chuyển giọng nói sang văn bản (qua dịch vụ nhận dạng của trình duyệt). File âm thanh gốc vẫn được lưu lại trên máy bạn. Nên thông báo rõ với người tham gia rằng âm thanh buổi làm việc sẽ được lưu lại, trước khi bắt đầu.
+    File âm thanh được ghi và lưu ngay trên trình duyệt của bạn (không cần Internet lúc ghi âm). Việc <strong>chuyển sang văn bản cần Internet và một Gemini API Key</strong> — audio sẽ được gửi tới máy chủ Google (Gemini) để xử lý sau khi bạn bấm nút chuyển văn bản. Nên thông báo rõ với người tham gia rằng âm thanh buổi làm việc sẽ được lưu lại, trước khi bắt đầu.
   </div>
   <div id="bannerRuntimeError" class="banner err"></div>
 
@@ -212,24 +209,38 @@
 
     <div class="row2">
       <div class="field">
-        <label>Ngôn ngữ nhận diện</label>
+        <label>Ngôn ngữ nói trong buổi</label>
         <select id="langSelect">
-          <option value="vi-VN" selected>Tiếng Việt</option>
-          <option value="en-US">English</option>
+          <option value="vi" selected>Tiếng Việt</option>
+          <option value="en">English</option>
         </select>
       </div>
       <div class="field">
         <label>Tên buổi làm việc (đặt tên file)</label>
         <input type="text" id="sessionName" placeholder="VD: BienBan_PGD_08-08-2026" />
       </div>
+      <div class="field" style="min-width:260px;">
+        <label>Gemini API Key</label>
+        <input type="password" id="apiKey" placeholder="Dán API key của bạn vào đây" autocomplete="off" />
+        <span class="hint">Chỉ lưu trong trình duyệt này (localStorage), không gửi đi đâu ngoài Google khi bạn bấm chuyển văn bản.</span>
+      </div>
+      <div class="field">
+        <label>Model Gemini</label>
+        <select id="modelSelect">
+          <option value="gemini-3.5-flash" selected>gemini-3.5-flash (nhanh, khuyến nghị)</option>
+          <option value="gemini-3.5-pro">gemini-3.5-pro (chính xác hơn, chậm hơn)</option>
+          <option value="gemini-2.5-flash">gemini-2.5-flash (bản cũ, dự phòng)</option>
+        </select>
+        <span class="hint">Nếu Gemini báo lỗi "model not found", đổi thử sang lựa chọn khác trong danh sách này.</span>
+      </div>
       <div class="toggle">
         <input type="checkbox" id="autoBackup" checked />
-        <label for="autoBackup">Tự động tải file âm thanh và văn bản sao lưu mỗi 15 phút (đề phòng sự cố khi thực hiện trong thời gian dài)</label>
+        <label for="autoBackup">Tự động tải file âm thanh sao lưu mỗi 15 phút (đề phòng sự cố khi thực hiện trong thời gian dài)</label>
       </div>
     </div>
 
     <div class="btn-row" style="margin-top:18px;">
-      <button id="startBtn" class="btn primary">Bắt đầu</button>
+      <button id="startBtn" class="btn primary">Bắt đầu ghi âm</button>
       <button id="pauseBtn" class="btn" disabled>Tạm dừng</button>
       <button id="resumeBtn" class="btn" disabled style="display:none;">Tiếp tục</button>
       <button id="stopBtn" class="btn stop" disabled>Kết thúc</button>
@@ -238,20 +249,22 @@
 
   <div class="card">
     <div class="panel-title">
-      <h2>Văn bản trực tiếp</h2>
+      <h2>Văn bản (do Gemini AI chuyển từ âm thanh)</h2>
       <span class="wordcount" id="wordCount">0 từ</span>
     </div>
-    <div id="transcript" class="transcript"><span class="placeholder">Văn bản sẽ hiện ra ở đây khi bắt đầu và có người nói...</span></div>
+    <div id="transcript" class="transcript"><span class="placeholder">Ghi âm xong, bấm "Chuyển sang văn bản (Gemini AI)" bên dưới để xem văn bản ở đây...</span></div>
+    <div class="transcribe-status" id="transcribeStatus"></div>
     <div class="foot-actions">
       <button id="downloadAudioBtn" class="btn" disabled>Tải file âm thanh (.webm)</button>
+      <button id="transcribeBtn" class="btn primary" disabled>Chuyển sang văn bản (Gemini AI)</button>
       <button id="downloadTextBtn" class="btn" disabled>Tải file văn bản (.txt)</button>
       <button id="clearBtn" class="btn" disabled>Làm mới, thực hiện buổi mới</button>
     </div>
   </div>
 
   <footer>
-    Dữ liệu chỉ xử lý trong phiên làm việc này trên trình duyệt của bạn - nếu đóng trang mà chưa bấm "Kết thúc" và tải file, dữ liệu sẽ mất (trừ các file sao lưu tự động đã tải trong lúc thực hiện, nếu có bật).<br />
-    Luôn đọc lại và đối chiếu văn bản do công cụ tạo ra với ghi chép tay trước khi đưa vào biên bản chính thức.
+    Dữ liệu chỉ xử lý trong phiên làm việc này trên trình duyệt của bạn - nếu đóng trang mà chưa bấm "Kết thúc" và tải file, dữ liệu sẽ mất (trừ các file âm thanh sao lưu tự động đã tải trong lúc thực hiện, nếu có bật).<br />
+    Luôn đọc lại và đối chiếu văn bản do AI tạo ra với ghi chép tay trước khi đưa vào biên bản chính thức.
   </footer>
 </div>
 
@@ -269,35 +282,41 @@
   const transcriptEl = document.getElementById('transcript');
   const wordCountEl = document.getElementById('wordCount');
   const downloadAudioBtn = document.getElementById('downloadAudioBtn');
+  const transcribeBtn = document.getElementById('transcribeBtn');
   const downloadTextBtn = document.getElementById('downloadTextBtn');
   const clearBtn = document.getElementById('clearBtn');
   const langSelect = document.getElementById('langSelect');
+  const modelSelect = document.getElementById('modelSelect');
   const sessionNameInput = document.getElementById('sessionName');
+  const apiKeyInput = document.getElementById('apiKey');
   const autoBackupChk = document.getElementById('autoBackup');
-  const bannerUnsupported = document.getElementById('bannerUnsupported');
   const bannerRuntimeError = document.getElementById('bannerRuntimeError');
+  const transcribeStatusEl = document.getElementById('transcribeStatus');
 
   let mediaRecorder = null;
   let audioChunks = [];
   let audioBlob = null;
   let stream = null;
-  let recognition = null;
-  let recognizing = false;
-  let shouldKeepRecognizing = false;
-  let finalSegments = []; // {time, text}
-  let interimText = '';
+  let transcriptText = '';
   let state = 'idle'; // idle | recording | paused | stopped
   let startTime = null;
   let elapsedBeforePause = 0;
   let timerInterval = null;
   let backupInterval = null;
-  let consecutiveRecErrors = 0;
-  let lastRecErrorCode = '';
 
-  const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SpeechRecognitionCtor){
-    bannerUnsupported.classList.add('show');
-  }
+  // Khôi phục API key / model đã lưu trước đó trên trình duyệt này
+  try{
+    const savedKey = localStorage.getItem('ksnb_gemini_api_key');
+    if(savedKey) apiKeyInput.value = savedKey;
+    const savedModel = localStorage.getItem('ksnb_gemini_model');
+    if(savedModel) modelSelect.value = savedModel;
+  }catch(e){}
+  apiKeyInput.addEventListener('change', function(){
+    try{ localStorage.setItem('ksnb_gemini_api_key', apiKeyInput.value.trim()); }catch(e){}
+  });
+  modelSelect.addEventListener('change', function(){
+    try{ localStorage.setItem('ksnb_gemini_model', modelSelect.value); }catch(e){}
+  });
 
   function pad(n){return n.toString().padStart(2,'0');}
   function fmtElapsed(ms){
@@ -325,21 +344,6 @@
     bannerRuntimeError.innerHTML = '';
   }
 
-  const REC_ERROR_MESSAGES = {
-    'network': 'Trình duyệt báo <strong>lỗi mạng (network)</strong> khi gọi dịch vụ nhận dạng giọng nói của Google. Nguyên nhân thường gặp nhất: <strong>không dùng bản Google Chrome chính thức</strong> (ví dụ Cốc Cốc, Brave, một số bản Chromium/Edge cũ không có sẵn dịch vụ này), hoặc <strong>mạng/proxy công ty đang chặn</strong> các địa chỉ của Google. Hãy thử: (1) mở đúng bằng Google Chrome tải từ google.com/chrome, (2) thử bằng mạng 4G/điện thoại cá nhân để loại trừ tường lửa cơ quan.',
-    'not-allowed': 'Trình duyệt báo <strong>không có quyền dùng micro</strong> cho tính năng nhận dạng giọng nói (khác với quyền ghi âm). Hãy vào biểu tượng ổ khóa cạnh địa chỉ trang &rarr; Quyền của trang &rarr; Microphone &rarr; chọn Cho phép, sau đó tải lại trang.',
-    'service-not-allowed': 'Dịch vụ nhận dạng giọng nói bị <strong>chặn bởi trình duyệt hoặc chính sách quản trị máy</strong> (thường gặp trên máy tính công ty do IT cấu hình). Có thể máy bạn (theo hồ sơ, không có quyền cài đặt phần mềm) đang dùng Chrome do IT quản lý và đã tắt tính năng này.',
-    'audio-capture': 'Không tìm thấy micro, hoặc micro đang được một ứng dụng khác chiếm dụng.',
-    'no-speech': ''
-  };
-
-  function handleRecognitionError(code){
-    if(code === 'no-speech' || code === 'aborted') return; // bình thường, không phải lỗi nghiêm trọng
-    if(code === lastRecErrorCode){ consecutiveRecErrors++; } else { consecutiveRecErrors = 1; lastRecErrorCode = code; }
-    const msg = REC_ERROR_MESSAGES[code] || ('Lỗi nhận dạng giọng nói: <strong>' + code + '</strong>. Âm thanh vẫn đang được ghi lại bình thường, chỉ phần chuyển thành chữ bị ảnh hưởng.');
-    if(msg) showRuntimeError(msg + '<br><span style="font-size:12px;">(Mã lỗi kỹ thuật: ' + code + ' — lặp lại ' + consecutiveRecErrors + ' lần)</span>');
-  }
-
   function updateTimer(){
     const now = Date.now();
     const elapsed = elapsedBeforePause + (state==='recording' ? (now-startTime) : 0);
@@ -347,36 +351,23 @@
   }
 
   function renderTranscript(){
-    if(finalSegments.length===0 && !interimText){
-      transcriptEl.innerHTML = '<span class="placeholder">Văn bản sẽ hiện ra ở đây khi bắt đầu và có người nói...</span>';
+    if(!transcriptText){
+      transcriptEl.innerHTML = '<span class="placeholder">Ghi âm xong, bấm "Chuyển sang văn bản (Gemini AI)" bên dưới để xem văn bản ở đây...</span>';
       wordCountEl.textContent = '0 từ';
       return;
     }
-    let html = finalSegments.map(seg=>
-      '<div'+(seg.isGap ? ' class="gap-marker"' : '')+'><span class="seg-time">['+seg.time+']</span>'+escapeHtml(seg.text)+'</div>'
-    ).join('');
-    if(interimText){
-      html += '<div class="interim">'+escapeHtml(interimText)+'</div>';
-    }
-    transcriptEl.innerHTML = html;
+    transcriptEl.textContent = transcriptText;
     transcriptEl.scrollTop = transcriptEl.scrollHeight;
-    const words = finalSegments.map(s=>s.text).join(' ').trim().split(/\s+/).filter(Boolean).length;
+    const words = transcriptText.trim().split(/\s+/).filter(Boolean).length;
     wordCountEl.textContent = words + ' từ';
   }
 
-  function escapeHtml(str){
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
-  }
-
   function buildTranscriptText(){
-    const header = 'VĂN BẢN CHUYỂN ĐỔI TỰ ĐỘNG (do AI chuyển giọng nói - CẦN ĐỐI CHIẾU, CHỈNH SỬA TRƯỚC KHI DÙNG CHÍNH THỨC)\n' +
+    const header = 'VĂN BẢN CHUYỂN ĐỔI TỰ ĐỘNG (do Gemini AI chuyển từ âm thanh - CẦN ĐỐI CHIẾU, CHỈNH SỬA TRƯỚC KHI DÙNG CHÍNH THỨC)\n' +
       'Buổi: ' + (sessionNameInput.value.trim() || '(chưa đặt tên)') + '\n' +
       'Tạo lúc: ' + new Date().toLocaleString('vi-VN') + '\n' +
       '----------------------------------------\n\n';
-    const body = finalSegments.map(seg => '['+seg.time+'] '+seg.text).join('\n\n');
-    return header + body + '\n';
+    return header + transcriptText + '\n';
   }
 
   function safeFileBase(){
@@ -394,69 +385,9 @@
 
   function doBackupDownload(){
     const stamp = fmtClock(new Date()).replace(/:/g,'-');
-    if(finalSegments.length>0){
-      const txt = buildTranscriptText();
-      const blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
-      downloadBlob(blob, safeFileBase()+'_saoluu_'+stamp+'.txt');
-    }
     if(audioChunks.length>0){
       const audioBlobBackup = new Blob(audioChunks, {type:'audio/webm'});
       downloadBlob(audioBlobBackup, safeFileBase()+'_saoluu_'+stamp+'.webm');
-    }
-  }
-
-  function startRecognition(){
-    if(!SpeechRecognitionCtor) return;
-    recognition = new SpeechRecognitionCtor();
-    recognition.lang = langSelect.value;
-    recognition.continuous = true;
-    recognition.interimResults = true;
-
-    recognition.onresult = function(event){
-      let interim = '';
-      for(let i=event.resultIndex; i<event.results.length; i++){
-        const res = event.results[i];
-        if(res.isFinal){
-          finalSegments.push({time: fmtClock(new Date()), text: res[0].transcript.trim()});
-        } else {
-          interim += res[0].transcript;
-        }
-      }
-      interimText = interim;
-      renderTranscript();
-      consecutiveRecErrors = 0; lastRecErrorCode = '';
-      clearRuntimeError();
-    };
-
-    recognition.onerror = function(e){
-      console.warn('Speech recognition error:', e.error);
-      handleRecognitionError(e.error);
-    };
-
-    recognition.onend = function(){
-      recognizing = false;
-      const gapStart = Date.now();
-      if(shouldKeepRecognizing){
-        // auto-restart to keep long sessions alive; mark the gap so it's visible, not silent
-        const markGap = function(){
-          const gapSec = Math.round((Date.now()-gapStart)/1000);
-          if(gapSec >= 1){
-            finalSegments.push({time: fmtClock(new Date()), text: '\u26A0 [Gián đoạn nhận diện khoảng ' + gapSec + ' giây - kiểm tra lại đoạn này trong file âm thanh nếu cần]', isGap:true});
-            renderTranscript();
-          }
-        };
-        try{ recognition.start(); recognizing = true; markGap(); }
-        catch(err){ setTimeout(()=>{ if(shouldKeepRecognizing){ try{recognition.start(); recognizing=true; markGap();}catch(e2){} } }, 400); }
-      }
-    };
-
-    try{ recognition.start(); recognizing = true; }catch(e){}
-  }
-
-  function stopRecognition(){
-    shouldKeepRecognizing = false;
-    if(recognition){
-      try{ recognition.stop(); }catch(e){}
     }
   }
 
@@ -469,6 +400,8 @@
     }
     audioChunks = [];
     audioBlob = null;
+    transcriptText = '';
+    clearRuntimeError();
     mediaRecorder = new MediaRecorder(stream);
     mediaRecorder.ondataavailable = function(e){
       if(e.data && e.data.size>0) audioChunks.push(e.data);
@@ -476,31 +409,25 @@
     mediaRecorder.onstop = function(){
       audioBlob = new Blob(audioChunks, {type:'audio/webm'});
       downloadAudioBtn.disabled = false;
+      transcribeBtn.disabled = false;
     };
     mediaRecorder.start(1000);
-
-    shouldKeepRecognizing = true;
-    startRecognition();
 
     state = 'recording';
     startTime = Date.now();
     elapsedBeforePause = 0;
-    finalSegments = [];
-    interimText = '';
-    consecutiveRecErrors = 0;
-    lastRecErrorCode = '';
-    clearRuntimeError();
     renderTranscript();
 
     recBtn.className = 'rec-button recording';
     waveform.classList.add('active');
-    setStatus('Đang chuyển đổi', 'on');
+    setStatus('Đang ghi âm', 'on');
     startBtn.disabled = true;
     pauseBtn.disabled = false;
     pauseBtn.style.display = 'inline-block';
     resumeBtn.style.display = 'none';
     stopBtn.disabled = false;
     downloadAudioBtn.disabled = true;
+    transcribeBtn.disabled = true;
     downloadTextBtn.disabled = true;
     clearBtn.disabled = true;
     langSelect.disabled = true;
@@ -515,7 +442,6 @@
   function pauseRecording(){
     if(state!=='recording') return;
     mediaRecorder.pause();
-    stopRecognition();
     elapsedBeforePause += Date.now()-startTime;
     state = 'paused';
     recBtn.className = 'rec-button paused';
@@ -530,13 +456,11 @@
   function resumeRecording(){
     if(state!=='paused') return;
     mediaRecorder.resume();
-    shouldKeepRecognizing = true;
-    startRecognition();
     startTime = Date.now();
     state = 'recording';
     recBtn.className = 'rec-button recording';
     waveform.classList.add('active');
-    setStatus('Đang chuyển đổi', 'on');
+    setStatus('Đang ghi âm', 'on');
     pauseBtn.style.display = 'inline-block';
     resumeBtn.style.display = 'none';
     timerInterval = setInterval(updateTimer, 500);
@@ -547,34 +471,151 @@
     if(state==='recording'){ elapsedBeforePause += Date.now()-startTime; }
     clearInterval(timerInterval);
     clearInterval(backupInterval);
-    stopRecognition();
-    interimText='';
-    renderTranscript();
     if(mediaRecorder && mediaRecorder.state!=='inactive'){ mediaRecorder.stop(); }
     if(stream){ stream.getTracks().forEach(t=>t.stop()); }
 
     state = 'stopped';
     recBtn.className = 'rec-button idle';
     waveform.classList.remove('active');
-    setStatus('Đã kết thúc - tải file bên dưới', 'ok');
+    setStatus('Đã kết thúc - tải âm thanh hoặc chuyển sang văn bản bên dưới', 'ok');
     startBtn.disabled = true;
     pauseBtn.disabled = true; pauseBtn.style.display='inline-block'; resumeBtn.style.display='none';
     stopBtn.disabled = true;
-    downloadTextBtn.disabled = (finalSegments.length===0);
     clearBtn.disabled = false;
   }
 
   function resetAll(){
-    state='idle'; finalSegments=[]; interimText=''; audioChunks=[]; audioBlob=null;
+    state='idle'; audioChunks=[]; audioBlob=null; transcriptText='';
     elapsedBeforePause=0; timerEl.textContent='00:00:00';
-    consecutiveRecErrors=0; lastRecErrorCode=''; clearRuntimeError();
+    clearRuntimeError(); transcribeStatusEl.textContent='';
     renderTranscript();
     recBtn.className='rec-button idle';
     setStatus('Sẵn sàng','');
     startBtn.disabled=false; pauseBtn.disabled=true; stopBtn.disabled=true;
-    downloadAudioBtn.disabled=true; downloadTextBtn.disabled=true; clearBtn.disabled=true;
+    downloadAudioBtn.disabled=true; transcribeBtn.disabled=true; downloadTextBtn.disabled=true; clearBtn.disabled=true;
     langSelect.disabled=false;
     pauseBtn.style.display='inline-block'; resumeBtn.style.display='none';
+  }
+
+  // ---------- Gọi Gemini API để chuyển âm thanh thành văn bản ----------
+
+  async function geminiUploadFile(blob, apiKey, mimeType){
+    const numBytes = blob.size;
+    const startRes = await fetch('https://generativelanguage.googleapis.com/upload/v1beta/files?key=' + encodeURIComponent(apiKey), {
+      method: 'POST',
+      headers: {
+        'X-Goog-Upload-Protocol': 'resumable',
+        'X-Goog-Upload-Command': 'start',
+        'X-Goog-Upload-Header-Content-Length': String(numBytes),
+        'X-Goog-Upload-Header-Content-Type': mimeType,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({file:{display_name: 'ghiam_' + Date.now()}})
+    });
+    if(!startRes.ok){
+      const t = await startRes.text().catch(()=> '');
+      throw new Error('Không khởi tạo được phiên tải lên Gemini (HTTP '+startRes.status+'). ' + t.slice(0,200));
+    }
+    const uploadUrl = startRes.headers.get('X-Goog-Upload-URL');
+    if(!uploadUrl) throw new Error('Không nhận được địa chỉ tải lên từ Gemini (thiếu header X-Goog-Upload-URL).');
+
+    const uploadRes = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'X-Goog-Upload-Offset': '0',
+        'X-Goog-Upload-Command': 'upload, finalize'
+      },
+      body: blob
+    });
+    if(!uploadRes.ok){
+      const t = await uploadRes.text().catch(()=> '');
+      throw new Error('Tải file lên Gemini thất bại (HTTP '+uploadRes.status+'). ' + t.slice(0,200));
+    }
+    const info = await uploadRes.json();
+    return info.file;
+  }
+
+  async function geminiWaitActive(fileName, apiKey){
+    let state = 'PROCESSING';
+    let info = null;
+    let tries = 0;
+    while(state === 'PROCESSING' && tries < 60){
+      await new Promise(r=>setTimeout(r, 2500));
+      const res = await fetch('https://generativelanguage.googleapis.com/v1beta/' + fileName + '?key=' + encodeURIComponent(apiKey));
+      if(!res.ok){
+        const t = await res.text().catch(()=> '');
+        throw new Error('Không kiểm tra được trạng thái file trên Gemini (HTTP '+res.status+'). ' + t.slice(0,200));
+      }
+      info = await res.json();
+      state = info.state;
+      tries++;
+    }
+    if(state !== 'ACTIVE') throw new Error('File âm thanh chưa sẵn sàng trên Gemini (trạng thái: '+state+').');
+    return info;
+  }
+
+  async function geminiTranscribe(fileUri, mimeType, apiKey, model, langLabel){
+    const prompt = 'Hãy phiên âm (transcribe) toàn bộ nội dung audio này thành văn bản ' + langLabel + ', đầy đủ, chính xác từng câu nói, theo đúng thứ tự thời gian. Nếu nghe được nhiều người nói khác nhau, hãy xuống dòng phân đoạn theo lượt nói (không cần ghi tên người nói nếu không xác định được). Không tóm tắt, không bỏ sót, không thêm bình luận hay nhận xét của bạn. Chỉ trả về đúng phần văn bản đã phiên âm, không thêm gì khác.';
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(apiKey), {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            {fileData: {fileUri: fileUri, mimeType: mimeType}},
+            {text: prompt}
+          ]
+        }]
+      })
+    });
+    if(!res.ok){
+      const t = await res.text().catch(()=> '');
+      throw new Error('Gemini báo lỗi khi tạo văn bản (HTTP '+res.status+'). ' + t.slice(0,300));
+    }
+    const data = await res.json();
+    const parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
+    const text = parts.map(p=>p.text||'').join('\n').trim();
+    if(!text) throw new Error('Gemini không trả về văn bản (có thể do nội dung bị chặn, hoặc file quá dài/quá nặng).');
+    return text;
+  }
+
+  async function runTranscribe(){
+    const apiKey = apiKeyInput.value.trim();
+    if(!apiKey){ alert('Vui lòng nhập Gemini API Key trước.'); return; }
+    if(!audioBlob){ alert('Chưa có file âm thanh để chuyển.'); return; }
+    try{ localStorage.setItem('ksnb_gemini_api_key', apiKey); }catch(e){}
+
+    const model = modelSelect.value;
+    const langLabel = langSelect.value === 'en' ? 'tiếng Anh' : 'tiếng Việt';
+    const mimeType = audioBlob.type || 'audio/webm';
+
+    transcribeBtn.disabled = true;
+    clearRuntimeError();
+    setStatus('Đang chuyển văn bản...', 'busy');
+
+    try{
+      transcribeStatusEl.textContent = 'Đang tải file âm thanh lên Gemini (' + (audioBlob.size/1024/1024).toFixed(1) + ' MB)...';
+      const fileInfo = await geminiUploadFile(audioBlob, apiKey, mimeType);
+
+      transcribeStatusEl.textContent = 'Đang xử lý âm thanh trên Gemini...';
+      const activeInfo = fileInfo.state === 'ACTIVE' ? fileInfo : await geminiWaitActive(fileInfo.name, apiKey);
+
+      transcribeStatusEl.textContent = 'Đang tạo văn bản...';
+      const text = await geminiTranscribe(activeInfo.uri, activeInfo.mimeType || mimeType, apiKey, model, langLabel);
+
+      transcriptText = text;
+      renderTranscript();
+      downloadTextBtn.disabled = false;
+      transcribeStatusEl.textContent = 'Hoàn tất.';
+      setStatus('Đã có văn bản - kiểm tra và tải file bên dưới', 'ok');
+    }catch(err){
+      console.error(err);
+      showRuntimeError('<strong>Chuyển văn bản thất bại.</strong> ' + (err && err.message ? err.message : String(err)));
+      transcribeStatusEl.textContent = 'Có lỗi, xem thông báo phía trên.';
+      setStatus('Đã kết thúc - tải âm thanh hoặc thử chuyển văn bản lại', 'ok');
+    }finally{
+      transcribeBtn.disabled = false;
+    }
   }
 
   startBtn.addEventListener('click', startRecording);
@@ -589,6 +630,7 @@
   downloadAudioBtn.addEventListener('click', function(){
     if(audioBlob) downloadBlob(audioBlob, safeFileBase()+'.webm');
   });
+  transcribeBtn.addEventListener('click', runTranscribe);
   downloadTextBtn.addEventListener('click', function(){
     const blob = new Blob([buildTranscriptText()], {type:'text/plain;charset=utf-8'});
     downloadBlob(blob, safeFileBase()+'.txt');
