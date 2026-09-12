@@ -732,9 +732,18 @@
       throw new Error('Gemini báo lỗi khi tạo văn bản (HTTP '+res.status+'). ' + t.slice(0,300));
     }
     const data = await res.json();
-    const parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
+    const candidate = data.candidates && data.candidates[0];
+    const parts = (candidate && candidate.content && candidate.content.parts) || [];
     const text = parts.map(function(p){return p.text||'';}).join('\n').trim();
-    if(!text) throw new Error('Gemini không trả về văn bản (có thể do nội dung bị chặn, hoặc file quá dài/quá nặng).');
+    if(!text){
+      const blockReason = data.promptFeedback && data.promptFeedback.blockReason;
+      const finishReason = candidate && candidate.finishReason;
+      let detail;
+      if(blockReason) detail = 'Bị bộ lọc an toàn của Gemini chặn (blockReason: ' + blockReason + ').';
+      else if(finishReason && finishReason !== 'STOP') detail = 'Model dừng sớm, lý do: ' + finishReason + ' (có thể do file quá dài/vượt giới hạn token).';
+      else detail = 'Không rõ nguyên nhân từ phía Gemini.';
+      throw new Error('Gemini không trả về văn bản. ' + detail + ' Dữ liệu thô (rút gọn): ' + JSON.stringify(data).slice(0,500));
+    }
     return text;
   }
 
