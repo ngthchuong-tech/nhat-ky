@@ -1405,7 +1405,7 @@ function selectRefDoc(id){
 
   if(doc.type === 'pdf'){
     refViewerBody.innerHTML = `<iframe src="${doc.blobUrl}"></iframe>
-      <p style="margin-top:8px;font-size:12px;color:var(--ink-soft);">📕 File PDF — không tự bôi-đen-chèn được (trình duyệt tự vẽ PDF). Bạn có thể chọn/copy chữ trực tiếp trong khung trên rồi dán tay (Ctrl+V) vào giáo án, hoặc bấm "Dùng làm nguồn cho AI" để AI tự đọc cả file.</p>`;
+      <p style="margin-top:8px;font-size:12px;color:var(--ink-soft);">📕 File PDF — không tự bôi-đen-chèn được (trình duyệt tự vẽ PDF). Bạn có thể chọn/copy chữ trực tiếp trong khung trên rồi dán tay (Ctrl+V) vào giáo án, hoặc bấm "Dùng làm nguồn cho AI" để AI trích nội dung 1 lần rồi dùng lại cho các lượt chat sau.</p>`;
   } else if(doc.type === 'docx'){
     refViewerBody.innerHTML = doc.html || '<p><em>(Không đọc được nội dung)</em></p>';
   } else {
@@ -1414,12 +1414,33 @@ function selectRefDoc(id){
   }
 }
 
-toggleSourceBtn.onclick = ()=>{
+toggleSourceBtn.onclick = async ()=>{
   if(sourceRefIds.has(activeRefId)){
     sourceRefIds.delete(activeRefId);
-  } else {
-    sourceRefIds.add(activeRefId);
+    selectRefDoc(activeRefId);
+    updateSourceChip();
+    return;
   }
+
+  const doc = refDocs.find(d => d.id === activeRefId);
+  // Tài liệu PDF tự upload (không thuộc Thư viện): trích chữ 1 lần trước khi bật làm nguồn, giống cơ chế
+  // đã dùng cho Thư viện — tránh gửi nguyên file PDF (dễ vượt giới hạn dung lượng) ở mọi lượt chat sau.
+  if(doc && doc.type === 'pdf' && !doc.text){
+    toggleSourceBtn.disabled = true;
+    toggleSourceBtn.textContent = '⏳ Đang trích nội dung (chỉ 1 lần)...';
+    try{
+      const res = await callBackend('trichNoiDungTuPdf', { base64Pdf: doc.base64, tenTaiLieu: doc.name });
+      doc.text = res.noiDung || '';
+    }catch(err){
+      alert('Không trích được nội dung file PDF này: ' + (err.message || 'thử lại sau.'));
+      toggleSourceBtn.disabled = false;
+      selectRefDoc(activeRefId);
+      return;
+    }
+    toggleSourceBtn.disabled = false;
+  }
+
+  sourceRefIds.add(activeRefId);
   selectRefDoc(activeRefId);
   updateSourceChip();
 };
@@ -1740,7 +1761,13 @@ function getActiveLibrarySourcePayload(){
   refDocs.forEach(doc=>{
     if(!sourceRefIds.has(doc.id)) return;
     if(doc.type === 'pdf'){
-      danhSachNguon.push({ ten: doc.name, pdfBase64: doc.base64 });
+      // Bình thường đã trích chữ 1 lần khi bật nguồn (xem toggleSourceBtn.onclick) nên chỉ gửi text,
+      // rất nhẹ. Chỉ còn gửi nguyên pdfBase64 trong trường hợp hiếm khi text trích thất bại nhưng vẫn lỡ bật.
+      if(doc.text){
+        danhSachNguon.push({ ten: doc.name, text: doc.text });
+      } else {
+        danhSachNguon.push({ ten: doc.name, pdfBase64: doc.base64 });
+      }
     } else {
       danhSachNguon.push({ ten: doc.name, text: doc.text });
     }
@@ -1828,11 +1855,34 @@ async function sendMessage(){
     if(newText){
       ta.classList.remove('placeholder');
       if(coBang){
-        // Chế độ giữ định dạng: áp thẳng HTML AI trả về (giữ bảng), không tô vàng theo từng đoạn được
-        // (cơ chế tô vàng dựa trên so sánh văn bản thuần, không dùng được khi có bảng).
+        // Chế độ giữ định dạng: AI được yêu cầu giữ nguyên cấu trúc bảng, nhưng đây chỉ là chỉ thị trong
+        // prompt (AI viết lại toàn bộ HTML từ đầu), không phải ràng buộc kỹ thuật chắc chắn — vẫn có thể
+        // lệch cấu trúc bảng sau nhiều lượt sửa. Đếm số bảng/hàng trước-sau để cảnh báo nếu có thay đổi
+        // bất thường, thay vì âm thầm áp dụng rồi tin vào việc người dùng tự đọc lại.
+        const demThe = (html, tag) => (html.match(new RegExp('<' + tag + '(\\s|>)', 'gi')) || []).length;
+        const soBangCu = demThe(currentHtml, 'table'), soBangMoi = demThe(newText, 'table');
+        const soHangCu = demThe(currentHtml, 'tr'), soHangMoi = demThe(newText, 'tr');
+        const lechCauTruc = soBangCu !== soBangMoi || soHangCu !== soHangMoi;
+
+        if(lechCauTruc){
+          const tiepTuc = confirm(
+            '⚠️ Cấu trúc bảng có vẻ đã thay đổi so với trước khi sửa:\n' +
+            `- Số bảng: ${soBangCu} → ${soBangMoi}\n` +
+            `- Số hàng: ${soHangCu} → ${soHangMoi}\n\n` +
+            'AI có thể đã làm lệch bảng biểu thay vì chỉ sửa nội dung chữ. Bấm OK để vẫn áp dụng (rồi tự kiểm tra kỹ lại bảng), ' +
+            'hoặc bấm Huỷ để GIỮ NGUYÊN bản cũ và không áp dụng lần sửa này.'
+          );
+          if(!tiepTuc){
+            addMsg('Đã huỷ — giữ nguyên giáo án cũ vì cấu trúc bảng có vẻ bị thay đổi. Thử lại với yêu cầu cụ thể hơn, hoặc bôi đen đúng đoạn/ô cần sửa thay vì sửa toàn bộ.', 'ai');
+            return;
+          }
+        }
+
         ta.innerHTML = newText;
         diffBanner.style.display = 'none';
-        addMsg('Đã cập nhật giáo án, giữ nguyên bảng biểu — chế độ này KHÔNG tô vàng phần thay đổi được, đọc kỹ lại toàn bộ trước khi lưu.', 'ai');
+        addMsg(lechCauTruc
+          ? 'Đã áp dụng bản sửa — nhưng cấu trúc bảng có vẻ đã thay đổi, hãy đọc kỹ lại TOÀN BỘ bảng biểu trước khi lưu/xuất file.'
+          : 'Đã cập nhật giáo án, giữ nguyên bảng biểu — chế độ này KHÔNG tô vàng phần thay đổi được, đọc kỹ lại toàn bộ trước khi lưu.', 'ai');
       } else {
         const { html, changedCount } = textToParagraphs(newText, currentText);
         ta.innerHTML = html;
@@ -1912,6 +1962,7 @@ const HUONG_DAN_HTML = `
 
 <h3>5. Tab 📎 + Tài liệu tham khảo</h3>
 <p>Tải lên các file .docx/.txt/.pdf khác (không phải sách trong Thư viện) — ví dụ kế hoạch giáo dục tích hợp, kế hoạch hoà nhập. Bôi đen đoạn trong tài liệu để chèn thẳng vào giáo án, hoặc bấm "Dùng làm nguồn cho AI" để AI đọc và tham khảo khi chỉnh sửa.</p>
+<p>Với file PDF: <strong>lần đầu bật làm nguồn</strong>, app cần vài giây để AI trích nội dung chữ (chỉ 1 lần, hiện chữ "⏳ Đang trích nội dung"); các lượt chat sau trong cùng phiên làm việc sẽ dùng lại ngay nội dung đã trích, không gửi lại nguyên file PDF nữa — tránh lỗi vượt giới hạn dung lượng với file lớn/scan. Lưu ý: nội dung trích chỉ giữ trong phiên làm việc hiện tại (không lưu lại như Thư viện) — tải lại trang thì phải trích lại nếu dùng tiếp.</p>
 <div class="warn-box">⚠️ Với file .docx/.txt, bôi đen chèn được trực tiếp. Với file .pdf, KHÔNG bôi đen chèn được (app không trích chữ từ PDF phía trình duyệt) — chỉ dùng được qua "Dùng làm nguồn cho AI" (AI tự đọc PDF).</div>
 <div class="warn-box">⚠️ Có thể bật nhiều nguồn cùng lúc (nhiều bài Thư viện + nhiều tài liệu tham khảo) — tất cả hiện trong khung chat, mỗi dòng có ✕ riêng để tắt, hoặc "✕ Bỏ hết nguồn" để tắt tất cả 1 lần. Không tự tắt khi chuyển tab.</div>
 <p>Có nút "🔍 Kiểm tra căn cứ nguồn" cạnh đó — bấm để nhờ AI tự rà lại giáo án hiện tại, chỉ ra phần nào có vẻ không có căn cứ rõ trong các nguồn đang bật (AI có thể tự suy diễn thêm khi soạn). Không chạy tự động vì tốn thêm 1 lượt gọi AI — chỉ bấm khi cần độ tin cậy cao hơn cho giáo án quan trọng.</p>
