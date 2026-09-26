@@ -1834,85 +1834,132 @@ async function sendMessage(){
     return;
   }
 
-  // ---- Trường hợp không chọn đoạn nào — sửa toàn bộ giáo án như trước ----
-  const thinking = addMsg('Đang chỉnh sửa giáo án…', 'ai');
-
-  const currentText = ta.innerText || ta.textContent;
-  const currentHtml = ta.innerHTML;
-  const coBang = /<table/i.test(currentHtml); // giáo án đang có bảng -> chuyển sang chế độ giữ định dạng (gửi/nhận HTML)
-  // Ảnh nhúng trong giáo án mẫu (.docx) nằm dạng base64 rất dài — gửi cả chuỗi đó cho AI làm vượt giới hạn
-  // token (lỗi 'input token count exceeds...'). Tách ảnh ra, thay bằng mã giữ chỗ trước khi gửi, khôi phục lại sau.
-  const anhDaTach = [];
-  const htmlGuiDi = currentHtml.replace(/(<img\b[^>]*?\bsrc=")(data:[^"]+)(")/gi, (m, dau, data, cuoi) => {
-    anhDaTach.push(data);
-    return dau + '__ANH_' + (anhDaTach.length - 1) + '__' + cuoi;
-  });
-
+  // ---- Không chọn đoạn nào: 1 ô chat duy nhất, AI tự quyết định trả lời hay sửa giáo án ----
   try{
-    const data = await callBackend('suaGiaoAn', {
-      ...(coBang ? { noiDungHienTaiHTML: htmlGuiDi, giuDinhDang: true } : { noiDungHienTai: currentText }),
+    await guiTroChuyen(q);
+  } finally {
+    sendBtn.disabled = false;
+  }
+}
+
+/* ---------------- TRÒ CHUYỆN VỚI AI (AI tự quyết định hỏi đáp hay sửa) ---------------- */
+// Lịch sử vài lượt chat gần nhất gửi kèm để AI hiểu các câu nối tiếp ("sửa lại phần vừa rồi ngắn hơn").
+let lichSuChat = [];
+
+// Nhận diện môn học từ 1 chuỗi (tên sách / tiêu đề giáo án) để cảnh báo khi nguồn đang bật khác môn với giáo án.
+function phatHienMon(chuoi){
+  const t = String(chuoi || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase();
+  if(/tieng ?viet/.test(t) || /(^|[^a-z])tv\d/.test(t)) return 'Tiếng Việt';
+  if(/toan/.test(t)) return 'Toán';
+  return null;
+}
+
+// Chia giáo án thành các "khối" để AI sửa theo số khối (đoạn văn, ô bảng, dòng danh sách) — chỉ các khối
+// lá (không chứa khối con), nên sửa chữ trong 1 ô bảng không thể làm hỏng cấu trúc bảng.
+const CSS_KHOI = 'p,li,td,th,h1,h2,h3,h4,h5,h6,div,blockquote,pre';
+function layCacKhoi(){
+  return Array.from(ta.querySelectorAll(CSS_KHOI))
+    .filter(el => !el.querySelector(CSS_KHOI) && el.textContent.trim() !== '');
+}
+
+// Đổi chữ của 1 khối nhưng giữ thẻ in đậm bao ngoài (vd tiêu đề <p><strong>...</strong></p>).
+function datChuChoKhoi(el, chu){
+  const con = el.children.length === 1 ? el.firstElementChild : null;
+  if(con && (con.tagName === 'STRONG' || con.tagName === 'B') && con.textContent === el.textContent){
+    con.textContent = chu;
+  } else {
+    el.textContent = chu;
+  }
+}
+
+async function guiTroChuyen(q){
+  // Cảnh báo nếu nguồn đang bật khác môn với giáo án (vd giáo án Toán nhưng nguồn là sách Tiếng Việt)
+  const monGiaoAn = phatHienMon(document.getElementById('giaoanTitle').textContent) || phatHienMon(MON_HOC_HIEN_TAI);
+  const nguonLech = librarySources.filter(s => {
+    const m = phatHienMon(s.tenSach);
+    return m && monGiaoAn && m !== monGiaoAn;
+  });
+  if(nguonLech.length){
+    const ok = confirm(
+      '⚠️ Giáo án đang là môn ' + monGiaoAn + ' nhưng nguồn đang bật thuộc môn khác:\n- ' +
+      nguonLech.map(s => s.tenBai + ' — ' + s.tenSach).join('\n- ') +
+      '\n\nAI sẽ đối chiếu với sách sai môn. Bấm OK để vẫn gửi, hoặc Huỷ để kiểm tra lại nguồn.'
+    );
+    if(!ok){ addMsg('Đã huỷ — hãy bấm ✕ bỏ nguồn không đúng môn rồi gửi lại.', 'ai'); return; }
+  }
+
+  // Giáo án đang là văn bản thuần (bản demo/mới tải) -> chuyển thành các đoạn <p> để chia khối được
+  if(layCacKhoi().length === 0 && ta.textContent.trim() !== ''){
+    ta.classList.remove('placeholder');
+    ta.innerHTML = textToParagraphs(ta.innerText || ta.textContent, null).html;
+  }
+  const cacKhoi = layCacKhoi();
+  const chuDaGui = cacKhoi.map(el => el.textContent.trim());
+
+  const thinking = addMsg('Đang xử lý…', 'ai');
+  try{
+    const data = await callBackend('troChuyen', {
+      cacKhoi: chuDaGui,
+      lichSu: lichSuChat.slice(-6),
       yeuCau: q,
       monHoc: MON_HOC_HIEN_TAI,
       lop: LOP_HIEN_TAI,
-      ...getActiveRefPayload(),
       ...getActiveLibrarySourcePayload()
     });
-    let newText = data.noiDungMoi ? data.noiDungMoi.trim() : null;
-    if(newText && anhDaTach.length) newText = newText.replace(/__ANH_(\d+)__/g, (m, i) => anhDaTach[+i] || m);
     thinking.remove();
-    if(newText){
-      ta.classList.remove('placeholder');
-      if(coBang){
-        // Chế độ giữ định dạng: AI được yêu cầu giữ nguyên cấu trúc bảng, nhưng đây chỉ là chỉ thị trong
-        // prompt (AI viết lại toàn bộ HTML từ đầu), không phải ràng buộc kỹ thuật chắc chắn — vẫn có thể
-        // lệch cấu trúc bảng sau nhiều lượt sửa. Đếm số bảng/hàng trước-sau để cảnh báo nếu có thay đổi
-        // bất thường, thay vì âm thầm áp dụng rồi tin vào việc người dùng tự đọc lại.
-        const demThe = (html, tag) => (html.match(new RegExp('<' + tag + '(\\s|>)', 'gi')) || []).length;
-        const soBangCu = demThe(currentHtml, 'table'), soBangMoi = demThe(newText, 'table');
-        const soHangCu = demThe(currentHtml, 'tr'), soHangMoi = demThe(newText, 'tr');
-        const lechCauTruc = soBangCu !== soBangMoi || soHangCu !== soHangMoi;
 
-        if(lechCauTruc){
-          const tiepTuc = confirm(
-            '⚠️ Cấu trúc bảng có vẻ đã thay đổi so với trước khi sửa:\n' +
-            `- Số bảng: ${soBangCu} → ${soBangMoi}\n` +
-            `- Số hàng: ${soHangCu} → ${soHangMoi}\n\n` +
-            'AI có thể đã làm lệch bảng biểu thay vì chỉ sửa nội dung chữ. Bấm OK để vẫn áp dụng (rồi tự kiểm tra kỹ lại bảng), ' +
-            'hoặc bấm Huỷ để GIỮ NGUYÊN bản cũ và không áp dụng lần sửa này.'
-          );
-          if(!tiepTuc){
-            addMsg('Đã huỷ — giữ nguyên giáo án cũ vì cấu trúc bảng có vẻ bị thay đổi. Thử lại với yêu cầu cụ thể hơn, hoặc bôi đen đúng đoạn/ô cần sửa thay vì sửa toàn bộ.', 'ai');
-            return;
-          }
+    let loiHienThi = data.loiNhan || '';
+    if(data.loai === 'sua' && Array.isArray(data.thayThe)){
+      let daSua = 0, daThem = 0, daXoa = 0, khongDoi = 0, boQua = data.boQua || 0;
+      // Áp từ khối lớn xuống nhỏ để việc chèn/xoá không làm lệch số khối của các thay đổi còn lại
+      data.thayThe.slice().sort((a,b) => b.soKhoi - a.soKhoi).forEach(t => {
+        const el = cacKhoi[t.soKhoi];
+        // Bỏ qua nếu khối đã bị đổi/mất trong lúc chờ AI (người dùng tự sửa tay) — tránh ghi đè nhầm
+        if(!el || !el.isConnected || el.textContent.trim() !== chuDaGui[t.soKhoi]){ boQua++; return; }
+        const laO = el.tagName === 'TD' || el.tagName === 'TH';
+        if(t.xoa){
+          if(laO) el.textContent = ''; else el.remove();
+          daXoa++;
+          return;
         }
+        if(typeof t.noiDungMoi === 'string'){
+          if(t.noiDungMoi.trim() === chuDaGui[t.soKhoi]) khongDoi++;
+          else { datChuChoKhoi(el, t.noiDungMoi.trim()); el.classList.add('diff-new'); daSua++; }
+        }
+        if(typeof t.chenSau === 'string' && t.chenSau.trim()){
+          const moi = document.createElement(el.tagName === 'LI' ? 'li' : 'p');
+          moi.className = 'diff-new';
+          moi.textContent = t.chenSau.trim();
+          if(laO) el.appendChild(moi); else el.insertAdjacentElement('afterend', moi);
+          daThem++;
+        }
+      });
 
-        ta.innerHTML = newText;
-        diffBanner.style.display = 'none';
-        addMsg(lechCauTruc
-          ? 'Đã áp dụng bản sửa — nhưng cấu trúc bảng có vẻ đã thay đổi, hãy đọc kỹ lại TOÀN BỘ bảng biểu trước khi lưu/xuất file.'
-          : 'Đã cập nhật giáo án, giữ nguyên bảng biểu — chế độ này KHÔNG tô vàng phần thay đổi được, đọc kỹ lại toàn bộ trước khi lưu.', 'ai');
-      } else {
-        const { html, changedCount } = textToParagraphs(newText, currentText);
-        ta.innerHTML = html;
-        if(changedCount > 0){
-          diffCount.textContent = `🖍 AI vừa chỉnh sửa ${changedCount} đoạn (tô vàng) — đọc lại trước khi lưu.`;
-          diffBanner.style.display = 'flex';
-        } else {
-          diffBanner.style.display = 'none';
-        }
-        addMsg('Đã cập nhật giáo án — phần vừa sửa được tô vàng để bạn dễ kiểm tra.', 'ai');
+      const tong = daSua + daThem + daXoa;
+      const chiTiet = [];
+      if(daSua) chiTiet.push(daSua + ' khối đã sửa');
+      if(daThem) chiTiet.push(daThem + ' đoạn đã thêm');
+      if(daXoa) chiTiet.push(daXoa + ' khối đã xoá');
+      if(khongDoi) chiTiet.push(khongDoi + ' khối AI đề xuất nhưng nội dung không đổi');
+      if(boQua) chiTiet.push(boQua + ' thay đổi bị bỏ qua (khối không còn khớp)');
+      loiHienThi += (loiHienThi ? '\n\n' : '') +
+        (tong > 0 ? '✅ Kết quả thực tế: ' : '⚠️ Không có thay đổi nào được áp dụng. ') + chiTiet.join(', ') + '.';
+      if(tong > 0){
+        diffCount.textContent = `🖍 AI vừa thay đổi ${tong} chỗ (tô vàng) — đọc lại trước khi lưu.`;
+        diffBanner.style.display = 'flex';
+        markUnsaved();
+        autosaveDraft();
       }
-      markUnsaved();
-      autosaveDraft();
-    } else {
-      addMsg('Không nhận được phản hồi hợp lệ, thử lại nhé.', 'ai');
     }
+    addMsg(loiHienThi || 'AI không trả về nội dung, thử lại nhé.', 'ai');
+
+    lichSuChat.push({ vaiTro: 'user', noiDung: q });
+    lichSuChat.push({ vaiTro: 'model', noiDung: data.loai === 'sua' ? ('(Đã sửa giáo án) ' + (data.loiNhan || '')) : (data.loiNhan || '') });
+    if(lichSuChat.length > 12) lichSuChat = lichSuChat.slice(-12);
   }catch(err){
     thinking.remove();
     addMsg('Có lỗi: ' + (err.message || 'thử lại sau.'), 'ai');
     console.error(err);
-  } finally {
-    sendBtn.disabled = false;
   }
 }
 
@@ -1952,7 +1999,7 @@ const HUONG_DAN_HTML = `
 <ul>
   <li><strong>Tải giáo án mẫu lên:</strong> nút "↑ Tải giáo án mẫu lên" để nạp file .docx có sẵn vào khung soạn thảo.</li>
   <li><strong>Sửa tay:</strong> gõ trực tiếp vào khung như Word bình thường.</li>
-  <li><strong>Sửa bằng AI (toàn bộ):</strong> gõ yêu cầu ở khung chat bên phải rồi bấm Gửi — AI sửa cả giáo án, phần thay đổi được tô vàng để xem lại.</li>
+  <li><strong>Chat với AI (1 ô duy nhất):</strong> gõ yêu cầu ở khung chat bên phải rồi bấm Gửi. AI tự hiểu bạn đang <em>hỏi/nhờ nhận xét</em> (chỉ trả lời trên chat, không đụng giáo án) hay <em>nhờ sửa</em> (chỉ thay các đoạn/ô cần đổi, phần thay đổi được tô vàng, bảng biểu giữ nguyên cấu trúc). Sau mỗi lần sửa, app báo số chỗ thực sự đã thay đổi. AI nhớ vài câu chat gần nhất nên bạn có thể nói nối tiếp.</li>
   <li><strong>Sửa bằng AI (1 đoạn):</strong> bôi đen đoạn cần sửa trong giáo án, sẽ hiện nút "✏️ Yêu cầu AI sửa đoạn này" — chỉ đoạn đó bị đổi, phần còn lại giữ nguyên.</li>
   <li><strong>Xuất file Word:</strong> nút "⬇ Xuất file Word" tải về máy dạng .doc (mở được bằng Word bình thường).</li>
   <li><strong>Khôi phục bản demo:</strong> nút "↺ Khôi phục bản demo".</li>
