@@ -1650,6 +1650,28 @@ function addMsg(text, cls){
   return d;
 }
 
+// Hiển thị câu trả lời của AI có định dạng markdown cơ bản (in đậm, tiêu đề, gạch đầu dòng, đường kẻ) thay vì
+// hiện nguyên ký hiệu ** ### ---. Luôn escape HTML trước rồi mới thêm thẻ nên an toàn.
+function addMsgMd(text, cls){
+  const esc = String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const inline = t => t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code>$1</code>');
+  const html = esc.split('\n').map(dong => {
+    const t = dong.trim();
+    if(/^-{3,}$/.test(t)) return '<hr style="border:none;border-top:1px solid var(--line);margin:8px 0;">';
+    const h = t.match(/^#{1,6}\s+(.*)$/);
+    if(h) return '<div style="font-weight:700;margin:8px 0 2px;">' + inline(h[1]) + '</div>';
+    const li = t.match(/^[*\-]\s+(.*)$/);
+    if(li) return '<div style="padding-left:14px;text-indent:-10px;">• ' + inline(li[1]) + '</div>';
+    return t === '' ? '<div style="height:6px;"></div>' : '<div>' + inline(t) + '</div>';
+  }).join('');
+  const d = document.createElement('div');
+  d.className = 'msg ' + cls;
+  d.innerHTML = html;
+  chatLog.appendChild(d);
+  chatLog.scrollTop = chatLog.scrollHeight;
+  return d;
+}
+
 // Chuyển văn bản thuần AI trả về thành các đoạn <p>, in đậm dòng tiêu đề kiểu I./II./III./IV. hoặc CHỮ HOA
 // và tô màu đoạn nào KHÔNG khớp với nội dung cũ (tức là đoạn AI vừa thêm/sửa)
 function splitLines(text){
@@ -1960,7 +1982,7 @@ async function guiTroChuyen(q){
         autosaveDraft();
       }
     }
-    addMsg(loiHienThi || 'AI không trả về nội dung, thử lại nhé.', 'ai');
+    addMsgMd(loiHienThi || 'AI không trả về nội dung, thử lại nhé.', 'ai');
 
     lichSuChat.push({ vaiTro: 'user', noiDung: q });
     lichSuChat.push({ vaiTro: 'model', noiDung: data.loai === 'sua' ? ('(Đã sửa giáo án) ' + (data.loiNhan || '')) : (data.loiNhan || '') });
