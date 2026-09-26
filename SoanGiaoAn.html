@@ -1649,6 +1649,40 @@ chatInput.addEventListener('input', ()=>{
   });
 });
 
+/* ---------------- TẠM DỪNG KHUNG PDF KHI GÕ ---------------- */
+// Khung xem PDF (Google Drive Viewer / trình xem PDF của trình duyệt) chạy rất nặng, làm ô chat và khung soạn
+// giáo án gõ bị trễ rõ rệt trên một số máy. Khi bắt đầu gõ, tạm gỡ khung PDF, ngừng gõ ~6 giây thì tự tải lại
+// (hoặc bấm "Xem lại ngay"). Tắt tính năng: localStorage.setItem('pdf_tam_dung','0') trong console.
+let pdfTamDung = null; // { khung, html, hen }
+function timKhungPdfDangChay(){
+  const ifr = document.querySelector('.pdf-frame-wrap iframe, .ref-viewer-body iframe');
+  return ifr ? ifr.parentElement : null;
+}
+function tamDungKhungPdf(){
+  try{ if(localStorage.getItem('pdf_tam_dung') === '0') return; }catch(e){}
+  if(pdfTamDung && !pdfTamDung.khung.isConnected) pdfTamDung = null;
+  if(pdfTamDung){
+    clearTimeout(pdfTamDung.hen);
+    pdfTamDung.hen = setTimeout(tiepTucKhungPdf, 6000);
+    return;
+  }
+  const khung = timKhungPdfDangChay();
+  if(!khung) return;
+  pdfTamDung = { khung, html: khung.innerHTML, hen: setTimeout(tiepTucKhungPdf, 6000) };
+  khung.innerHTML = '<div class="empty-state" style="height:100%;"><div class="glyph">⏸</div>' +
+    '<p>Khung PDF tạm dừng để bạn gõ cho mượt — tự tải lại sau khi ngừng gõ vài giây.</p>' +
+    '<button class="lib-source-btn" onclick="tiepTucKhungPdf()">▶ Xem lại ngay</button></div>';
+}
+function tiepTucKhungPdf(){
+  if(!pdfTamDung) return;
+  clearTimeout(pdfTamDung.hen);
+  const { khung, html } = pdfTamDung;
+  pdfTamDung = null;
+  if(khung.isConnected) khung.innerHTML = html;
+}
+chatInput.addEventListener('input', tamDungKhungPdf);
+ta.addEventListener('input', tamDungKhungPdf);
+
 function addMsg(text, cls){
   const d = document.createElement('div');
   d.className = 'msg ' + cls;
