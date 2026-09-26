@@ -1857,6 +1857,13 @@ function phatHienMon(chuoi){
 // Chia giáo án thành các "khối" để AI sửa theo số khối (đoạn văn, ô bảng, dòng danh sách) — chỉ các khối
 // lá (không chứa khối con), nên sửa chữ trong 1 ô bảng không thể làm hỏng cấu trúc bảng.
 const CSS_KHOI = 'p,li,td,th,h1,h2,h3,h4,h5,h6,div,blockquote,pre';
+function monCuaGiaoAn(){
+  const t = (ta.textContent || '').slice(0, 600).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/gi,'d').toLowerCase();
+  const m = t.match(/mon\s+(tieng\s*viet|toan)/);
+  if(!m) return null;
+  return /tieng/.test(m[1]) ? 'Tiếng Việt' : 'Toán';
+}
+
 function layCacKhoi(){
   return Array.from(ta.querySelectorAll(CSS_KHOI))
     .filter(el => !el.querySelector(CSS_KHOI) && el.textContent.trim() !== '');
@@ -1874,7 +1881,9 @@ function datChuChoKhoi(el, chu){
 
 async function guiTroChuyen(q){
   // Cảnh báo nếu nguồn đang bật khác môn với giáo án (vd giáo án Toán nhưng nguồn là sách Tiếng Việt)
-  const monGiaoAn = phatHienMon(document.getElementById('giaoanTitle').textContent) || phatHienMon(MON_HOC_HIEN_TAI);
+  // Môn của giáo án lấy từ NỘI DUNG (câu "... MÔN TIẾNG VIỆT LỚP 2" ở đầu bài), không lấy từ tiêu đề demo hay
+  // hằng số MON_HOC_HIEN_TAI. Không nhận ra được thì KHÔNG cảnh báo (tránh báo nhầm).
+  const monGiaoAn = monCuaGiaoAn();
   const nguonLech = librarySources.filter(s => {
     const m = phatHienMon(s.tenSach);
     return m && monGiaoAn && m !== monGiaoAn;
@@ -1902,7 +1911,7 @@ async function guiTroChuyen(q){
       cacKhoi: chuDaGui,
       lichSu: lichSuChat.slice(-6),
       yeuCau: q,
-      monHoc: MON_HOC_HIEN_TAI,
+      monHoc: monGiaoAn || MON_HOC_HIEN_TAI,
       lop: LOP_HIEN_TAI,
       ...getActiveLibrarySourcePayload()
     });
