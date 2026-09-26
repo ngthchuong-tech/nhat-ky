@@ -1840,17 +1840,25 @@ async function sendMessage(){
   const currentText = ta.innerText || ta.textContent;
   const currentHtml = ta.innerHTML;
   const coBang = /<table/i.test(currentHtml); // giáo án đang có bảng -> chuyển sang chế độ giữ định dạng (gửi/nhận HTML)
+  // Ảnh nhúng trong giáo án mẫu (.docx) nằm dạng base64 rất dài — gửi cả chuỗi đó cho AI làm vượt giới hạn
+  // token (lỗi 'input token count exceeds...'). Tách ảnh ra, thay bằng mã giữ chỗ trước khi gửi, khôi phục lại sau.
+  const anhDaTach = [];
+  const htmlGuiDi = currentHtml.replace(/(<img\b[^>]*?\bsrc=")(data:[^"]+)(")/gi, (m, dau, data, cuoi) => {
+    anhDaTach.push(data);
+    return dau + '__ANH_' + (anhDaTach.length - 1) + '__' + cuoi;
+  });
 
   try{
     const data = await callBackend('suaGiaoAn', {
-      ...(coBang ? { noiDungHienTaiHTML: currentHtml, giuDinhDang: true } : { noiDungHienTai: currentText }),
+      ...(coBang ? { noiDungHienTaiHTML: htmlGuiDi, giuDinhDang: true } : { noiDungHienTai: currentText }),
       yeuCau: q,
       monHoc: MON_HOC_HIEN_TAI,
       lop: LOP_HIEN_TAI,
       ...getActiveRefPayload(),
       ...getActiveLibrarySourcePayload()
     });
-    const newText = data.noiDungMoi ? data.noiDungMoi.trim() : null;
+    let newText = data.noiDungMoi ? data.noiDungMoi.trim() : null;
+    if(newText && anhDaTach.length) newText = newText.replace(/__ANH_(\d+)__/g, (m, i) => anhDaTach[+i] || m);
     thinking.remove();
     if(newText){
       ta.classList.remove('placeholder');
