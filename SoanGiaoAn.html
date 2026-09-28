@@ -425,6 +425,8 @@
   }
   .send-btn:disabled{opacity:.55;cursor:default;}
   .quick-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 12px;flex-shrink:0;}
+  .prompt-widget{position:relative;}
+  .prompt-dropdown{width:320px;left:0;right:auto;}
   .chip{
     font-size:12px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 11px;
     cursor:pointer;color:var(--ink-soft);
@@ -616,9 +618,16 @@
           <span class="sub">Trợ lý AI</span>
         </div>
         <div class="quick-chips">
-          <button class="chip" data-q="Đối chiếu mục tiêu tiết này với nội dung SGK, chỉnh lại cho khớp.">Đối chiếu mục tiêu với SGK</button>
-          <button class="chip" data-q="Bổ sung phần Tích hợp giáo dục An toàn giao thông theo đúng quy định KHGD khối 2.">Bổ sung tích hợp ATGT</button>
-          <button class="chip" data-q="Thêm mục điều chỉnh cho học sinh hòa nhập vào phần III, sau mỗi hoạt động chính.">Thêm điều chỉnh hòa nhập</button>
+          <div class="prompt-widget">
+            <button class="btn-ghost" id="promptMauBtn">⭐ Prompt mẫu ▾</button>
+            <div class="drafts-dropdown prompt-dropdown" id="promptMauPanel" style="display:none;">
+              <h4>Prompt mẫu đã lưu</h4>
+              <div class="dd-row">
+                <button class="btn-primary" id="promptSaveBtn" style="width:100%;">＋ Lưu yêu cầu đang gõ thành prompt mẫu</button>
+              </div>
+              <div id="promptListBox"><p class="sub">Chưa có prompt mẫu nào.</p></div>
+            </div>
+          </div>
         </div>
         <div class="chat-log" id="chatLog">
           <div class="msg hint">Gõ yêu cầu chỉnh sửa — AI sẽ cập nhật trực tiếp vào giáo án phía trên.</div>
@@ -1857,13 +1866,75 @@ const chatLog = document.getElementById('chatLog');
 const chatInput = document.getElementById('chatInput');
 const sendBtn = document.getElementById('sendBtn');
 
-document.querySelectorAll('.chip').forEach(c=>{
-  c.onclick = ()=>{
-    chatInput.value = c.dataset.q;
-    chatInput.focus();
-    chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length);
-  };
+/* ---------------- PROMPT MẪU (lưu sẵn yêu cầu hay dùng, thay cho 3 gợi ý cố định trước đây) ---------------- */
+// Lưu trong localStorage (riêng máy/trình duyệt này) — prompt mẫu là câu lệnh cá nhân hay dùng lại, không
+// cần đồng bộ nhiều máy như giáo án, nên không cần thêm bảng ở backend.
+const PROMPT_MAU_KEY = 'giaoan_prompt_mau';
+function layDanhSachPromptMau(){
+  try{ return JSON.parse(localStorage.getItem(PROMPT_MAU_KEY) || '[]'); }catch(e){ return []; }
+}
+function luuDanhSachPromptMau(list){
+  try{ localStorage.setItem(PROMPT_MAU_KEY, JSON.stringify(list)); }catch(e){ console.error('Không lưu được prompt mẫu:', e); }
+}
+function escChuThuong(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function renderDanhSachPromptMau(){
+  const box = document.getElementById('promptListBox');
+  const list = layDanhSachPromptMau();
+  if(!list.length){
+    box.innerHTML = '<p class="sub">Chưa có prompt mẫu nào — gõ yêu cầu vào ô chat rồi bấm nút "Lưu" ở trên để dùng lại sau này.</p>';
+    return;
+  }
+  box.innerHTML = '';
+  list.forEach(p=>{
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--line);cursor:pointer;';
+    row.innerHTML = `<div style="min-width:0;"><div style="font-weight:600;font-size:13px;">${escChuThuong(p.ten)}</div>` +
+      `<div class="sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escChuThuong(p.noiDung)}</div></div>`;
+    row.onclick = ()=>{
+      chatInput.value = p.noiDung;
+      chatInput.focus();
+      chatInput.setSelectionRange(chatInput.value.length, chatInput.value.length);
+      chatInput.dispatchEvent(new Event('input', {bubbles:true}));
+      promptMauPanel.style.display = 'none';
+    };
+    const xoaBtn = document.createElement('button');
+    xoaBtn.className = 'btn-secondary'; xoaBtn.textContent = '✕'; xoaBtn.title = 'Xoá prompt mẫu này'; xoaBtn.style.flexShrink = '0';
+    xoaBtn.onclick = (e)=>{
+      e.stopPropagation();
+      if(!confirm('Xoá prompt mẫu "' + p.ten + '"?')) return;
+      luuDanhSachPromptMau(layDanhSachPromptMau().filter(x=>x.id !== p.id));
+      renderDanhSachPromptMau();
+    };
+    row.appendChild(xoaBtn);
+    box.appendChild(row);
+  });
+}
+
+const promptMauBtn = document.getElementById('promptMauBtn');
+const promptMauPanel = document.getElementById('promptMauPanel');
+promptMauBtn.onclick = (e)=>{
+  e.stopPropagation();
+  const dangMo = promptMauPanel.style.display !== 'none';
+  promptMauPanel.style.display = dangMo ? 'none' : 'block';
+  if(!dangMo) renderDanhSachPromptMau();
+};
+document.addEventListener('mousedown', (e)=>{
+  if(promptMauPanel.style.display !== 'none' && !promptMauPanel.contains(e.target) && e.target !== promptMauBtn){
+    promptMauPanel.style.display = 'none';
+  }
 });
+document.getElementById('promptSaveBtn').onclick = ()=>{
+  const noiDung = chatInput.value.trim();
+  if(!noiDung){ alert('Gõ nội dung yêu cầu vào ô chat trước, rồi mới lưu thành prompt mẫu.'); return; }
+  const ten = window.prompt('Đặt tên ngắn cho prompt mẫu này:', noiDung.slice(0, 30));
+  if(!ten || !ten.trim()) return;
+  const list = layDanhSachPromptMau();
+  list.unshift({ id: 'pm_' + Date.now(), ten: ten.trim(), noiDung });
+  luuDanhSachPromptMau(list);
+  renderDanhSachPromptMau();
+};
+
 sendBtn.onclick = sendMessage;
 chatInput.addEventListener('keydown', e=>{
   if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
