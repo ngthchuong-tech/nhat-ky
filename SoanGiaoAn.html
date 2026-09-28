@@ -576,7 +576,17 @@
           <button class="btn-secondary" id="redoBtn" title="Làm lại (Ctrl+Y)" disabled>↷ Làm lại</button>
           <button class="btn-primary" id="exportBtn">⬇ Xuất file Word</button>
           <button class="btn-secondary" id="resetBtn">↺ Khôi phục bản demo</button>
+          <button class="btn-secondary" id="draftsBtn">📂 Bản nháp</button>
           <span class="sub" id="uploadStatus" style="align-self:center;"></span>
+        </div>
+        <div class="add-book-panel" id="draftsPanel" style="display:none;">
+          <h4>Quản lý bản nháp</h4>
+          <div class="ab-row">
+            <input type="text" id="draftNewName" placeholder="Đặt tên bản nháp mới, vd: Toán tuần 5 - Bài 8" style="flex:1;min-width:220px;font-family:inherit;font-size:13.5px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;">
+            <button class="btn-primary" id="draftSaveNewBtn">＋ Lưu thành bản mới</button>
+          </div>
+          <p class="sub" style="margin:0 0 10px;">Đang mở: <strong id="draftCurrentName">Nháp tự động (theo trình duyệt)</strong></p>
+          <div id="draftListBox"><p class="sub">Đang tải danh sách...</p></div>
         </div>
         <div id="diffBanner" class="diff-banner" style="display:none;">
           <span id="diffCount"></span>
@@ -1242,7 +1252,7 @@ function getDraftId(){
   }
   return id;
 }
-const draftId = getDraftId();
+let draftId = getDraftId(); // thay đổi được khi mở/lưu 1 bản nháp khác (trước đây cố định theo const)
 let autosaveTimer = null;
 
 function autosaveDraft(){
@@ -1273,6 +1283,7 @@ async function loadDraftOnStart(){
       ta.innerHTML = data.noiDungHTML;
       document.getElementById('giaoanTitle').textContent = data.tieuDe || 'Giáo án (nháp đã lưu)';
       uploadStatusEl.textContent = 'Đã tải lại nháp lần làm việc trước.';
+      capNhatTenNhapHienTai(data.tieuDe);
       ghiMocHoanTac(true);
     }
   }catch(err){
@@ -1280,6 +1291,116 @@ async function loadDraftOnStart(){
   }
 }
 loadDraftOnStart();
+
+/* ---------------- QUẢN LÝ NHIỀU BẢN NHÁP ĐẶT TÊN ĐƯỢC ---------------- */
+// Trước đây mỗi trình duyệt chỉ có đúng 1 ô nháp tự động, ghi đè lẫn nhau nếu soạn nhiều giáo án khác
+// tiết/bài trên cùng máy. Giờ vẫn giữ tự động lưu như cũ (draftId hiện tại), nhưng cho phép lưu thành
+// nhiều bản đặt tên riêng (mỗi bản 1 dòng trong Sheet GiaoAnNhap) và mở lại đúng bản cần.
+function capNhatTenNhapHienTai(ten){
+  document.getElementById('draftCurrentName').textContent = ten || 'Nháp tự động (theo trình duyệt)';
+}
+
+const draftsBtn = document.getElementById('draftsBtn');
+const draftsPanel = document.getElementById('draftsPanel');
+draftsBtn.onclick = ()=>{
+  const dangMo = draftsPanel.style.display !== 'none';
+  draftsPanel.style.display = dangMo ? 'none' : 'block';
+  if(!dangMo) moBangDanhSachNhap();
+};
+
+async function moBangDanhSachNhap(){
+  const box = document.getElementById('draftListBox');
+  box.innerHTML = '<p class="sub">Đang tải danh sách...</p>';
+  if(!GAS_URL || GAS_URL.indexOf('DÁN_URL') === 0){
+    box.innerHTML = '<p class="sub">Chưa cấu hình backend nên không lưu/xem được danh sách bản nháp.</p>';
+    return;
+  }
+  try{
+    const ketQua = await callBackend('layDanhSachNhap', {});
+    const list = Array.isArray(ketQua) ? ketQua : (ketQua.result || []);
+    if(!list.length){
+      box.innerHTML = '<p class="sub">Chưa có bản nháp nào được đặt tên lưu lại — dùng ô phía trên để lưu bản đang soạn thành 1 bản có tên.</p>';
+      return;
+    }
+    box.innerHTML = '';
+    list.forEach(d=>{
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--line);';
+      const thoiGian = d.luuLuc ? new Date(d.luuLuc).toLocaleString('vi-VN') : '';
+      const dangMoGhiChu = d.id === draftId ? ' · <strong style="color:var(--leaf);">đang mở</strong>' : '';
+      const ten = String(d.tieuDe || '(chưa đặt tên)').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+      row.innerHTML = `<div><div style="font-weight:600;font-size:13.5px;">${ten}</div><div class="sub">${thoiGian}${dangMoGhiChu}</div></div>`;
+      const btns = document.createElement('div');
+      btns.style.cssText = 'display:flex;gap:6px;flex-shrink:0;';
+      const moBtn = document.createElement('button');
+      moBtn.className = 'btn-secondary'; moBtn.textContent = 'Mở'; moBtn.onclick = ()=>moBanNhap(d.id, d.tieuDe);
+      const xoaBtn = document.createElement('button');
+      xoaBtn.className = 'btn-secondary'; xoaBtn.textContent = '✕'; xoaBtn.title = 'Xoá bản nháp này';
+      xoaBtn.onclick = ()=>xoaBanNhap(d.id, d.tieuDe);
+      btns.appendChild(moBtn); btns.appendChild(xoaBtn);
+      row.appendChild(btns);
+      box.appendChild(row);
+    });
+  }catch(err){
+    box.innerHTML = '<p class="sub">Không tải được danh sách: ' + (err.message||'') + '</p>';
+  }
+}
+
+async function moBanNhap(id, tieuDeGoi){
+  try{
+    const data = await callBackend('layNhap', { id });
+    if(!data.found){ alert('Không tìm thấy bản nháp này (có thể vừa bị xoá).'); moBangDanhSachNhap(); return; }
+    draftId = id;
+    localStorage.setItem('giaoan_draft_id', id);
+    ta.classList.remove('placeholder');
+    ta.innerHTML = data.noiDungHTML || '';
+    document.getElementById('giaoanTitle').textContent = data.tieuDe || tieuDeGoi || 'Giáo án';
+    capNhatTenNhapHienTai(data.tieuDe || tieuDeGoi);
+    diffBanner.style.display = 'none';
+    ghiMocHoanTac(true);
+    markSaved();
+    draftsPanel.style.display = 'none';
+    uploadStatusEl.textContent = 'Đã mở bản nháp "' + (data.tieuDe || tieuDeGoi || '') + '".';
+  }catch(err){
+    alert('Không mở được bản nháp: ' + err.message);
+  }
+}
+
+async function xoaBanNhap(id, tieuDe){
+  if(!confirm('Xoá hẳn bản nháp "' + (tieuDe||'') + '"? Không thể khôi phục lại.')) return;
+  try{
+    await callBackend('xoaNhap', { id });
+    if(id === draftId){
+      // Đang xoá đúng bản đang mở — chuyển sang 1 id trắng mới để lần lưu tự động sau không "hồi sinh"
+      // nhầm lại đúng bản vừa xoá.
+      draftId = 'draft_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+      localStorage.setItem('giaoan_draft_id', draftId);
+      capNhatTenNhapHienTai(null);
+    }
+    moBangDanhSachNhap();
+  }catch(err){
+    alert('Không xoá được: ' + err.message);
+  }
+}
+
+document.getElementById('draftSaveNewBtn').onclick = async ()=>{
+  const input = document.getElementById('draftNewName');
+  const ten = input.value.trim();
+  if(!ten){ alert('Nhập tên cho bản nháp trước khi lưu (vd: Toán tuần 5 - Bài 8).'); return; }
+  if(!GAS_URL || GAS_URL.indexOf('DÁN_URL') === 0){ alert('Chưa cấu hình backend nên chưa lưu được.'); return; }
+  draftId = 'draft_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+  localStorage.setItem('giaoan_draft_id', draftId);
+  document.getElementById('giaoanTitle').textContent = ten;
+  capNhatTenNhapHienTai(ten);
+  input.value = '';
+  try{
+    await callBackend('luuNhap', { id: draftId, tieuDe: ten, noiDungHTML: ta.innerHTML });
+    uploadStatusEl.textContent = 'Đã lưu thành bản nháp mới: "' + ten + '".';
+    moBangDanhSachNhap();
+  }catch(err){
+    alert('Không lưu được: ' + err.message);
+  }
+};
 
 document.getElementById('resetBtn').onclick = ()=>{
   setPlainDemo(giaoanMau);
