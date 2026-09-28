@@ -2293,13 +2293,22 @@ function layCacKhoi(){
     .filter(el => !el.querySelector(CSS_KHOI) && el.textContent.trim() !== '');
 }
 
-// Đổi chữ của 1 khối nhưng giữ thẻ in đậm bao ngoài (vd tiêu đề <p><strong>...</strong></p>).
+// AI trả lời/nội dung sửa thường có markdown đơn giản (**đậm**, xuống dòng \n) — chuyển thành HTML thật
+// thay vì để nguyên chữ (nếu không, dấu ** hiện ra chữ thô và \n bị trình duyệt gộp liền một dòng).
+function mdSangHtmlKhoi(chu){
+  const esc = String(chu||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return esc.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+}
+
+// Đổi chữ của 1 khối nhưng giữ thẻ in đậm bao ngoài (vd tiêu đề <p><strong>...</strong></p>), đồng thời
+// hiểu markdown đơn giản (đậm/xuống dòng) mà AI trả về bên trong nội dung mới.
 function datChuChoKhoi(el, chu){
   const con = el.children.length === 1 ? el.firstElementChild : null;
+  const html = mdSangHtmlKhoi(chu);
   if(con && (con.tagName === 'STRONG' || con.tagName === 'B') && con.textContent === el.textContent){
-    con.textContent = chu;
+    con.innerHTML = html;
   } else {
-    el.textContent = chu;
+    el.innerHTML = html;
   }
 }
 
@@ -2344,11 +2353,16 @@ async function guiTroChuyen(q){
     let loiHienThi = data.loiNhan || '';
     if(data.loai === 'sua' && Array.isArray(data.thayThe)){
       let daSua = 0, daThem = 0, daXoa = 0, khongDoi = 0, boQua = data.boQua || 0;
+      const khoiDaTuSua = new Set(); // các so_khoi CHÍNH app vừa sửa trong lượt này (không phải người dùng)
       // Áp từ khối lớn xuống nhỏ để việc chèn/xoá không làm lệch số khối của các thay đổi còn lại
       data.thayThe.slice().sort((a,b) => b.soKhoi - a.soKhoi).forEach(t => {
         const el = cacKhoi[t.soKhoi];
-        // Bỏ qua nếu khối đã bị đổi/mất trong lúc chờ AI (người dùng tự sửa tay) — tránh ghi đè nhầm
-        if(!el || !el.isConnected || el.textContent.trim() !== chuDaGui[t.soKhoi]){ boQua++; return; }
+        // Bỏ qua nếu khối đã bị đổi/mất trong lúc chờ AI (người dùng tự sửa tay) — tránh ghi đè nhầm.
+        // Nếu khối này đã bị chính lượt sửa hiện tại đổi rồi (AI trả về 2 mục riêng cho cùng 1 khối) thì
+        // KHÔNG tính là "người dùng đã sửa" — vẫn cho áp tiếp mục thứ 2.
+        const tuDaSuaRoi = khoiDaTuSua.has(t.soKhoi);
+        if(!el || !el.isConnected || (!tuDaSuaRoi && el.textContent.trim() !== chuDaGui[t.soKhoi])){ boQua++; return; }
+        khoiDaTuSua.add(t.soKhoi);
         const laO = el.tagName === 'TD' || el.tagName === 'TH';
         if(t.xoa){
           if(laO) el.textContent = ''; else el.remove();
@@ -2360,11 +2374,18 @@ async function guiTroChuyen(q){
           else { datChuChoKhoi(el, t.noiDungMoi.trim()); el.classList.add('diff-new'); daSua++; }
         }
         if(typeof t.chenSau === 'string' && t.chenSau.trim()){
-          const moi = document.createElement(el.tagName === 'LI' ? 'li' : 'p');
-          moi.className = 'diff-new';
-          moi.textContent = t.chenSau.trim();
-          if(laO) el.appendChild(moi); else el.insertAdjacentElement('afterend', moi);
-          daThem++;
+          // Tách theo từng dòng AI trả về -> mỗi dòng 1 đoạn/mục riêng (không gộp chung 1 khối bằng <br>),
+          // đúng ý "mỗi ý xuống 1 dòng" thay vì bị nối liền thành 1 đoạn dài.
+          const cacDong = t.chenSau.split('\n').map(d=>d.trim()).filter(Boolean);
+          let sauCung = el;
+          cacDong.forEach(dong=>{
+            const moi = document.createElement(el.tagName === 'LI' ? 'li' : 'p');
+            moi.className = 'diff-new';
+            moi.innerHTML = mdSangHtmlKhoi(dong);
+            if(laO) el.appendChild(moi); else sauCung.insertAdjacentElement('afterend', moi);
+            sauCung = moi;
+          });
+          daThem += cacDong.length;
         }
       });
 
