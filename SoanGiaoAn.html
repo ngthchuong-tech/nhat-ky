@@ -2530,16 +2530,32 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
 });
 
 /* export: giữ định dạng HTML (đậm/bảng/ảnh) khi mở lại bằng Word */
+// mammoth.js khi đọc file .docx mẫu thường để lại chiều rộng cố định theo pixel trên từng cột/ô bảng
+// (đúng bằng khổ giấy gốc). Trong khung soạn thảo của app, CSS "table{width:100%}" của trang đè lên nên
+// nhìn vẫn vừa khung — nhưng Word khi mở file xuất lại ưu tiên đúng con số pixel cố định đó trên từng ô,
+// không tự co theo lề trang của Word -> bảng tràn ra ngoài lề. Xoá hết width cố định trước khi xuất, để
+// Word tự chia đều theo đúng khổ giấy đang dùng.
+function boChieuRongCoDinh(html){
+  const tam = document.createElement('div');
+  tam.innerHTML = html;
+  tam.querySelectorAll('table, colgroup, col, tr, td, th').forEach(el=>{
+    el.removeAttribute('width');
+    if(el.style){ el.style.width = ''; el.style.minWidth = ''; el.style.maxWidth = ''; }
+  });
+  tam.querySelectorAll('table').forEach(t=>{ t.style.width = '100%'; });
+  return tam.innerHTML;
+}
+
 document.getElementById('exportBtn').onclick = ()=>{
   const bodyHtml = ta.classList.contains('placeholder')
     ? '<pre style="font-family:Times New Roman;white-space:pre-wrap;">' + ta.textContent.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</pre>'
-    : ta.innerHTML;
+    : boChieuRongCoDinh(ta.innerHTML);
   // Khung soạn thảo trong app tự kẻ viền/tô nền bảng bằng CSS riêng của trang (#giaoanText.doc-view table...),
   // nhưng CSS đó KHÔNG có trong file Word xuất ra — trước đây file .doc mở lên bị mất viền bảng dù trong app
   // vẫn thấy có viền. Chép lại đúng bộ quy tắc đó (không phụ thuộc #giaoanText.doc-view) vào file xuất.
   const cssXuatWord = `
     table{border-collapse:collapse;width:100%;margin:12px 0;}
-    table td,table th{border:1px solid #999;padding:6px 8px;vertical-align:top;}
+    table td,table th{border:1px solid #999;padding:6px 8px;vertical-align:top;word-wrap:break-word;overflow-wrap:break-word;}
     table tr:first-child:not(:last-child) td,table tr:first-child:not(:last-child) th{background:#404040;color:#fff;font-weight:700;text-align:center;}
   `;
   const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${cssXuatWord}</style></head>
