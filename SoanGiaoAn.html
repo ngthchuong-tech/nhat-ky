@@ -572,6 +572,8 @@
             ⬆ Tải giáo án mẫu lên
             <input type="file" id="uploadInput" accept=".docx,.txt" style="display:none;">
           </label>
+          <button class="btn-secondary" id="undoBtn" title="Hoàn tác (Ctrl+Z)" disabled>↶ Hoàn tác</button>
+          <button class="btn-secondary" id="redoBtn" title="Làm lại (Ctrl+Y)" disabled>↷ Làm lại</button>
           <button class="btn-primary" id="exportBtn">⬇ Xuất file Word</button>
           <button class="btn-secondary" id="resetBtn">↺ Khôi phục bản demo</button>
           <span class="sub" id="uploadStatus" style="align-self:center;"></span>
@@ -1222,6 +1224,11 @@ function setPlainDemo(text){
   ta.textContent = text;
 }
 setPlainDemo(giaoanMau);
+// ghiMocHoanTac() và các biến nó dùng (let/const) được khai báo ở phần dưới trong cùng file — dù hàm đã
+// được hoist lên trước, các biến let/const đó CHƯA khởi tạo xong nếu gọi ngay lúc này (lỗi "Cannot access
+// before initialization"). Dời việc gọi sang 1 microtask (chạy ngay sau khi toàn bộ script này chạy xong)
+// để chắc chắn mọi biến đã sẵn sàng, mà vẫn có mốc hoàn tác đầu tiên trước khi người dùng kịp thao tác gì.
+Promise.resolve().then(()=>{ if(typeof ghiMocHoanTac === 'function') ghiMocHoanTac(true); });
 
 /* ---------------- TỰ ĐỘNG LƯU NHÁP (autosave qua backend GAS) ---------------- */
 // ID nháp gắn theo trình duyệt này — bản chính thức nên thay bằng ID theo đúng
@@ -1266,6 +1273,7 @@ async function loadDraftOnStart(){
       ta.innerHTML = data.noiDungHTML;
       document.getElementById('giaoanTitle').textContent = data.tieuDe || 'Giáo án (nháp đã lưu)';
       uploadStatusEl.textContent = 'Đã tải lại nháp lần làm việc trước.';
+      ghiMocHoanTac(true);
     }
   }catch(err){
     console.error('Lỗi tải nháp:', err);
@@ -1278,6 +1286,7 @@ document.getElementById('resetBtn').onclick = ()=>{
   document.getElementById('giaoanTitle').textContent = 'Giáo án — Toán 2, Tuần 1, Bài 1, Tiết 1 (mẫu demo)';
   document.getElementById('uploadStatus').textContent = '';
   diffBanner.style.display = 'none';
+  ghiMocHoanTac(true);
   markSaved();
 };
 
@@ -1369,6 +1378,7 @@ uploadInput.addEventListener('change', async (e)=>{
     document.getElementById('giaoanTitle').textContent = 'Giáo án — ' + file.name;
     uploadStatus.textContent = 'Đã tải: ' + file.name + ' (định dạng gốc)';
     diffBanner.style.display = 'none';
+    ghiMocHoanTac(true);
     markUnsaved();
   }catch(err){
     console.error(err);
@@ -1697,6 +1707,7 @@ function insertHtmlAtCaret(html){
   }
   markUnsaved();
   autosaveDraft();
+  ghiMocHoanTac(false);
 }
 
 const chatLog = document.getElementById('chatLog');
@@ -1854,8 +1865,58 @@ function danhDauNguoiSua(){
   khoi.classList.remove('diff-new'); // người vừa gõ đè lên đúng khối AI từng sửa -> tính là người sửa
   khoi.classList.add('diff-user');
 }
+/* ---------------- HOÀN TÁC / LÀM LẠI (undo/redo riêng của app) ---------------- */
+// Không dùng undo có sẵn của trình duyệt (document.execCommand) vì AI sửa bằng cách gán thẳng
+// innerHTML/textContent — trình duyệt không tự đưa việc đó vào lịch sử undo gốc, dễ gây Ctrl+Z không
+// ăn khớp. Tự lưu lại toàn bộ HTML của giáo án tại từng mốc, tối đa 40 mốc gần nhất.
+let lichSuHoanTac = [];
+let viTriHoanTac = -1;
+const undoBtn = document.getElementById('undoBtn');
+const redoBtn = document.getElementById('redoBtn');
+function capNhatNutHoanTac(){
+  undoBtn.disabled = viTriHoanTac <= 0;
+  redoBtn.disabled = viTriHoanTac >= lichSuHoanTac.length - 1;
+}
+// dat=true: bắt đầu lại lịch sử từ đầu (dùng khi tải mẫu mới/khôi phục demo, không giữ lịch sử cũ nữa)
+function ghiMocHoanTac(dat){
+  const html = ta.innerHTML;
+  if(dat){
+    lichSuHoanTac = [html];
+    viTriHoanTac = 0;
+    capNhatNutHoanTac();
+    return;
+  }
+  if(lichSuHoanTac[viTriHoanTac] === html) return; // không đổi gì thì khỏi lưu thêm
+  lichSuHoanTac = lichSuHoanTac.slice(0, viTriHoanTac + 1); // bỏ nhánh "làm lại" cũ khi có thay đổi mới
+  lichSuHoanTac.push(html);
+  if(lichSuHoanTac.length > 40) lichSuHoanTac.shift();
+  viTriHoanTac = lichSuHoanTac.length - 1;
+  capNhatNutHoanTac();
+}
+let henHoanTac = null;
+function lenLichHoanTac(){ // gõ tay: gộp lại, chỉ lưu mốc sau khi ngừng gõ ~1.2s (đỡ lưu từng phím)
+  clearTimeout(henHoanTac);
+  henHoanTac = setTimeout(()=>ghiMocHoanTac(false), 1200);
+}
+function apDungMocHoanTac(idx){
+  if(idx < 0 || idx >= lichSuHoanTac.length) return;
+  clearTimeout(henHoanTac);
+  viTriHoanTac = idx;
+  ta.innerHTML = lichSuHoanTac[idx];
+  ta.classList.remove('placeholder');
+  capNhatNutHoanTac();
+  markUnsaved(); autosaveDraft();
+}
+undoBtn.onclick = ()=>apDungMocHoanTac(viTriHoanTac - 1);
+redoBtn.onclick = ()=>apDungMocHoanTac(viTriHoanTac + 1);
+ta.addEventListener('keydown', e=>{
+  const ctrl = e.ctrlKey || e.metaKey;
+  if(ctrl && !e.shiftKey && e.key.toLowerCase()==='z'){ e.preventDefault(); apDungMocHoanTac(viTriHoanTac - 1); }
+  else if(ctrl && (e.key.toLowerCase()==='y' || (e.shiftKey && e.key.toLowerCase()==='z'))){ e.preventDefault(); apDungMocHoanTac(viTriHoanTac + 1); }
+});
+
 ta.addEventListener('input', ()=>{
-  danhDauNguoiSua(); markUnsaved();
+  danhDauNguoiSua(); markUnsaved(); lenLichHoanTac();
   if(targetSpan){ targetSpan = null; targetChip.style.display = 'none'; }
 });
 
@@ -1972,6 +2033,7 @@ async function sendMessage(){
         addMsg('Đã cập nhật đúng đoạn bạn chọn.', 'ai');
         markUnsaved();
         autosaveDraft();
+        ghiMocHoanTac(false);
       } else {
         addMsg('Không nhận được phản hồi hợp lệ, thử lại nhé.', 'ai');
       }
@@ -2111,6 +2173,7 @@ async function guiTroChuyen(q){
         diffBanner.style.display = 'flex';
         markUnsaved();
         autosaveDraft();
+        ghiMocHoanTac(false);
       }
     }
     addMsgMd(loiHienThi || 'AI không trả về nội dung, thử lại nhé.', 'ai');
