@@ -43,6 +43,19 @@
     padding:6px 4px 16px;border-bottom:1px solid var(--line);margin-bottom:16px;
   }
   .brand{display:flex;align-items:center;gap:12px;}
+  /* Nút "Bản nháp" ở thanh ngang trên cùng — bảng chọn nổi (dropdown), không đẩy layout xuống như trước
+     khi còn để trong khu soạn thảo. */
+  .drafts-widget{position:relative;flex-shrink:0;margin-left:10px;}
+  .drafts-dropdown{
+    position:absolute;top:calc(100% + 8px);right:0;z-index:80;width:380px;max-width:calc(100vw - 32px);
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:0 10px 30px rgba(0,0,0,.15);padding:16px 18px;max-height:min(70vh,520px);overflow-y:auto;
+  }
+  .drafts-dropdown h4{margin:0 0 12px;font-family:'Fraunces',serif;font-size:16px;}
+  .drafts-dropdown .dd-row{display:flex;gap:8px;margin-bottom:12px;}
+  .drafts-dropdown .dd-row input[type=text]{
+    flex:1;min-width:0;font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+  }
   .brand-mark{
     width:40px;height:40px;border-radius:10px;
     background:linear-gradient(135deg,var(--leaf),var(--leaf-deep));
@@ -449,6 +462,18 @@
       <button class="tab-btn" data-view="ref">📎 + Tài liệu tham khảo</button>
       <button id="helpBtn" title="Hướng dẫn sử dụng">❓ Hướng dẫn</button>
     </nav>
+    <div class="drafts-widget">
+      <button class="btn-secondary" id="draftsBtn">📂 Bản nháp</button>
+      <div class="drafts-dropdown" id="draftsPanel" style="display:none;">
+        <h4>Quản lý bản nháp</h4>
+        <div class="dd-row">
+          <input type="text" id="draftNewName" placeholder="Đặt tên bản nháp mới, vd: Toán tuần 5 - Bài 8">
+          <button class="btn-primary" id="draftSaveNewBtn">＋ Lưu bản mới</button>
+        </div>
+        <p class="sub" style="margin:0 0 10px;">Đang mở: <strong id="draftCurrentName">Nháp tự động (theo trình duyệt)</strong></p>
+        <div id="draftListBox"><p class="sub">Đang tải danh sách...</p></div>
+      </div>
+    </div>
   </header>
 
   <div class="views-wrap" id="viewsWrap">
@@ -576,17 +601,7 @@
           <button class="btn-secondary" id="redoBtn" title="Làm lại (Ctrl+Y)" disabled>↷ Làm lại</button>
           <button class="btn-primary" id="exportBtn">⬇ Xuất file Word</button>
           <button class="btn-secondary" id="resetBtn">↺ Khôi phục bản demo</button>
-          <button class="btn-secondary" id="draftsBtn">📂 Bản nháp</button>
           <span class="sub" id="uploadStatus" style="align-self:center;"></span>
-        </div>
-        <div class="add-book-panel" id="draftsPanel" style="display:none;">
-          <h4>Quản lý bản nháp</h4>
-          <div class="ab-row">
-            <input type="text" id="draftNewName" placeholder="Đặt tên bản nháp mới, vd: Toán tuần 5 - Bài 8" style="flex:1;min-width:220px;font-family:inherit;font-size:13.5px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;">
-            <button class="btn-primary" id="draftSaveNewBtn">＋ Lưu thành bản mới</button>
-          </div>
-          <p class="sub" style="margin:0 0 10px;">Đang mở: <strong id="draftCurrentName">Nháp tự động (theo trình duyệt)</strong></p>
-          <div id="draftListBox"><p class="sub">Đang tải danh sách...</p></div>
         </div>
         <div id="diffBanner" class="diff-banner" style="display:none;">
           <span id="diffCount"></span>
@@ -1302,11 +1317,18 @@ function capNhatTenNhapHienTai(ten){
 
 const draftsBtn = document.getElementById('draftsBtn');
 const draftsPanel = document.getElementById('draftsPanel');
-draftsBtn.onclick = ()=>{
+draftsBtn.onclick = (e)=>{
+  e.stopPropagation();
   const dangMo = draftsPanel.style.display !== 'none';
   draftsPanel.style.display = dangMo ? 'none' : 'block';
   if(!dangMo) moBangDanhSachNhap();
 };
+// Bấm ra ngoài bảng nháp thì tự đóng lại (giống các bảng nổi khác trong app)
+document.addEventListener('mousedown', (e)=>{
+  if(draftsPanel.style.display !== 'none' && !draftsPanel.contains(e.target) && e.target !== draftsBtn){
+    draftsPanel.style.display = 'none';
+  }
+});
 
 async function moBangDanhSachNhap(){
   const box = document.getElementById('draftListBox');
@@ -2350,7 +2372,7 @@ const HUONG_DAN_HTML = `
   <li><strong>Hoàn tác / Làm lại:</strong> nút "↶ Hoàn tác" / "↷ Làm lại" hoặc phím tắt Ctrl+Z / Ctrl+Y — áp dụng cho cả sửa tay lẫn AI sửa, tối đa 40 mốc gần nhất. Riêng của app này, không phải undo có sẵn của trình duyệt.</li>
   <li><strong>Xuất file Word:</strong> nút "⬇ Xuất file Word" tải về máy dạng .doc (mở được bằng Word bình thường).</li>
   <li><strong>Khôi phục bản demo:</strong> nút "↺ Khôi phục bản demo".</li>
-  <li><strong>Quản lý bản nháp:</strong> nút "📂 Bản nháp" — lưu bản đang soạn thành 1 bản có tên riêng (không giới hạn số lượng, vd "Toán tuần 5 - Bài 8"), xem lại danh sách đã lưu, mở lại đúng bản cần, hoặc xoá bản không dùng nữa. Khác với nháp tự động (chỉ 1 bản/trình duyệt) — dùng để lưu nhiều tiết/bài khác nhau mà không bị ghi đè lên nhau.</li>
+  <li><strong>Quản lý bản nháp:</strong> nút "📂 Bản nháp" ở thanh trên cùng (dùng được từ mọi tab, không riêng tab này) — lưu bản đang soạn thành 1 bản có tên riêng (không giới hạn số lượng, vd "Toán tuần 5 - Bài 8"), xem lại danh sách đã lưu, mở lại đúng bản cần, hoặc xoá bản không dùng nữa. Khác với nháp tự động (chỉ 1 bản/trình duyệt) — dùng để lưu nhiều tiết/bài khác nhau mà không bị ghi đè lên nhau.</li>
 </ul>
 <div class="warn-box">⚠️ AI sửa theo đúng từng đoạn/ô cần đổi (kể cả ô trong bảng) nên <strong>vẫn tô vàng được cả khi giáo án có bảng biểu</strong> — không còn phải "sửa toàn bộ rồi mất tô vàng" như bản cũ. Dù vậy vẫn nên đọc kỹ phần tô vàng trước khi xuất file, vì AI có thể chỉnh không đúng ý dù đúng đoạn.</div>
 <div class="warn-box">⚠️ <strong>"Khôi phục bản demo" xoá ngay nội dung đang soạn, KHÔNG hỏi xác nhận trước.</strong> Chỉ dùng khi thực sự muốn bỏ hết và bắt đầu lại từ mẫu demo — nếu lỡ bấm nhầm, nội dung đã mất sẽ không khôi phục lại được.</div>
