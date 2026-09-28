@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root{
     --paper:#FBF7EE;
@@ -1273,6 +1274,65 @@ document.getElementById('resetBtn').onclick = ()=>{
   markSaved();
 };
 
+/* ---------------- GIỮ CĂN LỀ GỐC TỪ FILE .DOCX ---------------- */
+// mammoth.js chỉ đọc chữ đậm/nghiêng/bảng/ảnh — CỐ TÌNH bỏ mọi thứ về căn lề (giữa/phải/đều hai bên) của
+// từng đoạn văn, vì đây là "định dạng trực tiếp" chứ không phải style đặt tên. Để giữ đúng căn lề như file
+// mẫu, ta tự đọc thẳng phần XML bên trong file .docx (bản chất là 1 file .zip) lấy căn lề từng đoạn, rồi
+// khớp lại với các đoạn <p> mammoth vừa tạo ra (khớp theo đúng chữ, vì thứ tự/nội dung đoạn có thể lệch
+// đôi chút giữa 2 cách đọc — chỉ áp căn lề khi khớp chữ chính xác, để tránh gán nhầm căn lề cho đoạn khác).
+async function layCanLeTuDocx(file){
+  try{
+    const zip = await JSZip.loadAsync(file);
+    const xmlFile = zip.file('word/document.xml');
+    if(!xmlFile) return [];
+    const xmlText = await xmlFile.async('text');
+    const xml = new DOMParser().parseFromString(xmlText, 'application/xml');
+    if(xml.querySelector('parsererror')) return [];
+    const body = xml.getElementsByTagName('w:body')[0];
+    if(!body) return [];
+    const ketQua = [];
+    // Chỉ lấy các đoạn <w:p> là CON TRỰC TIẾP của <w:body> (bỏ qua đoạn nằm trong bảng <w:tbl> — bảng đã
+    // xử lý căn lề riêng ở phần "hàng tiêu đề bảng").
+    Array.from(body.children).forEach(node=>{
+      if(node.tagName !== 'w:p') return;
+      const chu = Array.from(node.getElementsByTagName('w:t')).map(t=>t.textContent).join('').replace(/\s+/g,' ').trim();
+      if(!chu) return;
+      // querySelector với tên thẻ có dấu ":" (namespace XML) không hoạt động ổn định trên mọi trình duyệt,
+      // nên tự dò bằng children/getElementsByTagName thay vì dùng selector CSS.
+      const pPr = Array.from(node.children).find(c => c.tagName === 'w:pPr');
+      const jcEls = pPr ? pPr.getElementsByTagName('w:jc') : [];
+      const val = jcEls.length ? jcEls[0].getAttribute('w:val') : null;
+      const align = val === 'center' ? 'center' : val === 'right' ? 'right' : val === 'both' ? 'justify' : null;
+      ketQua.push({ text: chu, align });
+    });
+    return ketQua;
+  }catch(e){
+    console.error('Không đọc được căn lề gốc từ .docx:', e);
+    return [];
+  }
+}
+
+// Áp căn lề đã đọc được vào các đoạn <p> mammoth tạo ra trong 1 khung chứa (thường là ta). Khớp theo thứ
+// tự + đúng chữ (cho phép bỏ qua tối đa vài đoạn lệch giữa 2 danh sách, vì mammoth có thể gộp/bỏ vài đoạn
+// trống mà XML gốc vẫn còn) — không khớp được thì bỏ qua, giữ căn trái mặc định, không đoán bừa.
+function apDungCanLeTuDocx(khung, danhSachCanLe){
+  if(!danhSachCanLe || !danhSachCanLe.length) return;
+  const chuan = t => (t||'').replace(/\s+/g,' ').trim();
+  const doanP = Array.from(khung.children).filter(el => el.tagName === 'P');
+  let j = 0;
+  doanP.forEach(el=>{
+    const chu = chuan(el.textContent);
+    if(!chu) return;
+    for(let k = j; k < Math.min(danhSachCanLe.length, j + 6); k++){
+      if(chuan(danhSachCanLe[k].text) === chu){
+        if(danhSachCanLe[k].align) el.style.textAlign = danhSachCanLe[k].align;
+        j = k + 1;
+        return;
+      }
+    }
+  });
+}
+
 const uploadInput = document.getElementById('uploadInput');
 const uploadStatus = document.getElementById('uploadStatus');
 uploadInput.addEventListener('change', async (e)=>{
@@ -1292,6 +1352,9 @@ uploadInput.addEventListener('change', async (e)=>{
       );
       ta.classList.remove('placeholder');
       ta.innerHTML = result.value || '<p><em>(Không đọc được nội dung)</em></p>';
+      // Áp lại đúng căn lề gốc (giữa/phải/đều hai bên) mà mammoth.js đã bỏ qua khi chuyển sang HTML
+      const canLeGoc = await layCanLeTuDocx(file);
+      apDungCanLeTuDocx(ta, canLeGoc);
     } else {
       const text = await file.text();
       setPlainDemo(text.trim());
