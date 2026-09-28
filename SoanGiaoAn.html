@@ -365,6 +365,13 @@
     box-shadow:0 0 0 1px #F0D878;
   }
   #giaoanText.doc-view p.diff-new{margin-left:-6px;}
+  /* Tô riêng phần người dùng tự gõ tay (khác màu với AI sửa) — không tự mất khi gõ tiếp, chỉ mất khi
+     bấm "Đã xem — bỏ tô màu" hoặc khi có lần AI sửa mới đè lên đúng chỗ đó. */
+  #giaoanText.doc-view .diff-user{
+    background:#DCEBFB;border-radius:3px;padding:2px 6px;
+    box-shadow:0 0 0 1px #AFD0EF;
+  }
+  #giaoanText.doc-view p.diff-user{margin-left:-6px;}
   #giaoanText.doc-view .ai-target{
     outline:2px dashed var(--clay);background:rgba(196,89,47,.08);border-radius:2px;
   }
@@ -1829,14 +1836,26 @@ const diffCount = document.getElementById('diffCount');
 document.getElementById('clearDiffBtn').onclick = clearDiffHighlight;
 function clearDiffHighlight(){
   ta.querySelectorAll('.diff-new').forEach(el=>el.classList.remove('diff-new'));
+  ta.querySelectorAll('.diff-user').forEach(el=>el.classList.remove('diff-user'));
   ta.querySelectorAll('.ai-target').forEach(el=>{
     if(el !== targetSpan) el.classList.remove('ai-target'); // giữ lại nếu đang thực sự chờ AI xử lý
   });
   diffBanner.style.display = 'none';
 }
-// Nếu người dùng tự sửa tay, tô màu không còn đáng tin cậy nữa -> ẩn đi
+// Người dùng tự gõ tay: tô riêng đúng khối đang sửa (màu khác AI) thay vì xoá hết tô màu — để biết được
+// đã sửa chỗ nào (AI sửa hay tự sửa) trong suốt quá trình soạn thảo, không chỉ ngay sau khi AI vừa sửa.
+function danhDauNguoiSua(){
+  const sel = window.getSelection();
+  if(!sel.rangeCount) return;
+  let node = sel.anchorNode;
+  if(node && node.nodeType === 3) node = node.parentElement; // text node -> lấy thẻ cha
+  const khoi = node && node.closest ? node.closest(CSS_KHOI) : null;
+  if(!khoi || !ta.contains(khoi)) return;
+  khoi.classList.remove('diff-new'); // người vừa gõ đè lên đúng khối AI từng sửa -> tính là người sửa
+  khoi.classList.add('diff-user');
+}
 ta.addEventListener('input', ()=>{
-  clearDiffHighlight(); markUnsaved();
+  danhDauNguoiSua(); markUnsaved();
   if(targetSpan){ targetSpan = null; targetChip.style.display = 'none'; }
 });
 
@@ -2141,13 +2160,13 @@ const HUONG_DAN_HTML = `
 <h3>3. Tab Soạn giáo án</h3>
 <ul>
   <li><strong>Tải giáo án mẫu lên:</strong> nút "↑ Tải giáo án mẫu lên" để nạp file .docx có sẵn vào khung soạn thảo.</li>
-  <li><strong>Sửa tay:</strong> gõ trực tiếp vào khung như Word bình thường.</li>
+  <li><strong>Sửa tay:</strong> gõ trực tiếp vào khung như Word bình thường. Đúng đoạn/ô bạn vừa gõ tay sẽ tự tô <strong>xanh nhạt</strong> (khác màu vàng của AI) và <strong>giữ nguyên tô màu xuyên suốt</strong> quá trình soạn — không tự mất khi gõ tiếp chỗ khác, chỉ mất khi bấm "Đã xem — bỏ tô màu".</li>
   <li><strong>Chat với AI (1 ô duy nhất):</strong> gõ yêu cầu ở khung chat bên phải rồi bấm Gửi. AI tự hiểu bạn đang <em>hỏi/nhờ nhận xét</em> (chỉ trả lời trên chat, không đụng giáo án) hay <em>nhờ sửa</em> (chỉ thay các đoạn/ô cần đổi, phần thay đổi được tô vàng, bảng biểu giữ nguyên cấu trúc). Sau mỗi lần sửa, app báo số chỗ thực sự đã thay đổi. AI nhớ vài câu chat gần nhất nên bạn có thể nói nối tiếp.</li>
   <li><strong>Sửa bằng AI (1 đoạn):</strong> bôi đen đoạn cần sửa trong giáo án, sẽ hiện nút "✏️ Yêu cầu AI sửa đoạn này" — chỉ đoạn đó bị đổi, phần còn lại giữ nguyên.</li>
   <li><strong>Xuất file Word:</strong> nút "⬇ Xuất file Word" tải về máy dạng .doc (mở được bằng Word bình thường).</li>
   <li><strong>Khôi phục bản demo:</strong> nút "↺ Khôi phục bản demo".</li>
 </ul>
-<div class="warn-box">⚠️ Nếu giáo án hiện tại có <strong>bảng biểu</strong> (vd tải lên từ file mẫu dạng bảng), app tự chuyển sang "chế độ giữ định dạng" khi bạn dùng AI sửa toàn bộ giáo án — giữ nguyên được bảng, nhưng đổi lại <strong>KHÔNG tô vàng được phần vừa sửa</strong> (cơ chế tô vàng chỉ hoạt động với văn bản thuần). Vì vậy phải đọc kỹ lại toàn bộ giáo án sau mỗi lần sửa, không chỉ dựa vào phần tô vàng như bình thường.</div>
+<div class="warn-box">⚠️ AI sửa theo đúng từng đoạn/ô cần đổi (kể cả ô trong bảng) nên <strong>vẫn tô vàng được cả khi giáo án có bảng biểu</strong> — không còn phải "sửa toàn bộ rồi mất tô vàng" như bản cũ. Dù vậy vẫn nên đọc kỹ phần tô vàng trước khi xuất file, vì AI có thể chỉnh không đúng ý dù đúng đoạn.</div>
 <div class="warn-box">⚠️ <strong>"Khôi phục bản demo" xoá ngay nội dung đang soạn, KHÔNG hỏi xác nhận trước.</strong> Chỉ dùng khi thực sự muốn bỏ hết và bắt đầu lại từ mẫu demo — nếu lỡ bấm nhầm, nội dung đã mất sẽ không khôi phục lại được.</div>
 <div class="warn-box">⚠️ <strong>Giáo án tự lưu nháp theo trình duyệt đang dùng</strong> (không đồng bộ giữa các máy khác nhau). Nếu chuyển sang máy khác hoặc trình duyệt khác, nháp lần trước sẽ không tự hiện lại — cần chủ động xuất file Word hoặc tải giáo án mẫu đó lên lại.</div>
 <div class="warn-box">⚠️ Đóng tab/trình duyệt khi đang có thay đổi chưa xuất file sẽ hiện cảnh báo — nhưng vẫn nên chủ động xuất Word định kỳ, tránh phụ thuộc hoàn toàn vào tự lưu nháp.</div>
