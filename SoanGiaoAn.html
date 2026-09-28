@@ -2233,8 +2233,9 @@ async function sendMessage(){
       const newText = data.noiDungMoi ? data.noiDungMoi.trim() : null;
       thinking.remove();
       if(newText){
-        const esc = newText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        targetSpan.innerHTML = esc.split(/\n+/).map(l=>l.trim()).filter(Boolean).join('<br>');
+        // Dùng chung cách hiểu markdown đơn giản (**đậm**, xuống dòng) với đường "chat 1 ô" — trước đây
+        // đường bôi-đen-sửa-đoạn này chưa được vá, vẫn hiện thô "**chữ**" nếu AI trả về có in đậm.
+        targetSpan.innerHTML = mdSangHtmlKhoi(newText);
         targetSpan.classList.remove('ai-target');
         targetSpan.classList.add('diff-new');
         diffCount.textContent = '🖍 AI vừa chỉnh sửa đoạn bạn chọn (tô vàng) — đọc lại trước khi lưu.';
