@@ -428,6 +428,27 @@
   .prompt-widget{position:relative;}
   .prompt-dropdown{width:320px;left:0;right:auto;}
   .toolbar{flex-shrink:0;padding:6px 16px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  /* Thanh công cụ định dạng kiểu Word (căn lề, đậm, nghiêng, gạch chân, màu chữ) cho khung soạn thảo */
+  .fmt-toolbar{
+    flex-shrink:0;padding:6px 16px;border-top:1px solid var(--line);
+    display:flex;gap:4px;flex-wrap:wrap;align-items:center;background:#FAF7F0;
+  }
+  .fmt-toolbar button{
+    width:30px;height:30px;border:1px solid transparent;border-radius:6px;background:transparent;
+    cursor:pointer;font-size:14px;font-family:'Be Vietnam Pro',sans-serif;color:var(--ink);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .fmt-toolbar button:hover{background:#EFE7D6;}
+  .fmt-toolbar button.active{background:var(--leaf);color:#fff;}
+  .fmt-toolbar .fmt-sep{width:1px;height:20px;background:var(--line);margin:0 4px;}
+  .fmt-toolbar .fmt-color{
+    display:flex;align-items:center;gap:2px;font-weight:700;font-size:14px;cursor:pointer;
+    width:30px;height:30px;justify-content:center;border-radius:6px;position:relative;
+  }
+  .fmt-toolbar .fmt-color:hover{background:#EFE7D6;}
+  .fmt-toolbar .fmt-color input[type=color]{
+    position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;
+  }
   .btn-primary{
     background:var(--clay);color:#fff;border:none;border-radius:8px;padding:6px 14px;
     font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;
@@ -599,6 +620,20 @@
           <button class="btn-primary" id="exportBtn">⬇ Xuất file Word</button>
           <button class="btn-secondary" id="resetBtn">↺ Khôi phục bản demo</button>
           <span class="sub" id="uploadStatus" style="align-self:center;"></span>
+        </div>
+        <div class="fmt-toolbar" id="fmtToolbar">
+          <button data-cmd="justifyLeft" title="Căn trái">⬅</button>
+          <button data-cmd="justifyCenter" title="Căn giữa">↔</button>
+          <button data-cmd="justifyRight" title="Căn phải">➡</button>
+          <button data-cmd="justifyFull" title="Căn đều 2 bên">≡</button>
+          <span class="fmt-sep"></span>
+          <button data-cmd="bold" title="In đậm (Ctrl+B)"><strong>B</strong></button>
+          <button data-cmd="italic" title="In nghiêng (Ctrl+I)"><em>I</em></button>
+          <button data-cmd="underline" title="Gạch chân (Ctrl+U)"><u>U</u></button>
+          <span class="fmt-sep"></span>
+          <label class="fmt-color" title="Màu chữ">
+            A<input type="color" id="textColorInput" value="#000000">
+          </label>
         </div>
         <div id="diffBanner" class="diff-banner" style="display:none;">
           <span id="diffCount"></span>
@@ -2127,6 +2162,47 @@ ta.addEventListener('keydown', e=>{
 ta.addEventListener('input', ()=>{
   danhDauNguoiSua(); markUnsaved(); lenLichHoanTac();
   if(targetSpan){ targetSpan = null; targetChip.style.display = 'none'; }
+});
+
+/* ---------------- THANH CÔNG CỤ ĐỊNH DẠNG KIỂU WORD (căn lề, đậm, nghiêng, gạch chân, màu chữ) ---------------- */
+// Dùng document.execCommand — API cũ nhưng vẫn chạy tốt trên contenteditable ở mọi trình duyệt phổ biến,
+// và không cần viết lại từ đầu cơ chế bôi đen/vùng chọn đã có sẵn trong app.
+const fmtToolbar = document.getElementById('fmtToolbar');
+const CAC_LENH_CAN_LE = ['justifyLeft','justifyCenter','justifyRight','justifyFull'];
+const CAC_LENH_TOGGLE = ['bold','italic','underline', ...CAC_LENH_CAN_LE];
+
+fmtToolbar.querySelectorAll('button[data-cmd]').forEach(btn=>{
+  // preventDefault ở mousedown để KHÔNG mất vùng đang bôi đen trong ta khi bấm nút (nếu không, contenteditable
+  // bị blur trước khi lệnh execCommand kịp chạy, làm lệnh áp nhầm vào chỗ khác hoặc không chạy).
+  btn.addEventListener('mousedown', e=> e.preventDefault());
+  btn.addEventListener('click', ()=>{
+    ta.focus();
+    document.execCommand(btn.dataset.cmd, false, null);
+    ta.dispatchEvent(new Event('input', {bubbles:true})); // để tô màu người-sửa + hoàn tác + lưu nháp nhận biết
+    capNhatTrangThaiThanhCongCu();
+  });
+});
+const textColorInput = document.getElementById('textColorInput');
+textColorInput.addEventListener('mousedown', e=> e.stopPropagation()); // không mất vùng chọn khi mở bảng màu
+textColorInput.addEventListener('input', e=>{
+  ta.focus();
+  document.execCommand('foreColor', false, e.target.value);
+  ta.dispatchEvent(new Event('input', {bubbles:true}));
+});
+
+// Bôi đậm/nghiêng nút đang bật đúng với định dạng tại vị trí con trỏ hiện tại (giống Word)
+function capNhatTrangThaiThanhCongCu(){
+  CAC_LENH_TOGGLE.forEach(cmd=>{
+    const btn = fmtToolbar.querySelector('[data-cmd="' + cmd + '"]');
+    if(!btn) return;
+    let dangBat = false;
+    try{ dangBat = document.queryCommandState(cmd); }catch(e){}
+    btn.classList.toggle('active', dangBat);
+  });
+}
+document.addEventListener('selectionchange', ()=>{
+  const sel = window.getSelection();
+  if(sel.rangeCount && ta.contains(sel.anchorNode)) capNhatTrangThaiThanhCongCu();
 });
 
 /* ---------------- BÔI ĐEN ĐOẠN VĂN BẢN ĐỂ YÊU CẦU AI SỬA RIÊNG ĐOẠN ĐÓ ---------------- */
