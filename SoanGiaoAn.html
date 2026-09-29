@@ -2631,13 +2631,21 @@ document.getElementById('exportBtn').onclick = ()=>{
   // Khung soạn thảo trong app tự kẻ viền/tô nền bảng bằng CSS riêng của trang (#giaoanText.doc-view table...),
   // nhưng CSS đó KHÔNG có trong file Word xuất ra — trước đây file .doc mở lên bị mất viền bảng dù trong app
   // vẫn thấy có viền. Chép lại đúng bộ quy tắc đó (không phụ thuộc #giaoanText.doc-view) vào file xuất.
+  // QUAN TRỌNG: nếu không khai báo khổ giấy/lề trang, Word tự đoán "100%" của bảng theo 1 chiều rộng
+  // không xác định (có thể rất lớn) chứ không phải theo đúng chiều rộng trang in — đây là nguyên nhân
+  // thật của lỗi "bảng tràn lề" (đã thử xoá width cố định trên bảng nhưng chưa đủ, phải khai đúng khổ
+  // trang thì "100%" mới tính đúng). Dùng đúng cú pháp @page kiểu Word ("WordSection1") mà Word nhận ra
+  // khi mở file HTML lưu dưới dạng .doc — khai A4, lề 2cm mỗi bên (khổ phổ biến cho giáo án tiểu học).
   const cssXuatWord = `
+    @page WordSection1{size:21cm 29.7cm;margin:2cm 2cm 2cm 2cm;mso-page-orientation:portrait;}
+    div.WordSection1{page:WordSection1;}
     table{border-collapse:collapse;width:100%;margin:12px 0;}
     table td,table th{border:1px solid #999;padding:6px 8px;vertical-align:top;word-wrap:break-word;overflow-wrap:break-word;}
     table tr:first-child:not(:last-child) td,table tr:first-child:not(:last-child) th{background:#404040;color:#fff;font-weight:700;text-align:center;}
   `;
-  const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${cssXuatWord}</style></head>
-    <body style="font-family:'Times New Roman',serif;font-size:14pt;">${bodyHtml}</body></html>`;
+  const doc = `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">` +
+    `<head><meta charset="utf-8"><style>${cssXuatWord}</style></head>` +
+    `<body style="font-family:'Times New Roman',serif;font-size:14pt;"><div class="WordSection1">${bodyHtml}</div></body></html>`;
   const blob = new Blob(['\ufeff', doc], {type:'application/msword'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
