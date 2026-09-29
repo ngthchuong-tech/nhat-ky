@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Quỹ Ban KSNB</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .stat-box {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-box.income {
+            border-left-color: #10b981;
+        }
+
+        .stat-box.expense {
+            border-left-color: #ef4444;
+        }
+
+        .stat-box.balance {
+            border-left-color: #667eea;
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        .form-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .form-section h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:hover {
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+            box-shadow: none;
+        }
+
+        .transactions-section h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .transaction-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .transaction-item.income {
+            border-left-color: #10b981;
+        }
+
+        .transaction-item.expense {
+            border-left-color: #ef4444;
+        }
+
+        .transaction-info {
+            flex: 1;
+        }
+
+        .transaction-date {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 3px;
+        }
+
+        .transaction-desc {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 3px;
+            font-weight: 500;
+        }
+
+        .transaction-type {
+            font-size: 11px;
+            color: #666;
+            background: white;
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .transaction-amount {
+            font-size: 16px;
+            font-weight: bold;
+            text-align: right;
+            min-width: 100px;
+        }
+
+        .transaction-item.income .transaction-amount {
+            color: #10b981;
+        }
+
+        .transaction-item.expense .transaction-amount {
+            color: #ef4444;
+        }
+
+        .btn-delete {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .btn-delete:hover {
+            background: #dc2626;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .filter-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tab-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 10px;
+            background: #e0e0e0;
+            color: #333;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .export-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .alert {
+            padding: 12px;
+            background: #d1fae5;
+            color: #065f46;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+
+        @media (max-width: 480px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 20px;
+            }
+
+            .transaction-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .transaction-amount {
+                text-align: left;
+                margin-top: 8px;
+            }
+
+            .tab-buttons {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💰 Quản lý Quỹ</h1>
+            <p>Ban KSNB - Cảng Đồng Nai</p>
+        </header>
+
+        <div class="stats">
+            <div class="stat-box income">
+                <div class="stat-label">Tổng Thu</div>
+                <div class="stat-value" id="totalIncome">0 ₫</div>
+            </div>
+            <div class="stat-box expense">
+                <div class="stat-label">Tổng Chi</div>
+                <div class="stat-value" id="totalExpense">0 ₫</div>
+            </div>
+            <div class="stat-box balance">
+                <div class="stat-label">Tồn Quỹ</div>
+                <div class="stat-value" id="balance">0 ₫</div>
+            </div>
+        </div>
+
+        <main>
+            <div class="form-section">
+                <h2>➕ Thêm giao dịch</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="date">Ngày</label>
+                        <input type="date" id="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="type">Thu/Chi</label>
+                        <select id="type" required>
+                            <option value="">-- Chọn --</option>
+                            <option value="Thu">💚 Thu</option>
+                            <option value="Chi">❤️ Chi</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Diễn giải</label>
+                    <input type="text" id="description" placeholder="Ví dụ: TGĐ lệ phí Ban KSNB" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="amount">Số tiền (₫)</label>
+                        <input type="number" id="amount" placeholder="0" min="0" step="1000" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="category">Loại</label>
+                        <input type="text" id="category" placeholder="Phí lệ, Quà tặng...">
+                    </div>
+                </div>
+
+                <button onclick="addTransaction()">➕ Thêm giao dịch</button>
+            </div>
+
+            <div class="transactions-section">
+                <h2>📋 Danh sách giao dịch</h2>
+
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="filterMonth('all')">Tất cả</button>
+                    <button class="tab-btn" onclick="filterMonth('current')">Tháng này</button>
+                    <button class="tab-btn" onclick="filterMonth('previous')">Tháng trước</button>
+                </div>
+
+                <div class="filter-section">
+                    <input type="month" id="monthFilter" onchange="filterByMonth()">
+                    <select id="typeFilter" onchange="filterByType()">
+                        <option value="">Tất cả</option>
+                        <option value="Thu">Thu</option>
+                        <option value="Chi">Chi</option>
+                    </select>
+                </div>
+
+                <div id="transactionsList"></div>
+            </div>
+
+            <div class="export-section">
+                <button class="btn-secondary" onclick="exportJSON()">📥 Tải JSON</button>
+                <button class="btn-secondary" onclick="exportCSV()">📊 Tải CSV</button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ============================================
+        // DATA MANAGEMENT
+        // ============================================
+        function getTransactions() {
+            const data = localStorage.getItem('ksnb_transactions');
+            return data ? JSON.parse(data) : [];
+        }
+
+        function saveTransactions(transactions) {
+            localStorage.setItem('ksnb_transactions', JSON.stringify(transactions));
+        }
+
+        function addTransaction() {
+            const date = document.getElementById('date').value;
+            const type = document.getElementById('type').value;
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const category = document.getElementById('category').value;
+
+            if (!date || !type || !description || !amount) {
+                alert('❌ Vui lòng điền đầy đủ thông tin');
+                return;
+            }
+
+            const transaction = {
+                id: Date.now(),
+                date,
+                type,
+                description,
+                amount,
+                category
+            };
+
+            const transactions = getTransactions();
+            transactions.push(transaction);
+            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+            saveTransactions(transactions);
+
+            // Reset form
+            document.getElementById('date').value = '';
+            document.getElementById('type').value = '';
+            document.getElementById('description').value = '';
+            document.getElementById('amount').value = '';
+            document.getElementById('category').value = '';
+
+            updateDisplay();
+        }
+
+        function deleteTransaction(id) {
+            if (confirm('❓ Xác nhận xóa giao dịch này?')) {
+                let transactions = getTransactions();
+                transactions = transactions.filter(t => t.id !== id);
+                saveTransactions(transactions);
+                updateDisplay();
+            }
+        }
+
+        // ============================================
+        // DISPLAY & FILTERING
+        // ============================================
+        let currentFilter = { month: null, type: '' };
+
+        function filterByMonth() {
+            const monthFilter = document.getElementById('monthFilter').value;
+            currentFilter.month = monthFilter;
+            renderTransactions();
+        }
+
+        function filterByType() {
+            const typeFilter = document.getElementById('typeFilter').value;
+            currentFilter.type = typeFilter;
+            renderTransactions();
+        }
+
+        function filterMonth(period) {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth() + 1;
+
+            let filterMonth = '';
+            if (period === 'current') {
+                filterMonth = `${year}-${String(month).padStart(2, '0')}`;
+            } else if (period === 'previous') {
+                const prevMonth = month === 1 ? 12 : month - 1;
+                const prevYear = month === 1 ? year - 1 : year;
+                filterMonth = `${prevYear}-${String(prevMonth).padStart(2, '0')}`;
+            }
+
+            currentFilter.month = filterMonth;
+            document.getElementById('monthFilter').value = filterMonth;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            renderTransactions();
+        }
+
+        function renderTransactions() {
+            const transactions = getTransactions();
+            const container = document.getElementById('transactionsList');
+
+            let filtered = transactions.filter(t => {
+                if (currentFilter.month && !t.date.startsWith(currentFilter.month)) {
+                    return false;
+                }
+                if (currentFilter.type && t.type !== currentFilter.type) {
+                    return false;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <p>Không có giao dịch nào</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(t => {
+                const dateObj = new Date(t.date);
+                const dateStr = dateObj.toLocaleDateString('vi-VN');
+                const isIncome = t.type === 'Thu';
+                const amountStr = t.amount.toLocaleString('vi-VN');
+
+                return `
+                    <div class="transaction-item ${isIncome ? 'income' : 'expense'}">
+                        <div class="transaction-info">
+                            <div class="transaction-date">${dateStr}</div>
+                            <div class="transaction-desc">${t.description}</div>
+                            <span class="transaction-type">${t.category || t.type}</span>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <div class="transaction-amount">${isIncome ? '+' : '-'} ${amountStr} ₫</div>
+                            <button class="btn-delete" onclick="deleteTransaction(${t.id})">Xóa</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateStats() {
+            const transactions = getTransactions();
+            const totalIncome = transactions.filter(t => t.type === 'Thu').reduce((sum, t) => sum + t.amount, 0);
+            const totalExpense = transactions.filter(t => t.type === 'Chi').reduce((sum, t) => sum + t.amount, 0);
+            const balance = totalIncome - totalExpense;
+
+            document.getElementById('totalIncome').textContent = totalIncome.toLocaleString('vi-VN') + ' ₫';
+            document.getElementById('totalExpense').textContent = totalExpense.toLocaleString('vi-VN') + ' ₫';
+            document.getElementById('balance').textContent = balance.toLocaleString('vi-VN') + ' ₫';
+        }
+
+        function updateDisplay() {
+            renderTransactions();
+            updateStats();
+        }
+
+        // ============================================
+        // EXPORT
+        // ============================================
+        function exportJSON() {
+            const transactions = getTransactions();
+            const dataStr = JSON.stringify(transactions, null, 2);
+            downloadFile(dataStr, 'ban-ksnb-quy.json', 'application/json');
+        }
+
+        function exportCSV() {
+            const transactions = getTransactions();
+            let csv = 'Ngày,Thu/Chi,Diễn giải,Số tiền,Loại\n';
+            
+            transactions.forEach(t => {
+                const date = new Date(t.date).toLocaleDateString('vi-VN');
+                csv += `"${date}","${t.type}","${t.description}","${t.amount}","${t.category}"\n`;
+            });
+
+            downloadFile(csv, 'ban-ksnb-quy.csv', 'text/csv');
+        }
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+
+        // ============================================
+        // INIT
+        // ============================================
+        window.addEventListener('load', () => {
+            const today = new Date();
+            const dateInput = document.getElementById('date');
+            dateInput.valueAsDate = today;
+
+            updateDisplay();
+        });
+    </script>
+</body>
+</html>
