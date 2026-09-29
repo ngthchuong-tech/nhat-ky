@@ -2566,11 +2566,26 @@ function moTaKhoiChoAI(el){
   return soAnh ? '[' + soAnh + ' HÌNH ẢNH minh hoạ — không có chữ]' : '';
 }
 
-// AI trả lời/nội dung sửa thường có markdown đơn giản (**đậm**, xuống dòng \n) — chuyển thành HTML thật
-// thay vì để nguyên chữ (nếu không, dấu ** hiện ra chữ thô và \n bị trình duyệt gộp liền một dòng).
+// Bảng tên màu (tiếng Việt, không dấu để so khớp dễ) mà AI được phép dùng khi đổi màu chữ theo yêu cầu.
+const BANG_MAU_CHU = {
+  'do': '#CC0000', 'cam': '#E07B00', 'vang': '#B8960B',
+  'xanh la': '#0A8A3C', 'xanh luc': '#0A8A3C', 'xanh': '#1A56CC', 'xanh duong': '#1A56CC', 'xanh bien': '#1A56CC',
+  'tim': '#7A2EA6', 'hong': '#D6336C', 'den': '#000000', 'xam': '#666666'
+};
+function chuanHoaTenMau(s){
+  return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/gi,'d').toLowerCase().trim();
+}
+
+// AI trả lời/nội dung sửa thường có markdown đơn giản (**đậm**, [MÀU:tên]...[/MÀU], xuống dòng \n) —
+// chuyển thành HTML thật thay vì để nguyên chữ (nếu không, ký hiệu hiện ra chữ thô và \n bị trình duyệt
+// gộp liền một dòng).
 function mdSangHtmlKhoi(chu){
   const esc = String(chu||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  return esc.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+  const coMau = esc.replace(/\[\s*M[ÀA]U\s*:\s*([^\]]+?)\s*\]([\s\S]*?)\[\s*\/\s*M[ÀA]U\s*\]/gi, (khop, ten, noiDung)=>{
+    const hex = BANG_MAU_CHU[chuanHoaTenMau(ten)];
+    return hex ? '<span style="color:' + hex + '">' + noiDung + '</span>' : noiDung; // không nhận ra màu -> bỏ ký hiệu, giữ chữ
+  });
+  return coMau.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
 }
 
 // Đổi chữ của 1 khối nhưng giữ thẻ in đậm bao ngoài (vd tiêu đề <p><strong>...</strong></p>), đồng thời
