@@ -2337,6 +2337,59 @@ document.getElementById('tblColDel').onclick = ()=>{
   ta.dispatchEvent(new Event('input', {bubbles:true}));
 };
 
+/* ---------------- KÉO CHỈNH ĐỘ RỘNG CỘT TRONG BẢNG (giống Word) ---------------- */
+// Lưu độ rộng theo PHẦN TRĂM (%) chứ không theo pixel — để không bị hàm boChieuRongCoDinh() xoá mất khi
+// xuất Word (pixel dễ gây tràn lề vì phụ thuộc đúng khổ giấy, % thì không).
+let oDangKeoCot = null, bangDangKeoCot = null, xBatDauKeo = 0, rongBatDauKeoPx = 0, rongBangPx = 0, viTriCotDangKeo = -1;
+let taOSanSangKeo = null; // ô đang ở trạng thái "gần mép phải, sẵn sàng kéo" (chưa bấm chuột)
+const LE_KEO_COT = 6; // px — đứng gần mép phải ô trong khoảng này thì hiện con trỏ kéo
+
+ta.addEventListener('mousemove', (e)=>{
+  if(oDangKeoCot) return; // đang kéo rồi thì khỏi tính lại con trỏ
+  const o = e.target && e.target.closest ? e.target.closest('td,th') : null;
+  // Dọn dấu "sẵn sàng kéo" của ô trước đó nếu chuột đã rời khỏi mép phải ô đó
+  if(taOSanSangKeo && taOSanSangKeo !== o){ taOSanSangKeo.style.cursor = ''; taOSanSangKeo = null; }
+  if(!o) return;
+  const rect = o.getBoundingClientRect();
+  if(e.clientX > rect.right - LE_KEO_COT){
+    o.style.cursor = 'col-resize';
+    taOSanSangKeo = o;
+  } else if(o === taOSanSangKeo){
+    o.style.cursor = '';
+    taOSanSangKeo = null;
+  }
+});
+
+ta.addEventListener('mousedown', (e)=>{
+  if(!taOSanSangKeo) return;
+  e.preventDefault(); // không đặt con trỏ soạn thảo/bôi đen chữ khi đang bắt đầu kéo viền cột
+  oDangKeoCot = taOSanSangKeo;
+  bangDangKeoCot = oDangKeoCot.closest('table');
+  bangDangKeoCot.style.tableLayout = 'fixed';
+  const hang = oDangKeoCot.closest('tr');
+  viTriCotDangKeo = Array.from(hang.children).indexOf(oDangKeoCot);
+  xBatDauKeo = e.clientX;
+  rongBatDauKeoPx = oDangKeoCot.getBoundingClientRect().width;
+  rongBangPx = bangDangKeoCot.getBoundingClientRect().width;
+});
+
+document.addEventListener('mousemove', (e)=>{
+  if(!oDangKeoCot) return;
+  const rongMoiPx = Math.max(30, rongBatDauKeoPx + (e.clientX - xBatDauKeo));
+  const rongMoiPhanTram = Math.max(3, (rongMoiPx / rongBangPx) * 100).toFixed(2) + '%';
+  bangDangKeoCot.querySelectorAll('tr').forEach(hang=>{
+    const o = hang.children[viTriCotDangKeo];
+    if(o) o.style.width = rongMoiPhanTram;
+  });
+});
+document.addEventListener('mouseup', ()=>{
+  if(!oDangKeoCot) return;
+  oDangKeoCot.style.cursor = '';
+  taOSanSangKeo = null;
+  oDangKeoCot = null;
+  ta.dispatchEvent(new Event('input', {bubbles:true})); // để lưu nháp + hoàn tác nhận biết thay đổi
+});
+
 /* ---------------- BÔI ĐEN ĐOẠN VĂN BẢN ĐỂ YÊU CẦU AI SỬA RIÊNG ĐOẠN ĐÓ ---------------- */
 let savedRange = null;
 let targetSpan = null;
@@ -2756,19 +2809,24 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
 });
 
 /* export: giữ định dạng HTML (đậm/bảng/ảnh) khi mở lại bằng Word */
-// mammoth.js khi đọc file .docx mẫu thường để lại chiều rộng cố định theo pixel trên từng cột/ô bảng
+// mammoth.js khi đọc file .docx mẫu thường để lại chiều rộng cố định theo PIXEL trên từng cột/ô bảng
 // (đúng bằng khổ giấy gốc). Trong khung soạn thảo của app, CSS "table{width:100%}" của trang đè lên nên
 // nhìn vẫn vừa khung — nhưng Word khi mở file xuất lại ưu tiên đúng con số pixel cố định đó trên từng ô,
-// không tự co theo lề trang của Word -> bảng tràn ra ngoài lề. Xoá hết width cố định trước khi xuất, để
-// Word tự chia đều theo đúng khổ giấy đang dùng.
+// không tự co theo lề trang của Word -> bảng tràn ra ngoài lề. Chỉ xoá width theo PIXEL (của mammoth) —
+// GIỮ LẠI width theo PHẦN TRĂM (%) vì đó là độ rộng cột người dùng tự kéo chỉnh tay, cần giữ khi xuất.
 function boChieuRongCoDinh(html){
   const tam = document.createElement('div');
   tam.innerHTML = html;
+  const laPhanTram = s => typeof s === 'string' && s.trim().endsWith('%');
   tam.querySelectorAll('table, colgroup, col, tr, td, th').forEach(el=>{
-    el.removeAttribute('width');
-    if(el.style){ el.style.width = ''; el.style.minWidth = ''; el.style.maxWidth = ''; }
+    const wAttr = el.getAttribute('width');
+    if(wAttr && !laPhanTram(wAttr)) el.removeAttribute('width');
+    if(el.style){
+      if(!laPhanTram(el.style.width)) el.style.width = '';
+      el.style.minWidth = ''; el.style.maxWidth = '';
+    }
   });
-  tam.querySelectorAll('table').forEach(t=>{ t.style.width = '100%'; });
+  tam.querySelectorAll('table').forEach(t=>{ if(!laPhanTram(t.style.width)) t.style.width = '100%'; });
   return tam.innerHTML;
 }
 
