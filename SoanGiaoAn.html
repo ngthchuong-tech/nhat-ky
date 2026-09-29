@@ -449,6 +449,12 @@
   .fmt-toolbar .fmt-color input[type=color]{
     position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;
   }
+  .fmt-toolbar select{
+    height:30px;border:1px solid var(--line);border-radius:6px;background:#fff;font-family:inherit;
+    font-size:12.5px;color:var(--ink);padding:0 4px;cursor:pointer;
+  }
+  #tblToolbar{border-top:none;padding-top:0;}
+  #tblToolbar button{width:auto;padding:0 8px;font-size:12.5px;gap:2px;}
   .btn-primary{
     background:var(--clay);color:#fff;border:none;border-radius:8px;padding:6px 14px;
     font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;
@@ -622,6 +628,17 @@
           <span class="sub" id="uploadStatus" style="align-self:center;"></span>
         </div>
         <div class="fmt-toolbar" id="fmtToolbar">
+          <select id="fontSizeSelect" title="Cỡ chữ">
+            <option value="">Cỡ chữ</option>
+            <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+            <option value="13">13</option><option value="14" selected>14</option><option value="16">16</option>
+            <option value="18">18</option><option value="20">20</option><option value="24">24</option><option value="28">28</option>
+          </select>
+          <select id="lineHeightSelect" title="Giãn dòng">
+            <option value="">Giãn dòng</option>
+            <option value="1">Đơn</option><option value="1.15">1.15</option><option value="1.5">1.5</option><option value="2">Đôi</option>
+          </select>
+          <span class="fmt-sep"></span>
           <button data-cmd="justifyLeft" title="Căn trái">⬅</button>
           <button data-cmd="justifyCenter" title="Căn giữa">↔</button>
           <button data-cmd="justifyRight" title="Căn phải">➡</button>
@@ -634,6 +651,21 @@
           <label class="fmt-color" title="Màu chữ">
             A<input type="color" id="textColorInput" value="#000000">
           </label>
+          <span class="fmt-sep"></span>
+          <button data-cmd="insertUnorderedList" title="Danh sách gạch đầu dòng">• ≡</button>
+          <button data-cmd="insertOrderedList" title="Danh sách đánh số">1. ≡</button>
+          <button data-cmd="outdent" title="Giảm thụt lề">⇤</button>
+          <button data-cmd="indent" title="Tăng thụt lề">⇥</button>
+        </div>
+        <div class="fmt-toolbar" id="tblToolbar">
+          <span class="sub" style="padding:0 4px 0 12px;">Bảng:</span>
+          <button id="tblRowAbove" title="Thêm hàng phía trên">⬆➕</button>
+          <button id="tblRowBelow" title="Thêm hàng phía dưới">⬇➕</button>
+          <button id="tblColLeft" title="Thêm cột bên trái">⬅➕</button>
+          <button id="tblColRight" title="Thêm cột bên phải">➡➕</button>
+          <span class="fmt-sep"></span>
+          <button id="tblRowDel" title="Xoá hàng hiện tại">➖ Hàng</button>
+          <button id="tblColDel" title="Xoá cột hiện tại">➖ Cột</button>
         </div>
         <div id="diffBanner" class="diff-banner" style="display:none;">
           <span id="diffCount"></span>
@@ -2169,7 +2201,7 @@ ta.addEventListener('input', ()=>{
 // và không cần viết lại từ đầu cơ chế bôi đen/vùng chọn đã có sẵn trong app.
 const fmtToolbar = document.getElementById('fmtToolbar');
 const CAC_LENH_CAN_LE = ['justifyLeft','justifyCenter','justifyRight','justifyFull'];
-const CAC_LENH_TOGGLE = ['bold','italic','underline', ...CAC_LENH_CAN_LE];
+const CAC_LENH_TOGGLE = ['bold','italic','underline', ...CAC_LENH_CAN_LE, 'insertUnorderedList','insertOrderedList'];
 
 fmtToolbar.querySelectorAll('button[data-cmd]').forEach(btn=>{
   // preventDefault ở mousedown để KHÔNG mất vùng đang bôi đen trong ta khi bấm nút (nếu không, contenteditable
@@ -2204,6 +2236,106 @@ document.addEventListener('selectionchange', ()=>{
   const sel = window.getSelection();
   if(sel.rangeCount && ta.contains(sel.anchorNode)) capNhatTrangThaiThanhCongCu();
 });
+
+// --- Cỡ chữ ---
+// document.execCommand('fontSize', ...) chỉ nhận 7 mốc cố định (1-7), không đúng cỡ pt thật. Mẹo chuẩn:
+// ép tạo thẻ <font size="7"> quanh vùng chọn rồi tự thay bằng style="font-size:...pt" đúng cỡ người chọn.
+const fontSizeSelect = document.getElementById('fontSizeSelect');
+fontSizeSelect.addEventListener('mousedown', e=> e.stopPropagation());
+fontSizeSelect.addEventListener('change', ()=>{
+  const cỡ = fontSizeSelect.value;
+  if(!cỡ) return;
+  ta.focus();
+  document.execCommand('fontSize', false, '7');
+  ta.querySelectorAll('font[size="7"]').forEach(f=>{
+    f.removeAttribute('size');
+    f.style.fontSize = cỡ + 'pt';
+  });
+  ta.dispatchEvent(new Event('input', {bubbles:true}));
+  fontSizeSelect.value = '';
+});
+
+// --- Giãn dòng ---
+// Không có execCommand chuẩn cho giãn dòng — tự tìm (các) khối đoạn văn đang giao với vùng chọn rồi gán
+// trực tiếp line-height cho từng khối đó.
+const lineHeightSelect = document.getElementById('lineHeightSelect');
+lineHeightSelect.addEventListener('mousedown', e=> e.stopPropagation());
+lineHeightSelect.addEventListener('change', ()=>{
+  const gt = lineHeightSelect.value;
+  if(!gt) return;
+  const sel = window.getSelection();
+  if(!sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  const cacKhoiChon = layCacKhoi().filter(el => range.intersectsNode(el));
+  (cacKhoiChon.length ? cacKhoiChon : [range.commonAncestorContainer.nodeType===1 ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement])
+    .forEach(el => { if(el && el.style) el.style.lineHeight = gt; });
+  ta.dispatchEvent(new Event('input', {bubbles:true}));
+  lineHeightSelect.value = '';
+});
+
+/* ---------------- CÔNG CỤ CHỈNH BẢNG (thêm/xoá hàng, cột) ---------------- */
+function layOTaiConTro(){
+  const sel = window.getSelection();
+  if(!sel.rangeCount) return null;
+  let node = sel.anchorNode;
+  if(node && node.nodeType === 3) node = node.parentElement;
+  return node && node.closest ? node.closest('td,th') : null;
+}
+function baoLoiChuaChonO(){ alert('Đặt con trỏ vào 1 ô trong bảng trước khi dùng nút này.'); }
+
+document.getElementById('tblRowAbove').onclick = ()=> themHang(true);
+document.getElementById('tblRowBelow').onclick = ()=> themHang(false);
+function themHang(phiaTren){
+  const o = layOTaiConTro();
+  if(!o){ baoLoiChuaChonO(); return; }
+  const hang = o.closest('tr');
+  const hangMoi = document.createElement('tr');
+  Array.from(hang.children).forEach(td=>{
+    const oMoi = document.createElement(td.tagName.toLowerCase());
+    oMoi.innerHTML = '<br>';
+    hangMoi.appendChild(oMoi);
+  });
+  hang.insertAdjacentElement(phiaTren ? 'beforebegin' : 'afterend', hangMoi);
+  ta.dispatchEvent(new Event('input', {bubbles:true}));
+}
+
+document.getElementById('tblColLeft').onclick = ()=> themCot(true);
+document.getElementById('tblColRight').onclick = ()=> themCot(false);
+function themCot(phiaTrai){
+  const o = layOTaiConTro();
+  if(!o){ baoLoiChuaChonO(); return; }
+  const hangHienTai = o.closest('tr');
+  const viTri = Array.from(hangHienTai.children).indexOf(o);
+  const bang = o.closest('table');
+  bang.querySelectorAll('tr').forEach(hang=>{
+    const oGoc = hang.children[viTri];
+    const oMoi = document.createElement(oGoc ? oGoc.tagName.toLowerCase() : 'td');
+    oMoi.innerHTML = '<br>';
+    if(oGoc) oGoc.insertAdjacentElement(phiaTrai ? 'beforebegin' : 'afterend', oMoi);
+    else hang.appendChild(oMoi);
+  });
+  ta.dispatchEvent(new Event('input', {bubbles:true}));
+}
+
+document.getElementById('tblRowDel').onclick = ()=>{
+  const o = layOTaiConTro();
+  if(!o){ baoLoiChuaChonO(); return; }
+  const bang = o.closest('table');
+  const hang = o.closest('tr');
+  if(bang.querySelectorAll('tr').length <= 1){ alert('Bảng chỉ còn 1 hàng — không xoá được nữa.'); return; }
+  hang.remove();
+  ta.dispatchEvent(new Event('input', {bubbles:true}));
+};
+document.getElementById('tblColDel').onclick = ()=>{
+  const o = layOTaiConTro();
+  if(!o){ baoLoiChuaChonO(); return; }
+  const hangHienTai = o.closest('tr');
+  if(hangHienTai.children.length <= 1){ alert('Bảng chỉ còn 1 cột — không xoá được nữa.'); return; }
+  const viTri = Array.from(hangHienTai.children).indexOf(o);
+  const bang = o.closest('table');
+  bang.querySelectorAll('tr').forEach(hang=>{ if(hang.children[viTri]) hang.children[viTri].remove(); });
+  ta.dispatchEvent(new Event('input', {bubbles:true}));
+};
 
 /* ---------------- BÔI ĐEN ĐOẠN VĂN BẢN ĐỂ YÊU CẦU AI SỬA RIÊNG ĐOẠN ĐÓ ---------------- */
 let savedRange = null;
