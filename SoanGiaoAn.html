@@ -2367,7 +2367,18 @@ function monCuaGiaoAn(){
 
 function layCacKhoi(){
   return Array.from(ta.querySelectorAll(CSS_KHOI))
-    .filter(el => !el.querySelector(CSS_KHOI) && el.textContent.trim() !== '');
+    // Giữ lại cả khối KHÔNG có chữ nhưng có chứa ảnh (trước đây bị lọc bỏ vì textContent rỗng, khiến AI
+    // không "thấy" các khối chứa ảnh để mà xoá khi người dùng yêu cầu).
+    .filter(el => !el.querySelector(CSS_KHOI) && (el.textContent.trim() !== '' || el.querySelector('img')));
+}
+
+// Chữ tóm tắt của 1 khối gửi cho AI — khối chỉ có ảnh (không chữ) thì thay bằng placeholder để AI biết có
+// ảnh ở đó và có thể xoá (xoa:true) nếu người dùng yêu cầu, dù không đọc được nội dung ảnh.
+function moTaKhoiChoAI(el){
+  const chu = el.textContent.trim();
+  if(chu) return chu;
+  const soAnh = el.querySelectorAll('img').length;
+  return soAnh ? '[' + soAnh + ' HÌNH ẢNH minh hoạ — không có chữ]' : '';
 }
 
 // AI trả lời/nội dung sửa thường có markdown đơn giản (**đậm**, xuống dòng \n) — chuyển thành HTML thật
@@ -2413,7 +2424,7 @@ async function guiTroChuyen(q){
     ta.innerHTML = textToParagraphs(ta.innerText || ta.textContent, null).html;
   }
   const cacKhoi = layCacKhoi();
-  const chuDaGui = cacKhoi.map(el => el.textContent.trim());
+  const chuDaGui = cacKhoi.map(moTaKhoiChoAI);
 
   const thinking = addMsg('Đang xử lý…', 'ai');
   try{
@@ -2438,14 +2449,18 @@ async function guiTroChuyen(q){
         // Nếu khối này đã bị chính lượt sửa hiện tại đổi rồi (AI trả về 2 mục riêng cho cùng 1 khối) thì
         // KHÔNG tính là "người dùng đã sửa" — vẫn cho áp tiếp mục thứ 2.
         const tuDaSuaRoi = khoiDaTuSua.has(t.soKhoi);
-        if(!el || !el.isConnected || (!tuDaSuaRoi && el.textContent.trim() !== chuDaGui[t.soKhoi])){ boQua++; return; }
+        if(!el || !el.isConnected || (!tuDaSuaRoi && moTaKhoiChoAI(el) !== chuDaGui[t.soKhoi])){ boQua++; return; }
         khoiDaTuSua.add(t.soKhoi);
         const laO = el.tagName === 'TD' || el.tagName === 'TH';
+        const coAnh = !!el.querySelector('img');
         if(t.xoa){
           if(laO) el.textContent = ''; else el.remove();
           daXoa++;
           return;
         }
+        // Khối có ảnh: chỉ cho phép XOÁ, không cho "sửa nội dung" đè lên — datChuChoKhoi dùng innerHTML nên
+        // sẽ xoá mất ảnh nếu lỡ áp nhầm noi_dung_moi vào đây.
+        if(coAnh && typeof t.noiDungMoi === 'string'){ boQua++; return; }
         if(typeof t.noiDungMoi === 'string'){
           if(t.noiDungMoi.trim() === chuDaGui[t.soKhoi]) khongDoi++;
           else { datChuChoKhoi(el, t.noiDungMoi.trim()); el.classList.add('diff-new'); daSua++; }
