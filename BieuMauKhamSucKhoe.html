@@ -766,6 +766,83 @@
             }
         }
 
+        // Lưu dữ liệu vào localStorage mỗi khi người dùng thay đổi input
+        form.addEventListener('change', () => {
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+            localStorage.setItem('healthFormData', JSON.stringify(data));
+        });
+
+        form.addEventListener('input', () => {
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+            localStorage.setItem('healthFormData', JSON.stringify(data));
+        });
+
+        // Khôi phục dữ liệu từ localStorage khi trang tải
+        function restoreFormData() {
+            const savedData = localStorage.getItem('healthFormData');
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    for (const [fieldName, value] of Object.entries(data)) {
+                        const field = form.querySelector(`[name="${fieldName}"]`);
+                        if (field) {
+                            if (field.type === 'radio') {
+                                const radioBtn = form.querySelector(`[name="${fieldName}"][value="${value}"]`);
+                                if (radioBtn) radioBtn.checked = true;
+                            } else {
+                                field.value = value;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('Lỗi khi khôi phục dữ liệu:', e);
+                }
+            }
+        }
+
+        // Xóa dữ liệu sau khi gửi thành công
+        function clearFormData() {
+            localStorage.removeItem('healthFormData');
+        }
+
+        // Gọi hàm khôi phục khi trang tải
+        restoreFormData();
+
+        // Sửa hàm submitForm để xóa dữ liệu sau khi gửi thành công
+        const originalSubmitForm = submitForm;
+        submitForm = async function() {
+            if (!validateForm()) return;
+
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+
+            loading.style.display = 'block';
+            successMsg.style.display = 'none';
+            errorMsg.style.display = 'none';
+
+            try {
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    clearFormData(); // Xóa dữ liệu sau khi gửi thành công
+                    form.style.display = 'none';
+                    loading.style.display = 'none';
+                    successMsg.style.display = 'block';
+                } else {
+                    throw new Error('Lỗi khi gửi dữ liệu');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                loading.style.display = 'none';
+                errorMsg.style.display = 'block';
+            }
+        };
+
         showStep(1);
     </script>
 </body>
