@@ -766,22 +766,22 @@
             }
         }
 
-        // Lưu dữ liệu vào localStorage mỗi khi người dùng thay đổi input
+        // Lưu dữ liệu vào sessionStorage mỗi khi người dùng thay đổi input
         form.addEventListener('change', () => {
             const formData = new FormData(form);
             const data = Object.fromEntries(formData);
-            localStorage.setItem('healthFormData', JSON.stringify(data));
+            sessionStorage.setItem('healthFormData', JSON.stringify(data));
         });
 
         form.addEventListener('input', () => {
             const formData = new FormData(form);
             const data = Object.fromEntries(formData);
-            localStorage.setItem('healthFormData', JSON.stringify(data));
+            sessionStorage.setItem('healthFormData', JSON.stringify(data));
         });
 
-        // Khôi phục dữ liệu từ localStorage khi trang tải
+        // Khôi phục dữ liệu từ sessionStorage khi trang tải
         function restoreFormData() {
-            const savedData = localStorage.getItem('healthFormData');
+            const savedData = sessionStorage.getItem('healthFormData');
             if (savedData) {
                 try {
                     const data = JSON.parse(savedData);
@@ -804,7 +804,7 @@
 
         // Xóa dữ liệu sau khi gửi thành công
         function clearFormData() {
-            localStorage.removeItem('healthFormData');
+            sessionStorage.removeItem('healthFormData');
         }
 
         // Gọi hàm khôi phục khi trang tải
