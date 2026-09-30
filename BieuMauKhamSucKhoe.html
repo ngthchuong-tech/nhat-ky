@@ -304,7 +304,7 @@ VD: NGUYỄN VĂN A</span>
 <label>Ngày sinh <span class="required">*</span></label>
 <span class="hint">Nhập theo định dạng: DD/MM/YYYY 
 Ví dụ: 31/01/2025</span>
-<input type="date" name="G_NGAY_SINH">
+<input type="text" name="G_NGAY_SINH" class="date-input" inputmode="numeric" maxlength="10" placeholder="DD/MM/YYYY" autocomplete="off">
 </div>
 <div class="form-group" data-col="H">
 <label>Lớp</label>
@@ -335,7 +335,7 @@ VD: 0260****7785</span>
 <label>Ngày cấp Số CCCD</label>
 <span class="hint">Nhập theo định dạng: DD/MM/YYYY 
 Ví dụ: 31/01/2025</span>
-<input type="date" name="L_NGAYCAP_CCCD">
+<input type="text" name="L_NGAYCAP_CCCD" class="date-input" inputmode="numeric" maxlength="10" placeholder="DD/MM/YYYY" autocomplete="off">
 </div>
 <div class="form-group" data-col="M">
 <label>Nơi cấp Số CCCD</label>
@@ -637,6 +637,7 @@ Số“1”: Có</span>
             if (!validateForm()) return;
             if (!kiemTraTenBenh()) return;
             if (!kiemTraSoDinhDanh()) return;
+            if (!kiemTraNgay()) return;
 
             const data = Object.fromEntries(new FormData(form));
             data.G_NGAY_SINH = toVNDate(data.G_NGAY_SINH);
@@ -716,7 +717,7 @@ Số“1”: Có</span>
                     const fields = form.querySelectorAll(`[name="${name}"]`);
                     fields.forEach(field => {
                         if (field.type === 'radio') field.checked = (field.value === value);
-                        else field.value = value;
+                        else field.value = (field.classList.contains('date-input') && /^\d{4}-\d{2}-\d{2}$/.test(value)) ? value.split('-').reverse().join('/') : value;
                     });
                 }
                 // Nạp lại danh sách Xã theo Tỉnh đã lưu rồi chọn lại Xã
@@ -807,6 +808,53 @@ Số“1”: Có</span>
             });
             input.addEventListener('blur', () => setTimeout(() => { box.style.display = 'none'; }, 150));
         });
+
+        // ===== Ô ngày tháng: gõ tay bằng bàn phím số, tự thêm dấu "/" =====
+        function dinhDangNgay(v) {
+            const so = v.replace(/\D/g, '').slice(0, 8);
+            if (so.length > 4) return so.slice(0, 2) + '/' + so.slice(2, 4) + '/' + so.slice(4);
+            if (so.length > 2) return so.slice(0, 2) + '/' + so.slice(2);
+            return so;
+        }
+        document.querySelectorAll('.date-input').forEach(el => {
+            el.addEventListener('input', (e) => {
+                // Đang xóa thì để nguyên cho dễ sửa; đang gõ thì tự thêm "/"
+                if (e.inputType && e.inputType.startsWith('delete')) return;
+                el.value = dinhDangNgay(el.value);
+            });
+            el.addEventListener('blur', () => { if (el.value) el.value = dinhDangNgay(el.value); });
+        });
+
+        // Kiểm tra ngày: đúng dạng DD/MM/YYYY, là ngày có thật, không ở tương lai
+        function loiNgay(v) {
+            const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v);
+            if (!m) return 'chưa đúng dạng DD/MM/YYYY (VD: 31/01/2025)';
+            const d = +m[1], mo = +m[2], y = +m[3];
+            const dt = new Date(y, mo - 1, d);
+            if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return 'không phải ngày có thật';
+            if (y < 1900) return 'năm không hợp lệ';
+            if (dt > new Date()) return 'là ngày trong tương lai';
+            return '';
+        }
+        function kiemTraNgay() {
+            const ds = [
+                { name: 'G_NGAY_SINH', label: 'Ngày sinh', step: 1 },
+                { name: 'L_NGAYCAP_CCCD', label: 'Ngày cấp Số CCCD', step: 2 }
+            ];
+            const sai = [];
+            ds.forEach(f => {
+                const el = form.querySelector(`[name="${f.name}"]`);
+                el.value = dinhDangNgay(el.value.trim());
+                const loi = el.value ? loiNgay(el.value) : '';
+                if (loi) sai.push({ ...f, el, loi });
+            });
+            if (sai.length === 0) return true;
+            sai.forEach(f => highlight(f.el));
+            showStep(sai[0].step);
+            showError(`❌ <b>Ngày tháng chưa đúng:</b><ul style="margin:10px 0 0 20px;">` +
+                sai.map(f => `<li><b>${f.label}</b> (Bước ${f.step}): "${f.el.value}" ${f.loi}.</li>`).join('') + '</ul>');
+            return false;
+        }
 
         // Số định danh (CCCD) phải đủ 12 chữ số: của học sinh (bắt buộc), của người giám hộ (nếu có nhập)
         function kiemTraSoDinhDanh() {
