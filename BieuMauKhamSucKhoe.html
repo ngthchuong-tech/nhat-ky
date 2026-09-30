@@ -280,7 +280,7 @@
         <div class="header">
             <h1>📋 Biểu mẫu Sức khỏe Học sinh</h1>
             <p>Vui lòng điền đầy đủ thông tin</p>
-            <p style="font-size:11px;color:#aaa;margin-top:4px;">Phiên bản 5.3 (ngày tháng gõ tay)</p>
+            <p style="font-size:11px;color:#aaa;margin-top:4px;">Phiên bản 5.4</p>
         </div>
 
         <div class="progress-bar">
@@ -319,36 +319,31 @@ Ví dụ: 31/01/2025</span>
 </div>
 
 <div class="step">
-<div class="step-title">2. Liên hệ &amp; Định danh</div>
+<div class="step-title">2. Liên hệ &amp; Định danh của học sinh</div>
 <div class="form-group" data-col="J">
-<label>Điện thoại</label>
+<label>Số điện thoại của học sinh</label>
 <span class="hint">Ghi rõ số điện thoại của người khám
 VD: 0977889***</span>
 <input type="tel" name="J_DIEN_THOAI">
 </div>
 <div class="form-group" data-col="K">
-<label>Số CMND/CCCD/Mã định danh <span class="required">*</span></label>
+<label>Số CMND/CCCD/Mã định danh của học sinh <span class="required">*</span></label>
 <span class="hint">Nhập Số CCCD/Mã định danh công dân:
 VD: 0260****7785</span>
 <input type="text" name="K_SO_CCCD" inputmode="numeric" maxlength="20">
 </div>
 <div class="form-group" data-col="L">
-<label>Ngày cấp Số CCCD</label>
+<label>Ngày cấp Số CCCD của học sinh</label>
 <span class="hint">Nhập theo định dạng: DD/MM/YYYY 
 Ví dụ: 31/01/2025</span>
 <input type="text" name="L_NGAYCAP_CCCD" class="date-input" inputmode="numeric" maxlength="10" placeholder="DD/MM/YYYY" autocomplete="off">
 </div>
 <div class="form-group" data-col="M">
-<label>Nơi cấp Số CCCD</label>
+<label>Nơi cấp Số CCCD của học sinh</label>
 <span class="hint">Nhập nơi cấp số CCCD</span>
 <input type="text" name="M_NOICAP_CCCD">
 </div>
-<div class="form-group" data-col="X">
-<label>Điện thoại</label>
-<span class="hint">Ghi rõ số điện thoại của người dân
-VD: 0977889***</span>
-<input type="tel" name="X_DIEN_THOAI_BO_ME">
-</div>
+
 </div>
 
 <div class="step">
@@ -364,6 +359,12 @@ VD: NGUYỄN VĂN A</span>
 <span class="hint">Nhập Số CCCD/Mã định danh công dân:
 VD: 0260****7785</span>
 <input type="text" name="O_SO_CCCD_NGH" inputmode="numeric" maxlength="20">
+</div>
+<div class="form-group" data-col="X">
+<label>Số điện thoại của cha/mẹ/người giám hộ</label>
+<span class="hint">Ghi rõ số điện thoại của người dân
+VD: 0977889***</span>
+<input type="tel" name="X_DIEN_THOAI_BO_ME">
 </div>
 <div class="form-group" data-col="P">
 <label>Tỉnh/Thành phố nơi ở hiện tại <span class="required">*</span></label>
@@ -559,7 +560,7 @@ Số“1”: Có</span>
         let currentStep = 1;
 
         // 8 trường bắt buộc (có dấu * trong file Excel)
-        const REQUIRED_FIELDS = [{"name": "E_HO_TEN", "label": "Họ tên", "step": 1}, {"name": "F_GIOI_TINH", "label": "Giới tính", "step": 1}, {"name": "G_NGAY_SINH", "label": "Ngày sinh", "step": 1}, {"name": "I_MA_DAN_TOC", "label": "Dân tộc", "step": 1}, {"name": "K_SO_CCCD", "label": "Số CMND/CCCD/Mã định danh", "step": 2}, {"name": "P_MATINH_CU_TRU", "label": "Tỉnh/Thành phố nơi ở hiện tại", "step": 3}, {"name": "R_MAXA_CU_TRU", "label": "Xã/Phường nơi ở hiện tại", "step": 3}, {"name": "T_DIA_CHI", "label": "Chỗ ở hiện tại", "step": 3}];
+        const REQUIRED_FIELDS = [{"name": "E_HO_TEN", "label": "Họ tên", "step": 1}, {"name": "F_GIOI_TINH", "label": "Giới tính", "step": 1}, {"name": "G_NGAY_SINH", "label": "Ngày sinh", "step": 1}, {"name": "I_MA_DAN_TOC", "label": "Dân tộc", "step": 1}, {"name": "K_SO_CCCD", "label": "Số CMND/CCCD/Mã định danh của học sinh", "step": 2}, {"name": "P_MATINH_CU_TRU", "label": "Tỉnh/Thành phố nơi ở hiện tại", "step": 3}, {"name": "R_MAXA_CU_TRU", "label": "Xã/Phường nơi ở hiện tại", "step": 3}, {"name": "T_DIA_CHI", "label": "Chỗ ở hiện tại", "step": 3}];
 
         // ===== Chuyển bước =====
         function showStep(n) {
@@ -840,7 +841,7 @@ Số“1”: Có</span>
         function kiemTraNgay() {
             const ds = [
                 { name: 'G_NGAY_SINH', label: 'Ngày sinh', step: 1 },
-                { name: 'L_NGAYCAP_CCCD', label: 'Ngày cấp Số CCCD', step: 2 }
+                { name: 'L_NGAYCAP_CCCD', label: 'Ngày cấp Số CCCD của học sinh', step: 2 }
             ];
             const sai = [];
             ds.forEach(f => {
