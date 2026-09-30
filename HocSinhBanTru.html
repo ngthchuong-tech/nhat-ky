@@ -25,7 +25,7 @@
   .grid2 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; margin-bottom: 12px; }
   .grid2 .card { margin: 0; }
   .stat .lbl { color: var(--muted); font-size: 14px; }
-  .stat .val { font-size: clamp(17px, 5vw, 22px); overflow-wrap: anywhere; font-weight: 700; margin-top: 2px; }
+  .stat .val { font-size: clamp(16px, 4.6vw, 22px); white-space: nowrap; font-weight: 700; margin-top: 2px; }
   .stat .sub { color: var(--muted); font-size: 13px; }
   .red { color: var(--danger); } .green { color: var(--ok); } .orange { color: var(--warn); }
   h2 { font-size: 17px; margin: 18px 0 10px; }
@@ -192,6 +192,12 @@ function hsCoNo(t) {   // HS không có dịch vụ tháng t nhưng còn nợ th
   const trong = new Set(hsTrongThang(t).map(h => h.id));
   return D.hocSinh.filter(h => !trong.has(h.id) && noCu(h.id, t).length > 0);
 }
+/* Hạn đóng tiền: phí của tháng được tính là nợ ngay từ ngày 1, phải đóng trước hết ngày hạn (mặc định ngày 10) */
+const hanDong = () => Math.min(Math.max(Number(cauHinh.hanDong) || 10, 1), 28);
+function hanCuaThang(t) { const [m, y] = t.split('/').map(Number); return new Date(y, m - 1, hanDong()); }
+const hanChu = t => { const d = hanCuaThang(t); return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear(); };
+function quaHan(t) { const nay = new Date(); nay.setHours(0, 0, 0, 0); return nay > hanCuaThang(t); }
+
 function daTinhPhi(t) { return D.phaiThu.some(x => x.thang === t); }
 function dvTheoNgay(ma) { const d = D.dvTheoMa[ma]; return d && d.cachTinh.toLowerCase() === 'theo ngày'; }
 
@@ -238,14 +244,19 @@ function veTongQuan() {
   let tiepTheo = moiNhat ? thangKe(moiNhat) : thangHienTai();
   if (soThang(thangHienTai()) > soThang(tiepTheo)) tiepTheo = thangHienTai();   // nghỉ hè: nhảy thẳng tới tháng hiện tại
 
+  const thieuThangNay = moiNhat && soThang(thangHienTai()) > soThang(moiNhat);
   $('#noiDung').innerHTML = `
+    ${thieuThangNay ? `<div class="banner">Chưa có dữ liệu tháng ${thangHienTai()}. Tháng gần nhất là ${moiNhat}${soThang(thangHienTai()) - soThang(moiNhat) > 1 ? ' (có thể do nghỉ hè)' : ''}, nên app chưa tự tạo, cô chọn tháng để chép.<br><button class="btn" onclick="taoThangMoi('${moiNhat}','${thangHienTai()}')">Tạo tháng ${thangHienTai()}</button></div>` : ''}
     ${!daTinhPhi(thang) ? `<div class="banner">Tháng ${thang} chưa tính phí.<br><button class="btn" onclick="tinhPhi()">Tính phí tháng ${thang}</button></div>` : ''}
     <div class="grid2">
       <div class="card stat"><div class="lbl">Phải thu tháng ${thang}</div><div class="val">${tien(phai)}</div><div class="sub">${ds.length} học sinh</div></div>
       <div class="card stat"><div class="lbl">Đã thu</div><div class="val green">${tien(da)}</div><div class="sub">${phai ? Math.round(da / phai * 100) : 0}% số phải thu</div></div>
-      <div class="card stat"><div class="lbl">Còn thiếu tháng này</div><div class="val ${phai - da > 0 ? 'red' : ''}">${tien(phai - da)}</div><div class="sub">${soChua} học sinh chưa đóng đủ</div></div>
-      <div class="card stat"><div class="lbl">Nợ các tháng trước</div><div class="val ${noTruoc > 0 ? 'orange' : ''}">${tien(noTruoc)}</div><div class="sub">${soHsNo} học sinh</div></div>
+      <div class="card stat"><div class="lbl">Nợ tháng ${thang}</div><div class="val ${phai - da > 0 ? 'red' : ''}">${tien(Math.max(phai - da, 0))}</div>
+        <div class="sub">${soChua} em · ${phai - da > 0 ? (quaHan(thang) ? `<b class="red">quá hạn ${hanChu(thang).slice(0, 5)}</b>` : `hạn ${hanChu(thang).slice(0, 5)}`) : 'đã thu đủ'}</div></div>
+      <div class="card stat"><div class="lbl">Nợ các tháng trước</div><div class="val ${noTruoc > 0 ? 'red' : ''}">${tien(noTruoc)}</div><div class="sub">${soHsNo} em${noTruoc > 0 ? ' · đã quá hạn' : ''}</div></div>
     </div>
+    <div class="card row"><div class="grow"><div class="name">Tổng phụ huynh còn nợ</div><div class="muted small">Tháng ${thang} + các tháng trước</div></div>
+      <div class="amt ${Math.max(phai - da, 0) + noTruoc > 0 ? 'red' : 'green'}" style="font-size:20px">${tien(Math.max(phai - da, 0) + noTruoc)}</div></div>
     <div class="card row">
       <div class="grow"><div class="name">Điểm danh hôm nay (${hn})</div>
         <div class="muted small">${hsNgay.length ? (daDD ? `${coMat}/${hsNgay.length} em bán trú ngày có mặt` : `Chưa điểm danh · ${hsNgay.length} em bán trú ngày`) : 'Hôm nay không có em nào bán trú tính ngày'}</div></div>
@@ -253,12 +264,33 @@ function veTongQuan() {
     </div>
     <div class="card">
       <div class="name">Việc hàng tháng</div>
-      <p class="muted small" style="margin:4px 0 10px">Đầu tháng: tạo đăng ký tháng mới (chép từ tháng trước, bỏ các em đã nghỉ giữa tháng). Sửa thêm/bớt dịch vụ trong Google Sheet nếu cần, rồi bấm Tính phí.</p>
+      <p class="muted small" style="margin:4px 0 10px">Sang tháng mới, lần đầu mở app sẽ tự tạo tháng mới (chép dịch vụ từ tháng trước, bỏ các em đã nghỉ). Nút dưới đây để tạo trước hoặc tạo lại khi cần.</p>
       <div class="row wrap">
         <button class="btn sec" onclick="taoThangMoi('${moiNhat || ''}','${tiepTheo}')" ${moiNhat ? '' : 'disabled'}>Tạo tháng ${tiepTheo}</button>
         <button class="btn ghost" onclick="tinhPhi()">Tính lại phí ${thang}</button>
       </div>
     </div>`;
+}
+
+/**
+ * Tự tạo tháng mới khi mở app:
+ * chỉ tự làm khi tháng hiện tại chưa có VÀ tháng gần nhất đúng là tháng liền trước
+ * (ví dụ đang có 09/2026, mở app ngày 01/10/2026 → tự chép 09 sang 10).
+ * Nếu cách quãng (nghỉ hè) thì không tự làm, chỉ hiện nhắc để cô chọn tháng chép.
+ */
+async function tuTaoThangMoi() {
+  if (!D || !D.dsThang.length) return;
+  const nay = thangHienTai(), moiNhat = D.dsThang[D.dsThang.length - 1];
+  if (D.dsThang.includes(nay) || thangKe(moiNhat) !== nay) return;
+  try {
+    const kq = await chay(() => goiApi('saoChepDangKy', { tuThang: moiNhat, denThang: nay }));
+    await chay(() => goiApi('tinhPhi', { thang: nay }));
+    thang = nay;
+    await taiDuLieu();
+    baoToast(`Đã tự tạo tháng ${nay} (chép từ ${moiNhat}, ${kq.soDong} dịch vụ` + (kq.boQua.length ? `, bỏ ${kq.boQua.length} dịch vụ đã ngừng` : '') + '). Em nào có thay đổi thì sửa trong mục Học sinh.', 7000);
+  } catch (e) {
+    await taiDuLieu().catch(() => {});   // máy khác vừa tạo xong thì chỉ cần tải lại
+  }
 }
 
 async function tinhPhi(t = thang) {
@@ -374,9 +406,9 @@ function veThuPhi() {
       <button class="${locThuPhi === 'all' ? 'on' : ''}" data-l="all">Tất cả (${ds.length})</button>
     </div>
     ${hien.length ? hien.map(x => {
+      const qh = quaHan(thang);
       const trangThai = x.canDong <= 0 ? '<span class="tag ok">Đã đóng đủ</span>'
-        : x.s.da > 0 && x.s.thieu > 0 ? '<span class="tag part">Đóng thiếu</span>'
-        : x.s.thieu > 0 ? '<span class="tag no">Chưa đóng</span>' : '';
+        : x.s.thieu > 0 ? `<span class="tag ${qh ? 'no' : 'part'}">${x.s.da > 0 ? 'Đóng thiếu' : 'Chưa đóng'} · ${qh ? 'quá hạn' : 'hạn ' + hanChu(thang).slice(0, 5)}</span>` : '';
       const daGui = D.daGui[thang + '|' + x.h.id];
       return `
       <div class="item" data-id="${esc(x.h.id)}">
@@ -384,7 +416,7 @@ function veThuPhi() {
         <div class="grow">
           <div class="name">${esc(x.h.hoTen)}</div>
           <div class="meta">Tháng ${thang}: ${tien(x.s.phai)}${x.s.da ? ' · đã đóng ' + tien(x.s.da) : ''}</div>
-          <div>${trangThai}${x.n.length ? `<span class="tag part">Nợ ${x.n.length} tháng trước: ${tien(x.tongNo)}</span>` : ''}${daGui ? '<span class="tag">Đã nhắn Zalo</span>' : ''}</div>
+          <div>${trangThai}${x.n.length ? `<span class="tag no">Nợ ${x.n.length} tháng trước: ${tien(x.tongNo)}</span>` : ''}${daGui ? '<span class="tag">Đã nhắn Zalo</span>' : ''}</div>
         </div>
         <div class="amt ${x.canDong > 0 ? 'red' : 'green'}">${x.canDong > 0 ? tien(x.canDong) : '✓'}</div>
       </div>`; }).join('')
@@ -413,6 +445,7 @@ function noiDungZalo(hsId) {
     m += `Tổng phải đóng: ${tien(s.phai)}\n`;
     if (s.da) m += `Đã đóng: ${tien(s.da)}\n`;
     m += `Còn thiếu: ${tien(Math.max(s.thieu, 0))}\n`;
+    if (s.thieu > 0) m += quaHan(thang) ? `(Đã quá hạn đóng ngày ${hanChu(thang)})\n` : `Hạn đóng: trước hết ngày ${hanChu(thang)}\n`;
   }
   if (n.length) {
     m += `\nNợ các tháng trước:\n` + n.map(x => `- Tháng ${x.thang}: ${tien(x.thieu)}`).join('\n') + '\n';
@@ -563,8 +596,9 @@ const dauThangChu = t => '01/' + t;
 const thangCuaNgay = chu => chu.slice(3);
 let SHS = null;   // hồ sơ đang sửa
 
-function cacThangChon() {
-  return [...new Set(D.dsThang.concat([thangHienTai(), thang]))].sort((a, b) => soThang(b) - soThang(a));
+function cacThangChon() {   // chỉ các tháng đã tạo (chưa có tháng nào thì cho tháng hiện tại)
+  const ds = D.dsThang.length ? D.dsThang.slice() : [thangHienTai()];
+  return ds.sort((a, b) => soThang(b) - soThang(a));
 }
 
 function napDichVu() {
@@ -587,7 +621,7 @@ function moSuaHocSinh(id, thangMo) {
     id: id || '',
     info: { hoTen: h.hoTen || '', lop: h.lop || '', truong: h.truong || '', ngaySinh: h.ngaySinh || '', gioiTinh: h.gioiTinh || '',
             tenBo: h.tenBo || '', tenMe: h.tenMe || '', sdt: h.sdt || '', diaChi: h.diaChi || '', ghiChu: h.ghiChu || '' },
-    thang: thangMo || (id ? thang : (D.dsThang.includes(thangHienTai()) ? thangHienTai() : thang)),
+    thang: thangMo || (id ? thang : (D.dsThang.includes(thangHienTai()) ? thangHienTai() : (D.dsThang[D.dsThang.length - 1] || thangHienTai()))),
     apDungSau: true, moNghi: false
   };
   napDichVu();
@@ -733,6 +767,10 @@ function veCaiDat() {
     ${D ? `<h2 style="margin-top:0">Dịch vụ & giá</h2>
       ${dvHtml}
       <button class="btn sec full" id="themDV" style="margin-bottom:6px">+ Thêm dịch vụ</button>
+      <div class="card row" style="margin-top:12px">
+        <div class="grow"><div class="name">Hạn đóng tiền hằng tháng</div><div class="muted small">Phí tháng tính là nợ từ ngày 1, quá ngày này thì báo "quá hạn"</div></div>
+        <span class="muted">Ngày</span><input type="number" id="hanDong" value="${hanDong()}" min="1" max="28" inputmode="numeric" style="width:70px;text-align:center">
+      </div>
       <h2>Kết nối</h2>` : ''}
     <div class="card">
       <div class="name">Kết nối Google Sheet</div>
@@ -750,12 +788,19 @@ function veCaiDat() {
       <select id="moc" class="thang" style="width:100%">${D.dsThang.slice().reverse().map(t => `<option>${t}</option>`).join('')}</select>
       <button class="btn sec full" id="soDu" style="margin-top:10px">Ghi nhận đã thu đủ</button>
     </div>` : ''}
+    ${D && D.dsThang.length ? `<div class="card">
+      <div class="name">Xóa một tháng tạo nhầm</div>
+      <p class="muted small" style="margin:4px 0 10px">Xóa hết dịch vụ, tiền phải thu, thông báo và điểm danh của tháng chọn. Dùng khi lỡ tạo tháng nghỉ hè, hoặc tháng tạo thiếu học sinh, để tạo lại cho đúng. Không ảnh hưởng các tháng khác.</p>
+      <select id="thangXoa" class="thang" style="width:100%">${D.dsThang.slice().reverse().map(t => `<option>${t}</option>`).join('')}</select>
+      <button class="btn danger full" id="xoaThang" style="margin-top:10px">Xóa dữ liệu tháng này</button>
+    </div>` : ''}
     ${D ? `<div class="card small muted">Đang kết nối: ${D.hocSinh.length} học sinh · ${D.dsThang.length} tháng dữ liệu · ${D.thuTien.length} lần thu tiền</div>` : ''}`;
   $('#luuCH').onclick = async () => {
-    cauHinh = { url: $('#url').value.trim(), key: $('#key').value };
+    cauHinh = Object.assign({}, cauHinh, { url: $('#url').value.trim(), key: $('#key').value });
     try { localStorage.setItem(LUU, JSON.stringify(cauHinh)); } catch (e) {}
     await taiDuLieu(false);
     manHinh = 'tongQuan'; ve();
+    tuTaoThangMoi();
     baoToast('Kết nối thành công');
   };
   const sd = $('#soDu');
@@ -770,6 +815,27 @@ function veCaiDat() {
     await taiDuLieu();
   };
   const td = $('#themDV'); if (td) td.onclick = () => moSuaDichVu(null);
+  const xt = $('#xoaThang');
+  if (xt) xt.onclick = async () => {
+    const t = $('#thangXoa').value;
+    const soHs = hsTrongThang(t).length;
+    if (!confirm(`Xóa toàn bộ dữ liệu tháng ${t} (${soHs} học sinh)? Việc này không hoàn tác được.`)) return;
+    let kq = await chay(() => goiApi('xoaThang', { thang: t }));
+    if (kq.canXacNhan) {
+      if (!confirm(`Tháng ${t} đã có ${kq.soLanThu} khoản tiền thu, tổng ${tien(kq.tongThu)}. Xóa luôn các khoản thu này?`)) return;
+      kq = await chay(() => goiApi('xoaThang', { thang: t, xoaTienThu: true }));
+    }
+    if (thang === t) thang = '';
+    await taiDuLieu(false);
+    manHinh = 'caiDat'; ve();
+    baoToast(`Đã xóa tháng ${t}: ${kq.chiTiet.dangKy} dịch vụ, ${kq.chiTiet.tienThu} khoản thu`, 5000);
+  };
+  const hd = $('#hanDong');
+  if (hd) hd.onchange = () => {
+    cauHinh.hanDong = Math.min(Math.max(Number(hd.value) || 10, 1), 28); hd.value = cauHinh.hanDong;
+    try { localStorage.setItem(LUU, JSON.stringify(cauHinh)); } catch (e) {}
+    baoToast('Hạn đóng tiền: ngày ' + cauHinh.hanDong + ' hằng tháng');
+  };
   document.querySelectorAll('.item[data-ma]').forEach(el => el.onclick = () => moSuaDichVu(el.dataset.ma));
 }
 
@@ -813,7 +879,7 @@ function moSuaDichVu(ma) {
 /* ================== KHỞI ĐỘNG ================== */
 window.addEventListener('unhandledrejection', e => e.preventDefault());   // lỗi đã được báo bằng thông báo nhỏ
 ve();
-if (cauHinh.url) taiDuLieu(false).catch(() => {});
+if (cauHinh.url) taiDuLieu(false).then(tuTaoThangMoi).catch(() => {});
 </script>
 </body>
 </html>
