@@ -715,21 +715,38 @@
         });
 
         function validateForm() {
+            // Chỉ 8 trường bắt buộc (có dấu * trong file)
             const requiredFields = {
-                'E_HO_TEN': 'Họ và tên học sinh',
-                'F_GIOI_TINH': 'Giới tính',
-                'G_NGAY_SINH': 'Ngày sinh',
-                'I_MA_DAN_TOC': 'Dân tộc',
-                'K_SO_CCCD': 'Số CMND/CCCD của học sinh',
-                'P_MATINH_CU_TRU': 'Tỉnh/Thành phố nơi ở',
-                'R_MAXA_CU_TRU': 'Xã/Phường nơi ở',
-                'T_DIA_CHI': 'Địa chỉ nơi ở'
+                'E_HO_TEN': { label: 'Họ và tên học sinh', step: 1 },
+                'F_GIOI_TINH': { label: 'Giới tính', step: 1 },
+                'G_NGAY_SINH': { label: 'Ngày sinh', step: 1 },
+                'I_MA_DAN_TOC': { label: 'Dân tộc', step: 1 },
+                'K_SO_CCCD': { label: 'Số CMND/CCCD của học sinh', step: 2 },
+                'P_MATINH_CU_TRU': { label: 'Tỉnh/Thành phố nơi ở hiện tại', step: 3 },
+                'R_MAXA_CU_TRU': { label: 'Xã/Phường nơi ở hiện tại', step: 3 },
+                'T_DIA_CHI': { label: 'Địa chỉ nơi ở hiện tại', step: 3 }
             };
 
-            for (const [fieldName, fieldLabel] of Object.entries(requiredFields)) {
+            for (const [fieldName, fieldInfo] of Object.entries(requiredFields)) {
                 const field = form.querySelector(`[name="${fieldName}"]`);
                 if (field && !field.value.trim()) {
-                    alert(`❌ Vui lòng điền: ${fieldLabel}`);
+                    // Thông báo rõ tên trường
+                    alert(`❌ THIẾU TRƯỜNG BẮTBUỘC:\n\n"${fieldInfo.label}"\n\nVui lòng điền thông tin này trước khi gửi.`);
+
+                    // Tự động quay lại bước chứa trường bị thiếu
+                    showStep(fieldInfo.step);
+
+                    // Focus vào trường bị thiếu
+                    field.focus();
+                    field.style.borderColor = '#e74c3c';
+                    field.style.boxShadow = '0 0 0 3px rgba(231, 76, 60, 0.2)';
+
+                    // Xóa highlight sau 3 giây
+                    setTimeout(() => {
+                        field.style.borderColor = '#ddd';
+                        field.style.boxShadow = '';
+                    }, 3000);
+
                     return false;
                 }
             }
