@@ -329,7 +329,7 @@ VD: 0977889***</span>
 <label>Số CMND/CCCD/Mã định danh <span class="required">*</span></label>
 <span class="hint">Nhập Số CCCD/Mã định danh công dân:
 VD: 0260****7785</span>
-<input type="text" name="K_SO_CCCD">
+<input type="text" name="K_SO_CCCD" inputmode="numeric" maxlength="20">
 </div>
 <div class="form-group" data-col="L">
 <label>Ngày cấp Số CCCD</label>
@@ -362,7 +362,7 @@ VD: NGUYỄN VĂN A</span>
 <label>Mã định danh (CCCD) của bố, mẹ hoặc người giám hộ</label>
 <span class="hint">Nhập Số CCCD/Mã định danh công dân:
 VD: 0260****7785</span>
-<input type="text" name="O_SO_CCCD_NGH">
+<input type="text" name="O_SO_CCCD_NGH" inputmode="numeric" maxlength="20">
 </div>
 <div class="form-group" data-col="P">
 <label>Tỉnh/Thành phố nơi ở hiện tại <span class="required">*</span></label>
@@ -636,6 +636,7 @@ Số“1”: Có</span>
             hideError();
             if (!validateForm()) return;
             if (!kiemTraTenBenh()) return;
+            if (!kiemTraSoDinhDanh()) return;
 
             const data = Object.fromEntries(new FormData(form));
             data.G_NGAY_SINH = toVNDate(data.G_NGAY_SINH);
@@ -806,6 +807,27 @@ Số“1”: Có</span>
             });
             input.addEventListener('blur', () => setTimeout(() => { box.style.display = 'none'; }, 150));
         });
+
+        // Số định danh (CCCD) phải đủ 12 chữ số: của học sinh (bắt buộc), của người giám hộ (nếu có nhập)
+        function kiemTraSoDinhDanh() {
+            const ds = [
+                { name: 'K_SO_CCCD', label: 'Số CMND/CCCD/Mã định danh của học sinh', step: 2 },
+                { name: 'O_SO_CCCD_NGH', label: 'Mã định danh (CCCD) của bố, mẹ hoặc người giám hộ', step: 3 }
+            ];
+            const sai = [];
+            ds.forEach(f => {
+                const el = form.querySelector(`[name="${f.name}"]`);
+                const so = el.value.replace(/[\s.\-]/g, '');
+                el.value = so;
+                if (so && !/^\d{12}$/.test(so)) sai.push({ ...f, el, so });
+            });
+            if (sai.length === 0) return true;
+            sai.forEach(f => highlight(f.el));
+            showStep(sai[0].step);
+            const list = sai.map(f => `<li><b>${f.label}</b> (Bước ${f.step}): "${f.so}" có ${f.so.replace(/\D/g, '').length} chữ số${/\D/.test(f.so) ? ' và có ký tự không phải số' : ''}. Số định danh phải gồm đúng 12 chữ số.</li>`).join('');
+            showError(`❌ <b>Số định danh chưa đúng:</b><ul style="margin:10px 0 0 20px;">${list}</ul>`);
+            return false;
+        }
 
         // Kiểm tra các ô tên bệnh: đã nhập thì phải là mục chọn trong danh mục
         function kiemTraTenBenh() {
