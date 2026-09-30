@@ -884,11 +884,73 @@
             return value;
         }
 
+        // Bỏ dấu để tìm kiếm: "Long Bình Tân" -> "long binh tan"
+        function boDau(s) {
+            return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '')
+                .replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().trim();
+        }
+
+        // Danh sách dài (VD: hàng nghìn xã/phường): dùng ô gõ để tìm, KHÔNG dùng ô chọn
+        // vì ô chọn hàng nghìn dòng làm điện thoại bị treo.
+        function taoOTimKiem(name, allowed, els) {
+            const first = els[0];
+            const oldBox = first.type === 'radio' ? first.closest('.checkbox-group') : first;
+            const wrap = document.createElement('div');
+            wrap.style.position = 'relative';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.name = name;
+            input.autocomplete = 'off';
+            input.placeholder = 'Gõ vài chữ để tìm, rồi chọn trong danh sách gợi ý';
+            const box = document.createElement('div');
+            box.style.cssText = 'display:none;position:absolute;left:0;right:0;top:100%;z-index:10;background:#fff;border:1px solid #ccc;border-radius:8px;max-height:240px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.15);';
+            wrap.appendChild(input);
+            wrap.appendChild(box);
+            oldBox.replaceWith(wrap);
+
+            const chiMuc = allowed.map(v => [v, boDau(v)]);
+            let hen = null;
+            input.addEventListener('input', () => {
+                clearTimeout(hen);
+                hen = setTimeout(() => {
+                    const q = boDau(input.value);
+                    box.innerHTML = '';
+                    if (!q) { box.style.display = 'none'; return; }
+                    const ketQua = [];
+                    for (const [v, k] of chiMuc) {
+                        if (k.includes(q)) { ketQua.push(v); if (ketQua.length >= 15) break; }
+                    }
+                    if (ketQua.length === 0) {
+                        box.innerHTML = '<div style="padding:10px;color:#999;">Không tìm thấy, thử gõ khác</div>';
+                    }
+                    ketQua.forEach(v => {
+                        const item = document.createElement('div');
+                        item.textContent = v;
+                        item.style.cssText = 'padding:10px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;';
+                        item.addEventListener('mousedown', (ev) => {
+                            ev.preventDefault();
+                            input.value = v;
+                            box.style.display = 'none';
+                            saveFormData();
+                        });
+                        box.appendChild(item);
+                    });
+                    box.style.display = 'block';
+                }, 200);
+            });
+            input.addEventListener('blur', () => setTimeout(() => { box.style.display = 'none'; }, 150));
+        }
+
         function apDungDanhSach(options) {
             for (const [name, allowed] of Object.entries(options)) {
                 if (!Array.isArray(allowed) || allowed.length === 0) continue;
                 const els = form.querySelectorAll(`[name="${name}"]`);
                 if (els.length === 0) continue;
+
+                if (allowed.length > 30) {
+                    taoOTimKiem(name, allowed, els);
+                    continue;
+                }
 
                 const select = document.createElement('select');
                 select.name = name;
