@@ -971,6 +971,11 @@
             try {
                 const res = await fetch(WEB_APP_URL + '?action=options');
                 const result = JSON.parse(await res.text());
+                if (result.status === 'error') {
+                    // Apps Script báo lỗi khi đọc danh sách: không chặn form, vẫn dùng danh sách có sẵn
+                    console.warn('Không lấy được danh sách từ Sheet:', result.message);
+                    return;
+                }
                 if (!result.version) {
                     // Apps Script trên Google chưa phải bản mới -> cảnh báo ngay khi mở form
                     const warn = document.createElement('div');
