@@ -229,7 +229,8 @@ function veTongQuan() {
   const daDD = hsNgay.some(h => trangThaiDD(hn, h.id));
 
   const moiNhat = D.dsThang[D.dsThang.length - 1];
-  const tiepTheo = moiNhat ? thangKe(moiNhat) : thangHienTai();
+  let tiepTheo = moiNhat ? thangKe(moiNhat) : thangHienTai();
+  if (soThang(thangHienTai()) > soThang(tiepTheo)) tiepTheo = thangHienTai();   // nghỉ hè: nhảy thẳng tới tháng hiện tại
 
   $('#noiDung').innerHTML = `
     ${!daTinhPhi(thang) ? `<div class="banner">Tháng ${thang} chưa tính phí.<br><button class="btn" onclick="tinhPhi()">Tính phí tháng ${thang}</button></div>` : ''}
@@ -259,7 +260,10 @@ async function tinhPhi(t = thang) {
   await taiDuLieu();
 }
 async function taoThangMoi(tu, den) {
-  if (!confirm(`Chép đăng ký dịch vụ từ tháng ${tu} sang tháng ${den}?`)) return;
+  const chon = prompt(`Tạo đăng ký tháng ${den} bằng cách chép từ tháng nào?\n(Các tháng đang có: ${D.dsThang.join(', ')})`, tu);
+  if (chon === null) return;
+  tu = chon.trim();
+  if (!D.dsThang.includes(tu)) { baoToast('Không có dữ liệu tháng ' + tu, 4000); return; }
   const kq = await chay(() => goiApi('saoChepDangKy', { tuThang: tu, denThang: den }));
   await chay(() => goiApi('tinhPhi', { thang: den }));
   thang = den;
