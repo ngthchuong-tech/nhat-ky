@@ -220,12 +220,6 @@
             box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
         }
 
-        .btn-next:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
         .btn-submit {
             background: linear-gradient(135deg, #2ecc71, #27ae60);
             color: white;
@@ -298,13 +292,13 @@
 
                 <div class="form-group">
                     <label>Họ và tên <span class="required">*</span></label>
-                    <input type="text" name="E_HO_TEN" required placeholder="VD: NGUYỄN VĂN A">
+                    <input type="text" name="E_HO_TEN" placeholder="VD: NGUYỄN VĂN A">
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label>Giới tính <span class="required">*</span></label>
-                        <select name="F_GIOI_TINH" required>
+                        <select name="F_GIOI_TINH">
                             <option value="">-- Chọn --</option>
                             <option value="Nam">Nam</option>
                             <option value="Nữ">Nữ</option>
@@ -312,7 +306,7 @@
                     </div>
                     <div class="form-group">
                         <label>Ngày sinh <span class="required">*</span></label>
-                        <input type="date" name="G_NGAY_SINH" required>
+                        <input type="date" name="G_NGAY_SINH">
                     </div>
                 </div>
 
@@ -323,7 +317,7 @@
                     </div>
                     <div class="form-group">
                         <label>Dân tộc <span class="required">*</span></label>
-                        <select name="I_MA_DAN_TOC" required>
+                        <select name="I_MA_DAN_TOC">
                             <option value="">-- Chọn --</option>
                             <option value="Kinh">Kinh</option>
                             <option value="Tày">Tày</option>
@@ -346,7 +340,7 @@
 
                 <div class="form-group">
                     <label>Số CMND/CCCD <span class="required">*</span></label>
-                    <input type="text" name="K_SO_CCCD" required placeholder="VD: 0260****7785">
+                    <input type="text" name="K_SO_CCCD" placeholder="VD: 0260****7785">
                 </div>
 
                 <div class="form-row">
@@ -378,7 +372,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Tỉnh/Thành phố <span class="required">*</span></label>
-                        <select name="P_MATINH_CU_TRU" required>
+                        <select name="P_MATINH_CU_TRU">
                             <option value="">-- Chọn --</option>
                             <option value="TP.HCM">TP.HCM</option>
                             <option value="Hà Nội">Hà Nội</option>
@@ -390,13 +384,13 @@
                     </div>
                     <div class="form-group">
                         <label>Xã/Phường <span class="required">*</span></label>
-                        <input type="text" name="R_MAXA_CU_TRU" required placeholder="VD: Phường 1">
+                        <input type="text" name="R_MAXA_CU_TRU" placeholder="VD: Phường 1">
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label>Địa chỉ hiện tại <span class="required">*</span></label>
-                    <input type="text" name="T_DIA_CHI" required placeholder="VD: 123 Nguyễn Huệ, Q.1, TP.HCM">
+                    <input type="text" name="T_DIA_CHI" placeholder="VD: 123 Nguyễn Huệ, Q.1, TP.HCM">
                 </div>
 
                 <div class="form-group">
@@ -690,24 +684,31 @@
             e.preventDefault();
 
             if (currentStep === totalSteps) {
-                // Submit form
+                // Gửi form - kiểm tra trường bắt buộc
                 submitForm();
             } else {
-                // Validate current step and move to next
-                if (validateStep(currentStep)) {
-                    showStep(currentStep + 1);
-                }
+                // Chuyển trang bình thường - không kiểm tra
+                showStep(currentStep + 1);
             }
         });
 
-        function validateStep(step) {
-            const currentStepElem = steps[step - 1];
-            const requiredFields = currentStepElem.querySelectorAll('[required]');
+        function validateForm() {
+            // Kiểm tra tất cả các trường bắt buộc khi gửi
+            const allRequiredFields = form.querySelectorAll('[required]');
 
-            for (let field of requiredFields) {
+            for (let field of allRequiredFields) {
                 if (!field.value.trim()) {
-                    alert(`❌ Vui lòng điền trường: ${field.previousElementSibling?.textContent || 'Bắt buộc'}`);
-                    field.focus();
+                    const label = field.previousElementSibling?.textContent || 'Trường này';
+                    alert(`❌ Vui lòng điền trường bắt buộc: ${label}`);
+
+                    // Tìm step chứa field và quay lại
+                    for (let i = 0; i < totalSteps; i++) {
+                        if (steps[i].contains(field)) {
+                            showStep(i + 1);
+                            field.focus();
+                            return false;
+                        }
+                    }
                     return false;
                 }
             }
@@ -715,7 +716,8 @@
         }
 
         async function submitForm() {
-            if (!validateStep(totalSteps)) return;
+            // Kiểm tra validation trước khi gửi
+            if (!validateForm()) return;
 
             const formData = new FormData(form);
             const data = Object.fromEntries(formData);
