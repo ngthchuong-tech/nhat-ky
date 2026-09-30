@@ -163,6 +163,11 @@ let manHinh = 'tongQuan';
 
 async function taiDuLieu(giuThang = true) {
   D = await chay(() => goiApi('tongHop'));
+  D.caiDat = D.caiDat || {};
+  if (cauHinh.hanDong && Number(cauHinh.hanDong) !== Number(D.caiDat.hanDong)) {   // bản trước lưu hạn trên máy → đưa lên sheet 1 lần
+    try { D.caiDat = await goiApi('luuCaiDat', { caiDat: { hanDong: cauHinh.hanDong } }); } catch (e) {}
+    delete cauHinh.hanDong; try { localStorage.setItem(LUU, JSON.stringify(cauHinh)); } catch (e) {}
+  }
   D.hsTheoId = {}; D.hocSinh.forEach(h => D.hsTheoId[h.id] = h);
   D.dvTheoMa = {}; D.dichVu.forEach(d => D.dvTheoMa[d.ma] = d);
   const ds = [...new Set(D.dangKy.map(x => x.thang).concat(D.phaiThu.map(x => x.thang)))].filter(Boolean).sort((a, b) => soThang(a) - soThang(b));
@@ -198,7 +203,7 @@ function hsCoNo(t) {   // HS không có dịch vụ tháng t nhưng còn nợ th
   return D.hocSinh.filter(h => !trong.has(h.id) && noCu(h.id, t).length > 0);
 }
 /* Hạn đóng tiền: phí của tháng được tính là nợ ngay từ ngày 1, phải đóng trước hết ngày hạn (mặc định ngày 10) */
-const hanDong = () => Math.min(Math.max(Number(cauHinh.hanDong) || 10, 1), 28);
+const hanDong = () => Math.min(Math.max(Number(D && D.caiDat && D.caiDat.hanDong) || 10, 1), 28);   // lưu chung trong Google Sheet (sheet CAI_DAT)
 function hanCuaThang(t) { const [m, y] = t.split('/').map(Number); return new Date(y, m - 1, hanDong()); }
 const hanChu = t => { const d = hanCuaThang(t); return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear(); };
 function quaHan(t) { const nay = new Date(); nay.setHours(0, 0, 0, 0); return nay > hanCuaThang(t); }
@@ -905,7 +910,7 @@ function veCaiDat() {
       ${dvHtml}
       <button class="btn sec full" id="themDV" style="margin-bottom:6px">+ Thêm dịch vụ</button>
       <div class="card row" style="margin-top:12px">
-        <div class="grow"><div class="name">Hạn đóng tiền hằng tháng</div><div class="muted small">Phí tháng tính là nợ từ ngày 1, quá ngày này thì báo "quá hạn"</div></div>
+        <div class="grow"><div class="name">Hạn đóng tiền hằng tháng</div><div class="muted small">Phí tháng tính là nợ từ ngày 1, quá ngày này thì báo "quá hạn". Lưu chung, mọi máy dùng cùng một hạn.</div></div>
         <span class="muted">Ngày</span><input type="number" id="hanDong" value="${hanDong()}" min="1" max="28" inputmode="numeric" style="width:70px;text-align:center">
       </div>
       <h2>Kết nối</h2>` : ''}
@@ -968,10 +973,10 @@ function veCaiDat() {
     baoToast(`Đã xóa tháng ${t}: ${kq.chiTiet.dangKy} dịch vụ, ${kq.chiTiet.tienThu} khoản thu`, 5000);
   };
   const hd = $('#hanDong');
-  if (hd) hd.onchange = () => {
-    cauHinh.hanDong = Math.min(Math.max(Number(hd.value) || 10, 1), 28); hd.value = cauHinh.hanDong;
-    try { localStorage.setItem(LUU, JSON.stringify(cauHinh)); } catch (e) {}
-    baoToast('Hạn đóng tiền: ngày ' + cauHinh.hanDong + ' hằng tháng');
+  if (hd) hd.onchange = async () => {
+    const n = Math.min(Math.max(Number(hd.value) || 10, 1), 28); hd.value = n;
+    D.caiDat = await chay(() => goiApi('luuCaiDat', { caiDat: { hanDong: n } }));
+    baoToast('Đã lưu hạn đóng tiền: ngày ' + n + ' hằng tháng (dùng chung cho mọi máy)', 4000);
   };
   document.querySelectorAll('.item[data-ma]').forEach(el => el.onclick = () => moSuaDichVu(el.dataset.ma));
 }
