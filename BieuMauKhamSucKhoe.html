@@ -10,7 +10,6 @@
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -20,7 +19,6 @@
             justify-content: center;
             align-items: center;
         }
-
         .container {
             background: white;
             border-radius: 15px;
@@ -30,34 +28,23 @@
             padding: 30px 25px;
             animation: slideUp 0.5s ease-out;
         }
-
         @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-
         .header {
             text-align: center;
             margin-bottom: 30px;
         }
-
         .header h1 {
             color: #333;
             font-size: 24px;
             margin-bottom: 10px;
         }
-
         .header p {
             color: #666;
             font-size: 14px;
         }
-
         .progress-bar {
             background: #e0e0e0;
             height: 8px;
@@ -65,7 +52,6 @@
             margin-bottom: 30px;
             overflow: hidden;
         }
-
         .progress-fill {
             background: linear-gradient(90deg, #667eea, #764ba2);
             height: 100%;
@@ -73,21 +59,15 @@
             transition: width 0.3s ease;
             width: 14.28%;
         }
-
-        .step {
-            display: none;
-        }
-
+        .step { display: none; }
         .step.active {
             display: block;
             animation: fadeIn 0.3s ease-in;
         }
-
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
         }
-
         .step-title {
             font-size: 18px;
             color: #333;
@@ -96,160 +76,99 @@
             padding-bottom: 10px;
             border-bottom: 2px solid #f0f0f0;
         }
-
         .form-group {
-            margin-bottom: 18px;
+            margin-bottom: 20px;
         }
-
-        label {
+        .form-group label {
             display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-size: 14px;
             font-weight: 500;
+            color: #333;
+            margin-bottom: 8px;
         }
-
-        .hint {
-            display: block;
-            margin-bottom: 6px;
-            color: #999;
-            font-size: 12px;
-            font-style: italic;
-        }
-
-        .required {
-            color: #e74c3c;
-        }
-
-        input[type="text"],
-        input[type="date"],
-        input[type="tel"],
-        input[type="number"],
-        select,
-        textarea {
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="date"],
+        .form-group select,
+        .form-group textarea {
             width: 100%;
-            padding: 12px 14px;
-            border: 1.5px solid #ddd;
-            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
             font-size: 14px;
             font-family: inherit;
-            transition: border-color 0.3s, box-shadow 0.3s;
+            transition: border-color 0.3s;
         }
-
-        input[type="text"]:focus,
-        input[type="date"]:focus,
-        input[type="tel"]:focus,
-        input[type="number"]:focus,
-        select:focus,
-        textarea:focus {
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
-
-        textarea {
-            resize: vertical;
+        .form-group textarea {
             min-height: 80px;
+            resize: vertical;
         }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+        .hint {
+            font-size: 12px;
+            color: #999;
+            display: block;
+            margin-top: 5px;
         }
-
-        @media (max-width: 600px) {
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-        }
-
         .checkbox-group {
             display: flex;
             flex-direction: column;
             gap: 10px;
+            margin-top: 10px;
         }
-
         .checkbox-item {
             display: flex;
             align-items: center;
         }
-
-        input[type="radio"] {
-            width: 18px;
-            height: 18px;
-            margin-right: 10px;
-            cursor: pointer;
+        .checkbox-item input[type="radio"],
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 8px;
         }
-
         .checkbox-item label {
             margin: 0;
+            font-weight: 400;
             cursor: pointer;
         }
-
         .buttons {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             margin-top: 30px;
         }
-
         button {
             flex: 1;
-            padding: 14px 20px;
+            padding: 12px 20px;
             border: none;
             border-radius: 8px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s;
         }
-
         .btn-prev {
             background: #f0f0f0;
             color: #333;
         }
-
         .btn-prev:hover {
             background: #e0e0e0;
         }
-
         .btn-next {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
         }
-
         .btn-next:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
         }
-
-        .success-message {
-            display: none;
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-            text-align: center;
-        }
-
-        .error-message {
-            display: none;
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-        }
-
         .loading {
             display: none;
             text-align: center;
-            padding: 20px;
+            padding: 40px 20px;
         }
-
         .spinner {
             border: 4px solid #f0f0f0;
             border-top: 4px solid #667eea;
@@ -257,12 +176,31 @@
             width: 40px;
             height: 40px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+            margin: 0 auto 20px;
         }
-
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+        .success-message {
+            display: none;
+            background: #d4edda;
+            color: #155724;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #c3e6cb;
+            text-align: center;
+            font-weight: 500;
+        }
+        .error-message {
+            display: none;
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #f5c6cb;
+            text-align: center;
+            font-weight: 500;
         }
     </style>
 </head>
@@ -278,201 +216,133 @@
         </div>
 
         <form id="healthForm">
-            <!-- Step 1: Thông tin cơ bản học sinh -->
+            <!-- Step 1 -->
             <div class="step active">
-                <div class="step-title">1️⃣ Thông tin cơ bản của học sinh</div>
-
+                <div class="step-title">1️⃣ Thông tin cá nhân học sinh</div>
                 <div class="form-group">
-                    <label>Họ và tên học sinh <span class="required">*</span></label>
-                    <span class="hint">NHẬP HỌ TÊN (IN HOA) - VD: NGUYỄN VĂN A</span>
-                    <input type="text" name="E_HO_TEN" placeholder="">
+                    <label>Họ và tên học sinh *</label>
+                    <input type="text" name="E_HO_TEN" placeholder="Nhập họ và tên">
                 </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Giới tính <span class="required">*</span></label>
-                        <select name="F_GIOI_TINH">
-                            <option value="">-- Chọn --</option>
-                            <option value="Nam">Nam</option>
-                            <option value="Nữ">Nữ</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Ngày sinh <span class="required">*</span></label>
-                        <span class="hint">Định dạng: DD/MM/YYYY (VD: 31/01/2025)</span>
-                        <input type="date" name="G_NGAY_SINH">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Lớp</label>
-                        <input type="text" name="H_LOP" placeholder="VD: 10A1">
-                    </div>
-                    <div class="form-group">
-                        <label>Dân tộc <span class="required">*</span></label>
-                        <span class="hint">VD: Kinh</span>
-                        <select name="I_MA_DAN_TOC">
-                            <option value="">-- Chọn --</option>
-                            <option value="Kinh">Kinh</option>
-                            <option value="Tày">Tày</option>
-                            <option value="Thái">Thái</option>
-                            <option value="Mường">Mường</option>
-                            <option value="Khác">Khác</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Step 2: Liên hệ & Định danh -->
-            <div class="step">
-                <div class="step-title">2️⃣ Liên hệ & Định danh</div>
-
                 <div class="form-group">
-                    <label>Số điện thoại của học sinh</label>
-                    <span class="hint">Ghi rõ số điện thoại của người khám - VD: 0977889***</span>
-                    <input type="tel" name="J_DIEN_THOAI" placeholder="">
-                </div>
-
-                <div class="form-group">
-                    <label>Số CMND/CCCD của học sinh <span class="required">*</span></label>
-                    <span class="hint">Nhập Số CCCD/Mã định danh công dân - VD: 0260****7785</span>
-                    <input type="text" name="K_SO_CCCD">
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Ngày cấp CCCD</label>
-                        <span class="hint">Định dạng: DD/MM/YYYY (VD: 31/01/2025)</span>
-                        <input type="date" name="L_NGAYCAP_CCCD">
-                    </div>
-                    <div class="form-group">
-                        <label>Nơi cấp CCCD</label>
-                        <span class="hint">Nhập nơi cấp số CCCD</span>
-                        <input type="text" name="M_NOICAP_CCCD" placeholder="">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Số điện thoại của bố mẹ/người giám hộ</label>
-                    <span class="hint">Ghi rõ số điện thoại của người dân - VD: 0977889***</span>
-                    <input type="tel" name="X_DIEN_THOAI_BO_ME" placeholder="">
-                </div>
-            </div>
-
-            <!-- Step 3: Thông tin gia đình -->
-            <div class="step">
-                <div class="step-title">3️⃣ Thông tin gia đình</div>
-
-                <div class="form-group">
-                    <label>Họ và tên bố, mẹ hoặc người giám hộ</label>
-                    <span class="hint">NHẬP HỌ TÊN NGƯỜI GIÁM HỘ (IN HOA) - VD: NGUYỄN VĂN A</span>
-                    <input type="text" name="N_NGUOI_GIAM_HO" placeholder="">
-                </div>
-
-                <div class="form-group">
-                    <label>Mã định danh (CCCD) của bố, mẹ hoặc người giám hộ</label>
-                    <span class="hint">Nhập Số CCCD/Mã định danh công dân - VD: 0260****7785</span>
-                    <input type="text" name="O_SO_CCCD_NGH" placeholder="">
-                </div>
-
-                <div class="form-group">
-                    <label>Tỉnh/Thành phố nơi ở hiện tại <span class="required">*</span></label>
-                    <span class="hint">Tên Tỉnh/Thành phố</span>
-                    <select name="P_MATINH_CU_TRU">
-                        <option value="">-- Chọn --</option>
-                        <option value="TP.HCM">TP.HCM</option>
-                        <option value="Hà Nội">Hà Nội</option>
-                        <option value="Đồng Nai">Đồng Nai</option>
-                        <option value="Bình Dương">Bình Dương</option>
-                        <option value="Long An">Long An</option>
-                        <option value="Vũng Tàu">Vũng Tàu</option>
-                        <option value="Khác">Khác</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Xã/Phường nơi ở hiện tại <span class="required">*</span></label>
-                    <span class="hint">Tên Phường/Xã</span>
-                    <input type="text" name="R_MAXA_CU_TRU" placeholder="">
-                </div>
-
-                <div class="form-group">
-                    <label>Địa chỉ nơi ở hiện tại <span class="required">*</span></label>
-                    <span class="hint">Địa chỉ hiện tại (Số nhà, thôn, xóm)</span>
-                    <input type="text" name="T_DIA_CHI" placeholder="">
-                </div>
-
-                <div class="form-group">
-                    <label>Nhóm máu</label>
-                    <span class="hint">Ghi theo hướng dẫn tại Quyết định 3176/QĐ-BYT</span>
-                    <select name="U_NHOM_MAU">
-                        <option value="">-- Chọn --</option>
-                        <option value="O">O</option>
-                        <option value="A">A</option>
-                        <option value="B">B</option>
-                        <option value="AB">AB</option>
-                        <option value="Không rõ">Không rõ</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Step 4: Tiền sử gia đình -->
-            <div class="step">
-                <div class="step-title">4️⃣ Tiền sử gia đình</div>
-
-                <div class="form-group">
-                    <label>Có ai trong gia đình mắc bệnh bẩm sinh hoặc bệnh truyền nhiễm không?</label>
-                    <span class="hint">Ghi theo số tương ứng: "0"=Không, "1"=Có</span>
+                    <label>Giới tính *</label>
                     <div class="checkbox-group">
                         <div class="checkbox-item">
-                            <input type="radio" name="AA_TSGD_MAC_BENH" value="0" id="aa_khong">
-                            <label for="aa_khong">0 - Không</label>
+                            <input type="radio" name="F_GIOI_TINH" value="Nam" id="gender_nam">
+                            <label for="gender_nam">Nam</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="radio" name="AA_TSGD_MAC_BENH" value="1" id="aa_co">
-                            <label for="aa_co">1 - Có</label>
+                            <input type="radio" name="F_GIOI_TINH" value="Nữ" id="gender_nu">
+                            <label for="gender_nu">Nữ</label>
                         </div>
                     </div>
                 </div>
-
                 <div class="form-group">
-                    <label>Nếu có, vui lòng nêu tên bệnh gia đình</label>
-                    <span class="hint">Ví dụ: Tăng huyết áp, Đái tháo đường…</span>
-                    <textarea name="AB_TSGD_MA_BENH" placeholder=""></textarea>
+                    <label>Ngày sinh *</label>
+                    <input type="date" name="G_NGAY_SINH">
+                </div>
+                <div class="form-group">
+                    <label>Lớp</label>
+                    <input type="text" name="H_LOP" placeholder="Nhập lớp">
+                </div>
+                <div class="form-group">
+                    <label>Dân tộc *</label>
+                    <input type="text" name="I_MA_DAN_TOC" placeholder="Nhập dân tộc (Kinh, Tày,...)">
+                </div>
+                <div class="form-group">
+                    <label>Điện thoại liên hệ</label>
+                    <input type="text" name="J_DIEN_THOAI" placeholder="Nhập số điện thoại">
                 </div>
             </div>
 
-            <!-- Step 5: Tiền sử sản khoa -->
+            <!-- Step 2 -->
+            <div class="step">
+                <div class="step-title">2️⃣ Giấy tờ và thông tin gia đình</div>
+                <div class="form-group">
+                    <label>Số CMND/CCCD của học sinh *</label>
+                    <input type="text" name="K_SO_CCCD" placeholder="Nhập số CMND/CCCD">
+                </div>
+                <div class="form-group">
+                    <label>Ngày cấp CMND/CCCD</label>
+                    <input type="date" name="L_NGAYCAP_CCCD">
+                </div>
+                <div class="form-group">
+                    <label>Nơi cấp CMND/CCCD</label>
+                    <input type="text" name="M_NOICAP_CCCD" placeholder="">
+                </div>
+                <div class="form-group">
+                    <label>Người giám hộ</label>
+                    <input type="text" name="N_NGUOI_GIAM_HO" placeholder="">
+                </div>
+                <div class="form-group">
+                    <label>Số CMND/CCCD người giám hộ</label>
+                    <input type="text" name="O_SO_CCCD_NGH" placeholder="">
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="step">
+                <div class="step-title">3️⃣ Địa chỉ hiện tại</div>
+                <div class="form-group">
+                    <label>Tỉnh/Thành phố nơi ở hiện tại *</label>
+                    <input type="text" name="P_MATINH_CU_TRU" placeholder="Nhập tỉnh/thành phố">
+                </div>
+                <div class="form-group">
+                    <label>Huyện/Quận</label>
+                    <input type="text" name="Q_MAHUYEN" placeholder="">
+                </div>
+                <div class="form-group">
+                    <label>Xã/Phường nơi ở hiện tại *</label>
+                    <input type="text" name="R_MAXA_CU_TRU" placeholder="Nhập xã/phường">
+                </div>
+                <div class="form-group">
+                    <label>Địa chỉ nơi ở hiện tại *</label>
+                    <input type="text" name="T_DIA_CHI" placeholder="Nhập địa chỉ chi tiết">
+                </div>
+                <div class="form-group">
+                    <label>Nhóm máu</label>
+                    <input type="text" name="U_NHOM_MAU" placeholder="Nhập nhóm máu (O, A, B, AB)">
+                </div>
+                <div class="form-group">
+                    <label>Điện thoại bố mẹ</label>
+                    <input type="text" name="X_DIEN_THOAI_BO_ME" placeholder="">
+                </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="step">
+                <div class="step-title">4️⃣ Tiền sử bệnh gia đình</div>
+                <div class="form-group">
+                    <label>Gia đình có mắc bệnh gì không?</label>
+                    <input type="text" name="AA_TSGD_MAC_BENH" placeholder="">
+                </div>
+                <div class="form-group">
+                    <label>Mã bệnh tiền sử gia đình</label>
+                    <input type="text" name="AB_TSGD_MA_BENH" placeholder="">
+                </div>
+            </div>
+
+            <!-- Step 5 -->
             <div class="step">
                 <div class="step-title">5️⃣ Tiền sử sản khoa</div>
-
                 <div class="form-group">
-                    <label>Sản khoa bình thường hay không?</label>
-                    <span class="hint">Ghi: Không hoặc Có</span>
+                    <label>Tiền sử sản khoa của mẹ</label>
                     <textarea name="AC_SAN_KHOA" placeholder=""></textarea>
                 </div>
-
                 <div class="form-group">
-                    <label>Sản khoa không bình thường</label>
-                    <span class="hint">Mã 1: Đẻ thiếu tháng, Mã 2: Đẻ thừa cân, Mã 3: Đẻ có can thiệp, Mã 4: Đẻ ngạt, Mã 5: Mẹ bị bệnh trong kỳ mang thai</span>
-                    <input type="text" name="AD_SAN_KHOA_KB" placeholder="">
+                    <label>Tiền sử sản khoa kế hoạch hóa</label>
+                    <textarea name="AD_SAN_KHOA_KB" placeholder=""></textarea>
                 </div>
-
                 <div class="form-group">
-                    <label>Tên bệnh gây ra sản khoa không bình thường</label>
-                    <span class="hint">Ví dụ: Mẹ bị tăng huyết áp</span>
+                    <label>Tên bệnh sản khoa</label>
                     <input type="text" name="AE_TEN_BENH_SK" placeholder="">
                 </div>
             </div>
 
-            <!-- Step 6: Lịch sử vắc xin -->
+            <!-- Step 6 -->
             <div class="step">
-                <div class="step-title">6️⃣ Lịch sử vắc xin</div>
-                <span class="hint" style="display: block; margin-bottom: 20px;">Ghi theo mã: "0"=Không được tiêm, "1"=Được tiêm, "99"=Không nhớ rõ</span>
-
+                <div class="step-title">6️⃣ Vắc xin tiêm chủng</div>
                 <div class="form-group">
-                    <label>BCG</label>
+                    <label>BCG (Lao)</label>
                     <div class="checkbox-group">
                         <div class="checkbox-item">
                             <input type="radio" name="AF_BCG" value="0" id="af_0">
@@ -488,9 +358,8 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="form-group">
-                    <label>Bạch hầu, ho gà, uốn ván (DPT)</label>
+                    <label>DPT</label>
                     <div class="checkbox-group">
                         <div class="checkbox-item">
                             <input type="radio" name="AG_DPT" value="0" id="ag_0">
@@ -506,7 +375,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label>Sởi</label>
                     <div class="checkbox-group">
@@ -524,7 +392,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label>Bại liệt</label>
                     <div class="checkbox-group">
@@ -542,7 +409,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label>Viêm não Nhật Bản B</label>
                     <div class="checkbox-group">
@@ -560,7 +426,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label>Viêm gan B</label>
                     <div class="checkbox-group">
@@ -578,9 +443,8 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="form-group">
-                    <label>Các loại vắc xin khác</label>
+                    <label>Vắc xin khác</label>
                     <div class="checkbox-group">
                         <div class="checkbox-item">
                             <input type="radio" name="AL_VAC_XIN_KHAC" value="0" id="al_0">
@@ -596,20 +460,17 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label>Tên vắc xin khác khi được tiêm</label>
                     <input type="text" name="AM_TEN_VAC_XIN_KHAC" placeholder="">
                 </div>
             </div>
 
-            <!-- Step 7: Tiền sử bệnh bản thân -->
+            <!-- Step 7 -->
             <div class="step">
                 <div class="step-title">7️⃣ Tiền sử bệnh bản thân</div>
-
                 <div class="form-group">
-                    <label>Bản thân có đang mắc bệnh bẩm sinh và mãn tính không?</label>
-                    <span class="hint">Ghi theo số tương ứng: "0"=Không, "1"=Có</span>
+                    <label>Bản thân có mắc bệnh bẩm sinh hay mãn tính không?</label>
                     <div class="checkbox-group">
                         <div class="checkbox-item">
                             <input type="radio" name="AN_BT_MAC_BENH" value="0" id="an_0">
@@ -621,15 +482,12 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label>Tên bệnh tiền sử bản thân (nếu có)</label>
                     <textarea name="AO_TEN_BENH_TS" placeholder=""></textarea>
                 </div>
-
                 <div class="form-group">
                     <label>Hiện tại có đang điều trị bệnh gì không?</label>
-                    <span class="hint">Ghi theo số tương ứng: "0"=Không, "1"=Có</span>
                     <div class="checkbox-group">
                         <div class="checkbox-item">
                             <input type="radio" name="AP_DANG_DIEU_TRI" value="0" id="ap_0">
@@ -641,10 +499,8 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="form-group">
-                    <label>Cụ thể tên bệnh và liệt kê các thuốc đang dùng</label>
-                    <span class="hint">Nhập cụ thể tên bệnh và thuốc đang dùng</span>
+                    <label>Tên bệnh và thuốc đang dùng</label>
                     <textarea name="AQ_BENH_THUOC" placeholder=""></textarea>
                 </div>
             </div>
@@ -688,14 +544,11 @@
             steps.forEach(step => step.classList.remove('active'));
             if (n > totalSteps) n = totalSteps;
             if (n < 1) n = 1;
-
             steps[n - 1].classList.add('active');
             prevBtn.style.display = n === 1 ? 'none' : 'block';
             nextBtn.innerHTML = n === totalSteps ? '✓ Gửi' : 'Tiếp tục →';
-
             const progressPercent = (n / totalSteps) * 100;
             progressFill.style.width = progressPercent + '%';
-
             currentStep = n;
             window.scrollTo(0, 0);
         }
@@ -706,7 +559,6 @@
 
         nextBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-
             if (currentStep === totalSteps) {
                 submitForm();
             } else {
@@ -715,7 +567,7 @@
         });
 
         function validateForm() {
-            // Chỉ 8 trường bắt buộc (có dấu * trong file)
+            // CHỈ 8 trường bắt buộc (có dấu *)
             const requiredFields = {
                 'E_HO_TEN': { label: 'Họ và tên học sinh', step: 1 },
                 'F_GIOI_TINH': { label: 'Giới tính', step: 1 },
@@ -729,24 +581,18 @@
 
             for (const [fieldName, fieldInfo] of Object.entries(requiredFields)) {
                 const field = form.querySelector(`[name="${fieldName}"]`);
-                if (field && !field.value.trim()) {
-                    // Thông báo rõ tên trường
+                if (!field || !field.value.trim()) {
                     alert(`❌ THIẾU TRƯỜNG BẮTBUỘC:\n\n"${fieldInfo.label}"\n\nVui lòng điền thông tin này trước khi gửi.`);
-
-                    // Tự động quay lại bước chứa trường bị thiếu
                     showStep(fieldInfo.step);
-
-                    // Focus vào trường bị thiếu
-                    field.focus();
-                    field.style.borderColor = '#e74c3c';
-                    field.style.boxShadow = '0 0 0 3px rgba(231, 76, 60, 0.2)';
-
-                    // Xóa highlight sau 3 giây
-                    setTimeout(() => {
-                        field.style.borderColor = '#ddd';
-                        field.style.boxShadow = '';
-                    }, 3000);
-
+                    if (field) {
+                        field.focus();
+                        field.style.borderColor = '#e74c3c';
+                        field.style.boxShadow = '0 0 0 3px rgba(231, 76, 60, 0.2)';
+                        setTimeout(() => {
+                            field.style.borderColor = '#ddd';
+                            field.style.boxShadow = '';
+                        }, 3000);
+                    }
                     return false;
                 }
             }
@@ -773,6 +619,7 @@
                     form.style.display = 'none';
                     loading.style.display = 'none';
                     successMsg.style.display = 'block';
+                    sessionStorage.removeItem('healthFormData');
                 } else {
                     throw new Error('Lỗi khi gửi dữ liệu');
                 }
@@ -783,7 +630,7 @@
             }
         }
 
-        // Lưu dữ liệu vào sessionStorage mỗi khi người dùng thay đổi input
+        // Auto-save vào sessionStorage
         form.addEventListener('change', () => {
             const formData = new FormData(form);
             const data = Object.fromEntries(formData);
@@ -796,69 +643,22 @@
             sessionStorage.setItem('healthFormData', JSON.stringify(data));
         });
 
-        // Khôi phục dữ liệu từ sessionStorage khi trang tải
-        function restoreFormData() {
-            const savedData = sessionStorage.getItem('healthFormData');
-            if (savedData) {
-                try {
-                    const data = JSON.parse(savedData);
-                    for (const [fieldName, value] of Object.entries(data)) {
-                        const field = form.querySelector(`[name="${fieldName}"]`);
-                        if (field) {
-                            if (field.type === 'radio') {
-                                const radioBtn = form.querySelector(`[name="${fieldName}"][value="${value}"]`);
-                                if (radioBtn) radioBtn.checked = true;
-                            } else {
-                                field.value = value;
-                            }
-                        }
+        // Khôi phục dữ liệu từ sessionStorage
+        const savedData = sessionStorage.getItem('healthFormData');
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            for (const [name, value] of Object.entries(data)) {
+                const field = form.querySelector(`[name="${name}"]`);
+                if (field) {
+                    if (field.type === 'radio') {
+                        const radio = form.querySelector(`[name="${name}"][value="${value}"]`);
+                        if (radio) radio.checked = true;
+                    } else {
+                        field.value = value;
                     }
-                } catch (e) {
-                    console.error('Lỗi khi khôi phục dữ liệu:', e);
                 }
             }
         }
-
-        // Xóa dữ liệu sau khi gửi thành công
-        function clearFormData() {
-            sessionStorage.removeItem('healthFormData');
-        }
-
-        // Gọi hàm khôi phục khi trang tải
-        restoreFormData();
-
-        // Sửa hàm submitForm để xóa dữ liệu sau khi gửi thành công
-        const originalSubmitForm = submitForm;
-        submitForm = async function() {
-            if (!validateForm()) return;
-
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData);
-
-            loading.style.display = 'block';
-            successMsg.style.display = 'none';
-            errorMsg.style.display = 'none';
-
-            try {
-                const response = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(data)
-                });
-
-                if (response.ok) {
-                    clearFormData(); // Xóa dữ liệu sau khi gửi thành công
-                    form.style.display = 'none';
-                    loading.style.display = 'none';
-                    successMsg.style.display = 'block';
-                } else {
-                    throw new Error('Lỗi khi gửi dữ liệu');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                loading.style.display = 'none';
-                errorMsg.style.display = 'block';
-            }
-        };
 
         showStep(1);
     </script>
