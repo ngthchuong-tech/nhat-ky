@@ -527,16 +527,20 @@ function veHocSinh() {
   const khop = h => !timHS || h.hoTen.toLowerCase().includes(timHS.toLowerCase()) || h.id.toLowerCase().includes(timHS.toLowerCase());
   const the = h => {
     const dk = D.dangKy.filter(x => x.hsId === h.id && x.thang === thang);
-    const tags = dk.map(x => {
+    const dvChu = dk.map(x => {
       const dv = D.dvTheoMa[x.maDv];
-      const ngung = x.denNgay && x.denNgay !== cuoiThangChu(thang) ? ` · ngừng ${x.denNgay.slice(0, 5)}` : '';
-      const bd = x.tuNgay && !x.tuNgay.startsWith('01/') ? ` · từ ${x.tuNgay.slice(0, 5)}` : '';
-      return `<span class="tag">${esc(dv ? dv.ten : x.maDv)}${dvTheoNgay(x.maDv) ? '' : ' · ' + tien(x.mucPhi)}${bd}${ngung}</span>`;
-    }).join('');
-    const phu = [h.lop ? 'Lớp ' + h.lop : '', h.sdt || 'Chưa có SĐT'].filter(Boolean).join(' · ');
+      let ten = dv ? dv.ten : x.maDv;
+      if (dv && !dvTheoNgay(x.maDv) && x.mucPhi !== dv.mucPhi) ten += ' ' + tien(x.mucPhi);        // chỉ ghi giá khi là giá riêng
+      if (x.tuNgay && !x.tuNgay.startsWith('01/')) ten += ' (từ ' + x.tuNgay.slice(0, 5) + ')';
+      if (x.denNgay && x.denNgay !== cuoiThangChu(thang)) ten += ' (nghỉ ' + x.denNgay.slice(0, 5) + ')';
+      return ten;
+    }).join(' · ');
+    const tong = soLieu(h.id, thang).phai;
     return `<div class="item" data-id="${esc(h.id)}"><div class="avatar">${esc(chuCaiDau(h.hoTen))}</div>
       <div class="grow"><div class="name">${esc(h.hoTen)}</div>
-      <div class="meta">${esc(phu)}</div><div>${tags}</div></div></div>`;
+      ${h.lop ? `<div class="meta">Lớp ${esc(h.lop)}</div>` : ''}
+      ${dvChu ? `<div class="meta small" style="margin-top:2px">${esc(dvChu)}</div>` : ''}</div>
+      ${tong ? `<div class="amt">${tien(tong)}</div>` : ''}</div>`;
   };
   const a = trong.filter(khop).sort((x, y) => x.hoTen.localeCompare(y.hoTen, 'vi'));
   const b = khac.filter(khop).sort((x, y) => x.hoTen.localeCompare(y.hoTen, 'vi'));
