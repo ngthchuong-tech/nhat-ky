@@ -92,6 +92,11 @@
   .f3 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 0 10px; }
   .f3 > div:first-child { grid-column: 1 / -1; }
   @media (min-width: 560px) { .f3 { grid-template-columns: repeat(3, minmax(0,1fr)); } .f3 > div:first-child { grid-column: auto; } }
+  .ktong { padding: 8px 0; border-bottom: 1px dashed var(--line); }
+  .ktong.tong { border: 0; background: var(--brand-soft); border-radius: 10px; padding: 10px; margin-top: 8px; }
+  .g3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 6px; margin-top: 4px; }
+  .g3 span { display: block; font-size: 12px; color: var(--muted); }
+  .g3 b { font-size: clamp(13px, 3.8vw, 16px); white-space: nowrap; }
   details summary { cursor: pointer; color: var(--muted); padding: 6px 0; }
 </style>
 </head>
@@ -387,19 +392,125 @@ async function luuDiemDanh() {
 
 /* ================== THU PHÍ ================== */
 let locThuPhi = 'chua';
+const LOC = { dv: [], lop: '', truong: '', mo: false };   // bộ lọc: dịch vụ (nhiều), lớp, trường
+
+/* Thứ tự ưu tiên khi phụ huynh đóng thiếu: tiền đóng được trừ vào dịch vụ đứng trước cho đủ rồi mới sang dịch vụ sau.
+   Bán trú > Xe > Đưa đón học thêm > Giữ chiều > các dịch vụ khác (theo thứ tự trong Cài đặt). */
+const UU_TIEN = ['BT_THANG', 'BT_NGAY', 'XE', 'DUA_DON_HT', 'GIU_CHIEU'];
+function thuTuUuTien(ma) {
+  const i = UU_TIEN.indexOf(ma);
+  return i >= 0 ? i : UU_TIEN.length + D.dichVu.findIndex(d => d.ma === ma);
+}
+
+/** Chia số tiền em đã đóng trong tháng t cho từng dịch vụ theo thứ tự ưu tiên. Trả về {maDv: {phai, da}} */
+function chiaTienDaThu(hsId, t) {
+  let con = Math.max(soLieu(hsId, t).da, 0);
+  const kq = {};
+  D.phaiThu.filter(x => x.hsId === hsId && x.thang === t)
+    .sort((a, b) => thuTuUuTien(a.maDv) - thuTuUuTien(b.maDv))
+    .forEach(x => {
+      const o = kq[x.maDv] = kq[x.maDv] || { phai: 0, da: 0 };
+      const tra = Math.min(x.thanhTien, con);
+      o.phai += x.thanhTien; o.da += tra; con -= tra;
+    });
+  return kq;
+}
+
+/** Phải thu / đã thu / còn thiếu của 1 em trong tháng t, CHỈ tính các dịch vụ đang lọc. */
+function soLieuLoc(hsId, t, dsDv) {
+  const chia = chiaTienDaThu(hsId, t);
+  const theoDv = {};
+  let phai = 0, da = 0;
+  Object.keys(chia).filter(m => dsDv.includes(m)).forEach(m => { theoDv[m] = chia[m]; phai += chia[m].phai; da += chia[m].da; });
+  return { phai, da, thieu: phai - da, theoDv };
+}
+
+function khoiTong(ten, soEm, phai, da, laTong) {
+  const thieu = phai - da;
+  return `<div class="ktong${laTong ? ' tong' : ''}">
+    <div class="row"><b class="grow">${esc(ten)}</b><span class="muted small">${soEm} em</span></div>
+    <div class="g3"><div><span>Phải thu</span><b>${tien(phai)}</b></div><div><span>Đã thu</span><b class="green">${tien(da)}</b></div><div><span>Còn thiếu</span><b class="${thieu > 0 ? 'red' : ''}">${tien(thieu)}</b></div></div>
+  </div>`;
+}
+
+function khopNhom(h) {
+  return (!LOC.lop || (h.lop || '') === LOC.lop) && (!LOC.truong || (h.truong || '') === LOC.truong);
+}
 
 function veThuPhi() {
-  const ds = hsTrongThang(thang).concat(hsCoNo(thang)).map(h => {
-    const s = soLieu(h.id, thang); const n = noCu(h.id, thang);
-    const tongNo = n.reduce((a, x) => a + x.thieu, 0);
-    return { h, s, n, tongNo, canDong: Math.max(s.thieu, 0) + tongNo };
-  }).sort((a, b) => a.h.hoTen.localeCompare(b.h.hoTen, 'vi'));
+  const locDv = LOC.dv.filter(m => D.dvTheoMa[m]);
+  const coLocDv = locDv.length > 0;
+  const coLoc = coLocDv || LOC.lop || LOC.truong;
+
+  let ds;
+  if (coLocDv) {
+    ds = hsTrongThang(thang).filter(khopNhom).map(h => {
+      const s = soLieuLoc(h.id, thang, locDv);
+      return { h, s, n: [], tongNo: 0, canDong: Math.max(s.thieu, 0) };
+    }).filter(x => x.s.phai > 0);
+  } else {
+    ds = hsTrongThang(thang).concat(hsCoNo(thang)).filter(khopNhom).map(h => {
+      const s = soLieu(h.id, thang); const n = noCu(h.id, thang);
+      const tongNo = n.reduce((a, x) => a + x.thieu, 0);
+      return { h, s, n, tongNo, canDong: Math.max(s.thieu, 0) + tongNo };
+    });
+  }
+  ds.sort((a, b) => a.h.hoTen.localeCompare(b.h.hoTen, 'vi'));
 
   const chua = ds.filter(x => x.canDong > 0), du = ds.filter(x => x.canDong <= 0);
   const hien = locThuPhi === 'chua' ? chua : locThuPhi === 'du' ? du : ds;
 
+  // danh sách lớp, trường để chọn
+  const tatCaHs = hsTrongThang(thang).concat(hsCoNo(thang));
+  const dsLop = [...new Set(tatCaHs.map(h => h.lop).filter(Boolean))].sort((x, y) => x.localeCompare(y, 'vi', { numeric: true }));
+  const dsTruong = [...new Set(tatCaHs.map(h => h.truong).filter(Boolean))].sort((x, y) => x.localeCompare(y, 'vi'));
+
+  // tổng hợp theo bộ lọc
+  const tong = ds.reduce((o, x) => { o.phai += x.s.phai; o.da += Math.min(x.s.da, x.s.phai); o.thieu += Math.max(x.s.thieu, 0); o.no += x.tongNo; return o; }, { phai: 0, da: 0, thieu: 0, no: 0 });
+  const theoDv = {};
+  if (coLocDv) ds.forEach(x => Object.keys(x.s.theoDv).forEach(m => {
+    const o = theoDv[m] = theoDv[m] || { soEm: 0, phai: 0, da: 0 };
+    o.soEm++; o.phai += x.s.theoDv[m].phai; o.da += x.s.theoDv[m].da;
+  }));
+  const moTaLoc = [coLocDv ? locDv.map(m => D.dvTheoMa[m].ten).join(', ') : '', LOC.lop ? 'Lớp ' + LOC.lop : '', LOC.truong].filter(Boolean).join(' · ');
+
   $('#noiDung').innerHTML = `
     ${!daTinhPhi(thang) ? `<div class="banner">Tháng ${thang} chưa tính phí.<br><button class="btn" onclick="tinhPhi()">Tính phí tháng ${thang}</button></div>` : ''}
+
+    <div class="card" style="padding:10px 12px">
+      <div class="row" style="cursor:pointer" id="moLoc">
+        <b class="grow">Lọc${coLoc ? ': <span style="color:var(--brand)">' + esc(moTaLoc) + '</span>' : ' theo dịch vụ, lớp, trường'}</b>
+        <span class="muted">${LOC.mo ? '▲' : '▼'}</span>
+      </div>
+      ${LOC.mo ? `
+        <label class="f">Dịch vụ (chọn một hoặc nhiều)</label>
+        <div class="tabs" style="flex-wrap:wrap;margin:0">
+          ${D.dichVu.map(d => `<button class="${locDv.includes(d.ma) ? 'on' : ''}" data-dv="${esc(d.ma)}">${esc(d.ten)}</button>`).join('')}
+        </div>
+        <div class="f3" style="grid-template-columns:minmax(0,1fr) minmax(0,1.6fr)">
+          <div style="grid-column:auto"><label class="f" for="locLop">Lớp</label>
+            <select id="locLop" class="thang" style="width:100%;font-weight:400"><option value="">Tất cả</option>${dsLop.map(x => `<option ${x === LOC.lop ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></div>
+          <div><label class="f" for="locTruong">Trường</label>
+            <select id="locTruong" class="thang" style="width:100%;font-weight:400"><option value="">Tất cả</option>${dsTruong.map(x => `<option ${x === LOC.truong ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></div>
+        </div>
+        ${coLoc ? '<button class="btn ghost full" id="boLoc" style="margin-top:10px">Bỏ lọc</button>' : ''}` : ''}
+    </div>
+
+    ${coLoc ? `
+    <div class="card">
+      <div class="name">Tổng hợp tháng ${thang}${moTaLoc ? ' · ' + esc(moTaLoc) : ''}</div>
+      ${!coLocDv ? `<div class="line"><span>Số học sinh</span><span>${ds.length}</span></div>
+      <div class="line"><span>Phải thu</span><b>${tien(tong.phai)}</b></div>
+      <div class="line"><span>Đã thu</span><span class="green">${tien(tong.da)}</span></div>
+      <div class="line"><span>Còn thiếu</span><span class="${tong.thieu > 0 ? 'red' : ''}">${tien(tong.thieu)}</span></div>` : ''}
+      ${!coLocDv && tong.no ? `<div class="line"><span>Nợ các tháng trước</span><span class="red">${tien(tong.no)}</span></div>` : ''}
+      ${coLocDv ? `<div style="margin-top:4px"></div>
+        ${locDv.filter(m => theoDv[m]).map(m => khoiTong(D.dvTheoMa[m].ten, theoDv[m].soEm, theoDv[m].phai, theoDv[m].da, false)).join('')}
+        ${khoiTong('TỔNG CỘNG', ds.length, tong.phai, tong.da, true)}
+        <p class="muted small" style="margin:8px 0 0">Em nào đóng thiếu thì tiền đã đóng được trừ lần lượt: Bán trú → Xe → Đưa đón học thêm → Giữ chiều → dịch vụ khác. Chỉ tính tháng đang chọn.</p>` : ''}
+      <button class="btn sec full" id="chepDS" style="margin-top:10px">Chép danh sách để gửi</button>
+    </div>` : ''}
+
     <div class="tabs">
       <button class="${locThuPhi === 'chua' ? 'on' : ''}" data-l="chua">Chưa đóng đủ (${chua.length})</button>
       <button class="${locThuPhi === 'du' ? 'on' : ''}" data-l="du">Đã đóng đủ (${du.length})</button>
@@ -410,19 +521,45 @@ function veThuPhi() {
       const trangThai = x.canDong <= 0 ? '<span class="tag ok">Đã đóng đủ</span>'
         : x.s.thieu > 0 ? `<span class="tag ${qh ? 'no' : 'part'}">${x.s.da > 0 ? 'Đóng thiếu' : 'Chưa đóng'} · ${qh ? 'quá hạn' : 'hạn ' + hanChu(thang).slice(0, 5)}</span>` : '';
       const daGui = D.daGui[thang + '|' + x.h.id];
+      const dongDv = coLocDv ? Object.keys(x.s.theoDv).map(m => D.dvTheoMa[m].ten + ' ' + tien(x.s.theoDv[m].phai)).join(' · ') : '';
       return `
       <div class="item" data-id="${esc(x.h.id)}">
         <div class="avatar">${esc(chuCaiDau(x.h.hoTen))}</div>
         <div class="grow">
-          <div class="name">${esc(x.h.hoTen)}</div>
-          <div class="meta">Tháng ${thang}: ${tien(x.s.phai)}${x.s.da ? ' · đã đóng ' + tien(x.s.da) : ''}</div>
-          <div>${trangThai}${x.n.length ? `<span class="tag no">Nợ ${x.n.length} tháng trước: ${tien(x.tongNo)}</span>` : ''}${daGui ? '<span class="tag">Đã nhắn Zalo</span>' : ''}</div>
+          <div class="name">${esc(x.h.hoTen)}${x.h.lop ? ` <span class="muted small" style="font-weight:400">· ${esc(x.h.lop)}</span>` : ''}</div>
+          <div class="meta">${coLocDv ? esc(dongDv) : 'Tháng ' + thang + ': ' + tien(x.s.phai)}${x.s.da ? ' · đã đóng ' + tien(x.s.da) : ''}</div>
+          <div>${trangThai}${x.n.length ? `<span class="tag no">Nợ ${x.n.length} tháng trước: ${tien(x.tongNo)}</span>` : ''}${daGui && !coLocDv ? '<span class="tag">Đã nhắn Zalo</span>' : ''}</div>
         </div>
         <div class="amt ${x.canDong > 0 ? 'red' : 'green'}">${x.canDong > 0 ? tien(x.canDong) : '✓'}</div>
       </div>`; }).join('')
-    : `<div class="empty">${locThuPhi === 'chua' ? 'Tất cả đã đóng đủ.' : 'Không có học sinh nào.'}</div>`}`;
+    : `<div class="empty">${locThuPhi === 'chua' ? 'Tất cả đã đóng đủ.' : 'Không có học sinh nào.'}</div>`}
+    ${hien.length ? (() => {
+      const t2 = hien.reduce((o, x) => { o.phai += x.s.phai; o.da += Math.min(x.s.da, x.s.phai); o.can += Math.max(x.canDong, 0); return o; }, { phai: 0, da: 0, can: 0 });
+      return `<div class="card" style="background:var(--brand-soft);border:0">
+        <div class="name">Tổng ${hien.length} em trong danh sách này${moTaLoc ? ' (' + esc(moTaLoc) + ')' : ''}</div>
+        <div class="line"><span>Phải thu tháng ${thang}</span><b>${tien(t2.phai)}</b></div>
+        <div class="line"><span>Đã thu</span><b class="green">${tien(t2.da)}</b></div>
+        <div class="line"><span>${coLocDv ? 'Còn thiếu' : 'Còn phải thu (cả nợ tháng trước)'}</span><b class="${t2.can > 0 ? 'red' : ''}">${tien(t2.can)}</b></div>
+      </div>`; })() : ''}`;
 
-  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { locThuPhi = b.dataset.l; veThuPhi(); });
+  $('#moLoc').onclick = () => { LOC.mo = !LOC.mo; veThuPhi(); };
+  document.querySelectorAll('[data-dv]').forEach(b => b.onclick = () => {
+    const m = b.dataset.dv; LOC.dv = LOC.dv.includes(m) ? LOC.dv.filter(x => x !== m) : LOC.dv.concat([m]); veThuPhi();
+  });
+  const ll = $('#locLop'); if (ll) ll.onchange = e => { LOC.lop = e.target.value; veThuPhi(); };
+  const lt = $('#locTruong'); if (lt) lt.onchange = e => { LOC.truong = e.target.value; veThuPhi(); };
+  const bl = $('#boLoc'); if (bl) bl.onclick = () => { LOC.dv = []; LOC.lop = ''; LOC.truong = ''; veThuPhi(); };
+  const cd = $('#chepDS'); if (cd) cd.onclick = () => {
+    const dong = ds.map((x, i) => {
+      const tt = x.canDong <= 0 ? 'đã đóng' : x.s.da > 0 ? 'đóng thiếu ' + tien(x.canDong) : 'chưa đóng';
+      const ct = coLocDv ? ' (' + Object.keys(x.s.theoDv).map(m => D.dvTheoMa[m].ten + ' ' + tien(x.s.theoDv[m].phai)).join(', ') + ')' : '';
+      return `${i + 1}. ${x.h.hoTen}${x.h.lop ? ' - lớp ' + x.h.lop : ''}: ${tien(x.s.phai)}${ct} - ${tt}`;
+    });
+    const bangDv = coLocDv ? '\n\nTHEO TỪNG DỊCH VỤ:\n' + locDv.filter(m => theoDv[m]).map(m => `- ${D.dvTheoMa[m].ten}: ${theoDv[m].soEm} em, phải thu ${tien(theoDv[m].phai)}, đã thu ${tien(theoDv[m].da)}, còn thiếu ${tien(theoDv[m].phai - theoDv[m].da)}`).join('\n') : '';
+    const txt = `DANH SÁCH THU PHÍ THÁNG ${thang}\n${moTaLoc}\n\n${dong.join('\n')}${bangDv}\n\nTỔNG CỘNG (${ds.length} học sinh):\nPhải thu: ${tien(tong.phai)}\nĐã thu: ${tien(tong.da)}\nCòn thiếu: ${tien(tong.thieu)}`;
+    saoChep(txt).then(ok => baoToast(ok ? 'Đã chép danh sách, dán vào Zalo hoặc tin nhắn để gửi' : 'Không chép được'));
+  };
+  document.querySelectorAll('.tabs button[data-l]').forEach(b => b.onclick = () => { locThuPhi = b.dataset.l; veThuPhi(); });
   document.querySelectorAll('.item[data-id]').forEach(el => el.onclick = () => moHocSinh(el.dataset.id));
 }
 
