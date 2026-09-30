@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f6f5c">
+<title>Bán trú</title>
+<style>
+  :root {
+    --bg: #f4f6f5; --card: #ffffff; --text: #1d2521; --muted: #66706b; --line: #e2e7e4;
+    --brand: #1f6f5c; --brand-soft: #e3f1ec; --warn: #b4541a; --warn-soft: #fcefe6;
+    --ok: #237a3b; --ok-soft: #e5f4e8; --danger: #b3261e; --danger-soft: #fbe9e7;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  button, input, select { font: inherit; color: inherit; }
+  .app { max-width: 760px; margin: 0 auto; padding: 0 16px calc(84px + env(safe-area-inset-bottom)); }
+  header { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 12px 0 10px;
+    display: flex; align-items: center; gap: 10px; }
+  header h1 { font-size: 20px; margin: 0; flex: 1; }
+  select.thang { padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); font-weight: 600; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
+  .grid2 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; margin-bottom: 12px; }
+  .grid2 .card { margin: 0; }
+  .stat .lbl { color: var(--muted); font-size: 14px; }
+  .stat .val { font-size: clamp(17px, 5vw, 22px); overflow-wrap: anywhere; font-weight: 700; margin-top: 2px; }
+  .stat .sub { color: var(--muted); font-size: 13px; }
+  .red { color: var(--danger); } .green { color: var(--ok); } .orange { color: var(--warn); }
+  h2 { font-size: 17px; margin: 18px 0 10px; }
+  .btn { border: 0; border-radius: 10px; padding: 11px 14px; background: var(--brand); color: #fff; font-weight: 600; cursor: pointer; }
+  .btn.sec { background: var(--brand-soft); color: var(--brand); }
+  .btn.ghost { background: transparent; border: 1px solid var(--line); color: var(--text); }
+  .btn.danger { background: var(--danger-soft); color: var(--danger); }
+  .btn.full { width: 100%; }
+  .btn:disabled { opacity: .5; }
+  .row { display: flex; gap: 10px; align-items: center; }
+  .row.wrap { flex-wrap: wrap; }
+  .grow { flex: 1; min-width: 0; }
+  .banner { background: var(--warn-soft); color: var(--warn); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; }
+  .banner .btn { margin-top: 8px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; }
+  .tabs button { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 7px 14px; white-space: nowrap; cursor: pointer; }
+  .tabs button.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .item { display: flex; gap: 12px; align-items: center; padding: 12px 14px; background: var(--card);
+    border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 8px; cursor: pointer; }
+  .item .name { font-weight: 600; }
+  .item .meta { color: var(--muted); font-size: 14px; }
+  .item .amt { text-align: right; font-weight: 700; white-space: nowrap; }
+  .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--brand-soft); color: var(--brand);
+    display: grid; place-items: center; font-weight: 700; flex: none; }
+  .tag { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); margin: 2px 4px 0 0; }
+  .tag.no { background: var(--danger-soft); color: var(--danger); border-color: transparent; }
+  .tag.ok { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+  .tag.part { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; flex: none; }
+  .seg button { border: 0; background: var(--card); padding: 9px 14px; cursor: pointer; }
+  .seg button.co.on { background: var(--ok); color: #fff; }
+  .seg button.vang.on { background: var(--danger); color: #fff; }
+  input[type=text], input[type=url], input[type=password], input[type=date], input[type=number], input[type=search] {
+    width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  label.f { display: block; font-size: 14px; color: var(--muted); margin: 10px 0 4px; }
+  nav.bottom { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 1px solid var(--line);
+    display: flex; justify-content: center; padding-bottom: env(safe-area-inset-bottom); z-index: 10; }
+  nav.bottom .in { display: flex; width: 100%; max-width: 760px; }
+  nav.bottom button { flex: 1; border: 0; background: none; padding: 9px 2px 10px; font-size: 12px; color: var(--muted); cursor: pointer; }
+  nav.bottom button svg { display: block; margin: 0 auto 2px; width: 22px; height: 22px; }
+  nav.bottom button.on { color: var(--brand); font-weight: 600; }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; align-items: flex-end; justify-content: center; z-index: 20; }
+  .modal.show { display: flex; }
+  .sheet { background: var(--card); width: 100%; max-width: 560px; max-height: 92vh; overflow: auto;
+    border-radius: 18px 18px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); }
+  @media (min-width: 700px) { .modal { align-items: center; } .sheet { border-radius: 18px; } }
+  .sheet h3 { margin: 0 0 4px; font-size: 19px; }
+  .line { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px dashed var(--line); }
+  .line:last-child { border-bottom: 0; }
+  .line.total { font-weight: 700; border-top: 1px solid var(--line); border-bottom: 0; margin-top: 4px; }
+  .muted { color: var(--muted); }
+  .small { font-size: 14px; }
+  .empty { text-align: center; color: var(--muted); padding: 28px 10px; }
+  .toast { position: fixed; left: 50%; bottom: calc(92px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+    background: #1d2521; color: #fff; padding: 10px 16px; border-radius: 10px; z-index: 30; max-width: 90vw; display: none; }
+  .loading { position: fixed; inset: 0; background: rgba(255,255,255,.6); display: none; place-items: center; z-index: 40; }
+  .loading.show { display: grid; }
+  .spin { width: 36px; height: 36px; border: 4px solid var(--brand-soft); border-top-color: var(--brand); border-radius: 50%; animation: s 0.8s linear infinite; }
+  @keyframes s { to { transform: rotate(360deg); } }
+  pre.msg { white-space: pre-wrap; background: var(--bg); border-radius: 10px; padding: 12px; font: 14px/1.5 inherit; margin: 8px 0; }
+  details summary { cursor: pointer; color: var(--muted); padding: 6px 0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1 id="tieuDe">Bán trú</h1>
+    <select class="thang" id="chonThang" aria-label="Chọn tháng"></select>
+  </header>
+  <main id="noiDung"></main>
+</div>
+
+<nav class="bottom"><div class="in" id="menu"></div></nav>
+
+<div class="modal" id="modal"><div class="sheet" id="modalNoiDung"></div></div>
+<div class="toast" id="toast"></div>
+<div class="loading" id="loading"><div class="spin"></div></div>
+
+<script>
+/* ================== CẤU HÌNH & TIỆN ÍCH ================== */
+const LUU = 'bantru_cauhinh_v3';
+let cauHinh = {};
+try { cauHinh = JSON.parse(localStorage.getItem(LUU) || '{}'); } catch (e) { cauHinh = {}; }
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const tien = n => String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + 'đ';
+const pad = n => String(n).padStart(2, '0');
+const soThang = t => { const [m, y] = t.split('/').map(Number); return y * 12 + m; };
+const thangKe = t => { let [m, y] = t.split('/').map(Number); m++; if (m > 12) { m = 1; y++; } return pad(m) + '/' + y; };
+const homNayChu = () => { const d = new Date(); return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear(); };
+const thangHienTai = () => { const d = new Date(); return pad(d.getMonth() + 1) + '/' + d.getFullYear(); };
+const chuSangNgay = s => { const [d, m, y] = s.split('/').map(Number); return new Date(y, m - 1, d); };
+const isoSangChu = s => { const [y, m, d] = s.split('-'); return d + '/' + m + '/' + y; };
+const chuSangIso = s => { const [d, m, y] = s.split('/'); return y + '-' + m + '-' + d; };
+const chuCaiDau = ten => { const p = String(ten).trim().split(/\s+/); return (p[p.length - 1] || '?')[0].toUpperCase(); };
+const laDienThoai = () => /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+
+function baoToast(s, ms = 2600) {
+  const t = $('#toast'); t.textContent = s; t.style.display = 'block';
+  clearTimeout(baoToast._t); baoToast._t = setTimeout(() => t.style.display = 'none', ms);
+}
+function dangTai(b) { $('#loading').classList.toggle('show', b); }
+
+async function goiApi(action, thamSo = {}) {
+  if (!cauHinh.url) throw new Error('Chưa nhập đường link ở mục Cài đặt');
+  const res = await fetch(cauHinh.url, { method: 'POST', body: JSON.stringify(Object.assign({ key: cauHinh.key, action }, thamSo)) });
+  const kq = await res.json();
+  if (!kq.ok) throw new Error(kq.loi || 'Lỗi không rõ');
+  return kq.data;
+}
+
+async function chay(viec, thongBaoXong) {
+  dangTai(true);
+  try { const kq = await viec(); if (thongBaoXong) baoToast(thongBaoXong); return kq; }
+  catch (e) { baoToast('Lỗi: ' + e.message, 5000); throw e; }
+  finally { dangTai(false); }
+}
+
+/* ================== DỮ LIỆU ================== */
+let D = null;          // dữ liệu từ Google Sheet
+let thang = '';        // tháng đang xem
+let manHinh = 'tongQuan';
+
+async function taiDuLieu(giuThang = true) {
+  D = await chay(() => goiApi('tongHop'));
+  D.hsTheoId = {}; D.hocSinh.forEach(h => D.hsTheoId[h.id] = h);
+  D.dvTheoMa = {}; D.dichVu.forEach(d => D.dvTheoMa[d.ma] = d);
+  const ds = [...new Set(D.dangKy.map(x => x.thang).concat(D.phaiThu.map(x => x.thang)))].filter(Boolean).sort((a, b) => soThang(a) - soThang(b));
+  D.dsThang = ds;
+  if (!giuThang || !ds.includes(thang)) thang = ds.includes(thangHienTai()) ? thangHienTai() : (ds[ds.length - 1] || thangHienTai());
+  veChonThang();
+  ve();
+}
+
+function veChonThang() {
+  const ds = D ? D.dsThang : [];
+  $('#chonThang').innerHTML = ds.slice().reverse().map(t => `<option ${t === thang ? 'selected' : ''}>${t}</option>`).join('') || `<option>${thangHienTai()}</option>`;
+}
+$('#chonThang').addEventListener('change', e => { thang = e.target.value; ve(); });
+
+/** Tiền phải thu / đã thu / còn thiếu của 1 học sinh trong 1 tháng */
+function soLieu(hsId, t) {
+  const phai = D.phaiThu.filter(x => x.hsId === hsId && x.thang === t).reduce((s, x) => s + x.thanhTien, 0);
+  const da = D.thuTien.filter(x => x.hsId === hsId && x.thang === t).reduce((s, x) => s + x.soTien, 0);
+  return { phai, da, thieu: phai - da };
+}
+/** Các tháng TRƯỚC tháng t còn thiếu tiền */
+function noCu(hsId, t) {
+  const cacThang = [...new Set(D.phaiThu.filter(x => x.hsId === hsId && soThang(x.thang) < soThang(t)).map(x => x.thang))].sort((a, b) => soThang(a) - soThang(b));
+  return cacThang.map(x => ({ thang: x, ...soLieu(hsId, x) })).filter(x => x.thieu > 0);
+}
+function hsTrongThang(t) {
+  const ids = [...new Set(D.phaiThu.filter(x => x.thang === t).map(x => x.hsId).concat(D.dangKy.filter(x => x.thang === t).map(x => x.hsId)))];
+  return ids.map(id => D.hsTheoId[id] || { id, hoTen: id, sdt: '' });
+}
+function hsCoNo(t) {   // HS không có dịch vụ tháng t nhưng còn nợ tháng trước
+  const trong = new Set(hsTrongThang(t).map(h => h.id));
+  return D.hocSinh.filter(h => !trong.has(h.id) && noCu(h.id, t).length > 0);
+}
+function daTinhPhi(t) { return D.phaiThu.some(x => x.thang === t); }
+function dvTheoNgay(ma) { const d = D.dvTheoMa[ma]; return d && d.cachTinh.toLowerCase() === 'theo ngày'; }
+
+/* ================== KHUNG & MENU ================== */
+const MENU = [
+  ['tongQuan', 'Tổng quan', '<path d="M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z"/>'],
+  ['diemDanh', 'Điểm danh', '<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>'],
+  ['thuPhi', 'Thu phí', '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>'],
+  ['hocSinh', 'Học sinh', '<circle cx="9" cy="8" r="4"/><path d="M1 21v-1a7 7 0 0 1 14 0v1M17 11a3 3 0 1 0 0-6M23 21v-1a6 6 0 0 0-4-5.6"/>'],
+  ['caiDat', 'Cài đặt', '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>']
+];
+function veMenu() {
+  $('#menu').innerHTML = MENU.map(([k, ten, icon]) =>
+    `<button class="${k === manHinh ? 'on' : ''}" data-k="${k}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg>${ten}</button>`).join('');
+  document.querySelectorAll('#menu button').forEach(b => b.onclick = () => { manHinh = b.dataset.k; ve(); window.scrollTo(0, 0); });
+}
+
+function ve() {
+  veMenu();
+  const ten = MENU.find(m => m[0] === manHinh)[1];
+  $('#tieuDe').textContent = manHinh === 'tongQuan' ? 'Bán trú' : ten;
+  $('#chonThang').style.visibility = (manHinh === 'caiDat' || manHinh === 'diemDanh' || !D) ? 'hidden' : 'visible';
+  if (!D && manHinh !== 'caiDat') {
+    $('#noiDung').innerHTML = `<div class="card"><p>Chưa kết nối với Google Sheet.</p><button class="btn" onclick="manHinh='caiDat';ve()">Mở Cài đặt</button></div>`;
+    return;
+  }
+  ({ tongQuan: veTongQuan, diemDanh: veDiemDanh, thuPhi: veThuPhi, hocSinh: veHocSinh, caiDat: veCaiDat })[manHinh]();
+}
+
+/* ================== TỔNG QUAN ================== */
+function veTongQuan() {
+  const ds = hsTrongThang(thang);
+  let phai = 0, da = 0, soChua = 0;
+  ds.forEach(h => { const s = soLieu(h.id, thang); phai += s.phai; da += s.da; if (s.thieu > 0) soChua++; });
+  let noTruoc = 0, soHsNo = 0;
+  D.hocSinh.forEach(h => { const n = noCu(h.id, thang); if (n.length) { soHsNo++; noTruoc += n.reduce((s, x) => s + x.thieu, 0); } });
+
+  const hn = homNayChu();
+  const hsNgay = hsBanTruNgay(hn);
+  const coMat = hsNgay.filter(h => trangThaiDD(hn, h.id) === 'Có').length;
+  const daDD = hsNgay.some(h => trangThaiDD(hn, h.id));
+
+  const moiNhat = D.dsThang[D.dsThang.length - 1];
+  const tiepTheo = moiNhat ? thangKe(moiNhat) : thangHienTai();
+
+  $('#noiDung').innerHTML = `
+    ${!daTinhPhi(thang) ? `<div class="banner">Tháng ${thang} chưa tính phí.<br><button class="btn" onclick="tinhPhi()">Tính phí tháng ${thang}</button></div>` : ''}
+    <div class="grid2">
+      <div class="card stat"><div class="lbl">Phải thu tháng ${thang}</div><div class="val">${tien(phai)}</div><div class="sub">${ds.length} học sinh</div></div>
+      <div class="card stat"><div class="lbl">Đã thu</div><div class="val green">${tien(da)}</div><div class="sub">${phai ? Math.round(da / phai * 100) : 0}% số phải thu</div></div>
+      <div class="card stat"><div class="lbl">Còn thiếu tháng này</div><div class="val ${phai - da > 0 ? 'red' : ''}">${tien(phai - da)}</div><div class="sub">${soChua} học sinh chưa đóng đủ</div></div>
+      <div class="card stat"><div class="lbl">Nợ các tháng trước</div><div class="val ${noTruoc > 0 ? 'orange' : ''}">${tien(noTruoc)}</div><div class="sub">${soHsNo} học sinh</div></div>
+    </div>
+    <div class="card row">
+      <div class="grow"><div class="name">Điểm danh hôm nay (${hn})</div>
+        <div class="muted small">${hsNgay.length ? (daDD ? `${coMat}/${hsNgay.length} em bán trú ngày có mặt` : `Chưa điểm danh · ${hsNgay.length} em bán trú ngày`) : 'Hôm nay không có em nào bán trú tính ngày'}</div></div>
+      ${hsNgay.length ? `<button class="btn sec" onclick="manHinh='diemDanh';ve()">Điểm danh</button>` : ''}
+    </div>
+    <div class="card">
+      <div class="name">Việc hàng tháng</div>
+      <p class="muted small" style="margin:4px 0 10px">Đầu tháng: tạo đăng ký tháng mới (chép từ tháng trước, bỏ các em đã nghỉ giữa tháng). Sửa thêm/bớt dịch vụ trong Google Sheet nếu cần, rồi bấm Tính phí.</p>
+      <div class="row wrap">
+        <button class="btn sec" onclick="taoThangMoi('${moiNhat || ''}','${tiepTheo}')" ${moiNhat ? '' : 'disabled'}>Tạo tháng ${tiepTheo}</button>
+        <button class="btn ghost" onclick="tinhPhi()">Tính lại phí ${thang}</button>
+      </div>
+    </div>`;
+}
+
+async function tinhPhi(t = thang) {
+  await chay(() => goiApi('tinhPhi', { thang: t }), 'Đã tính phí tháng ' + t);
+  await taiDuLieu();
+}
+async function taoThangMoi(tu, den) {
+  if (!confirm(`Chép đăng ký dịch vụ từ tháng ${tu} sang tháng ${den}?`)) return;
+  const kq = await chay(() => goiApi('saoChepDangKy', { tuThang: tu, denThang: den }));
+  await chay(() => goiApi('tinhPhi', { thang: den }));
+  thang = den;
+  await taiDuLieu();
+  baoToast(`Đã tạo ${kq.soDong} đăng ký tháng ${den}` + (kq.boQua.length ? ` · bỏ qua ${kq.boQua.length} dịch vụ đã ngừng` : ''), 5000);
+}
+
+/* ================== ĐIỂM DANH ================== */
+let ngayDD = homNayChu();
+let nhapDD = {};   // hsId -> 'Có' | 'Vắng' (chưa lưu)
+
+function hsBanTruNgay(ngayChu) {
+  const d = chuSangNgay(ngayChu);
+  const t = pad(d.getMonth() + 1) + '/' + d.getFullYear();
+  const ids = new Set();
+  D.dangKy.filter(x => x.thang === t && dvTheoNgay(x.maDv)).forEach(x => {
+    const tu = x.tuNgay ? chuSangNgay(x.tuNgay) : null, den = x.denNgay ? chuSangNgay(x.denNgay) : null;
+    if ((!tu || d >= tu) && (!den || d <= den)) ids.add(x.hsId);
+  });
+  return [...ids].map(id => D.hsTheoId[id] || { id, hoTen: id }).sort((a, b) => a.hoTen.localeCompare(b.hoTen, 'vi'));
+}
+function trangThaiDD(ngayChu, hsId) {
+  const r = D.diemDanh.filter(x => x.ngay === ngayChu && x.hsId === hsId);
+  return r.length ? r[r.length - 1].trangThai : '';
+}
+function soNgayCoTrongThang(hsId, ngayChu) {
+  const [, m, y] = ngayChu.split('/');
+  const ngay = new Set(D.diemDanh.filter(x => x.hsId === hsId && x.trangThai.toLowerCase() === 'có' && x.ngay.endsWith('/' + m + '/' + y)).map(x => x.ngay));
+  return ngay.size;
+}
+
+function veDiemDanh() {
+  const ds = hsBanTruNgay(ngayDD);
+  const d = chuSangNgay(ngayDD);
+  const thu = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'][d.getDay()];
+  const ht = id => nhapDD[id] || trangThaiDD(ngayDD, id);
+  const daCo = ds.filter(h => ht(h.id) === 'Có').length;
+  const chuaChon = ds.filter(h => !ht(h.id)).length;
+  const coThayDoi = Object.keys(nhapDD).length > 0;
+
+  $('#noiDung').innerHTML = `
+    <div class="card">
+      <label class="f" for="ngayDD" style="margin-top:0">Ngày điểm danh (${thu})</label>
+      <input type="date" id="ngayDD" value="${chuSangIso(ngayDD)}">
+      <p class="muted small" style="margin:8px 0 0">Chỉ hiện các em bán trú tính theo ngày. Các dịch vụ tính theo tháng không cần điểm danh.</p>
+    </div>
+    ${ds.length ? `
+      <div class="row" style="margin-bottom:10px">
+        <div class="grow muted small">Có mặt: <b>${daCo}/${ds.length}</b>${chuaChon ? ` · chưa chọn: ${chuaChon}` : ''}</div>
+        <button class="btn ghost" id="tatCaCo">Tất cả có mặt</button>
+      </div>
+      ${ds.map(h => { const v = ht(h.id); return `
+        <div class="item" style="cursor:default">
+          <div class="avatar">${esc(chuCaiDau(h.hoTen))}</div>
+          <div class="grow"><div class="name">${esc(h.hoTen)}</div><div class="meta">Tháng này đã có mặt ${soNgayCoTrongThang(h.id, ngayDD)} ngày</div></div>
+          <div class="seg"><button class="co ${v === 'Có' ? 'on' : ''}" data-id="${esc(h.id)}" data-v="Có">Có</button><button class="vang ${v === 'Vắng' ? 'on' : ''}" data-id="${esc(h.id)}" data-v="Vắng">Vắng</button></div>
+        </div>`; }).join('')}
+      <button class="btn full" id="luuDD" ${coThayDoi ? '' : 'disabled'} style="margin-top:6px">Lưu điểm danh</button>
+      <p class="muted small">Sau khi lưu, app tự tính lại tiền tháng này.</p>`
+    : `<div class="empty">Ngày này không có em nào bán trú tính theo ngày.</div>`}`;
+
+  $('#ngayDD').onchange = e => {
+    if (!e.target.value) return;
+    if (Object.keys(nhapDD).length && !confirm('Bỏ các thay đổi chưa lưu?')) { e.target.value = chuSangIso(ngayDD); return; }
+    ngayDD = isoSangChu(e.target.value); nhapDD = {}; veDiemDanh();
+  };
+  document.querySelectorAll('.seg button').forEach(b => b.onclick = () => { nhapDD[b.dataset.id] = b.dataset.v; veDiemDanh(); });
+  const tc = $('#tatCaCo'); if (tc) tc.onclick = () => { ds.forEach(h => nhapDD[h.id] = 'Có'); veDiemDanh(); };
+  const luu = $('#luuDD'); if (luu) luu.onclick = luuDiemDanh;
+}
+
+async function luuDiemDanh() {
+  const ds = Object.keys(nhapDD).map(hsId => ({ hsId, trangThai: nhapDD[hsId] }));
+  if (!ds.length) return;
+  const d = chuSangNgay(ngayDD);
+  const t = pad(d.getMonth() + 1) + '/' + d.getFullYear();
+  await chay(() => goiApi('luuDiemDanh', { ngay: ngayDD, ds }));
+  await chay(() => goiApi('tinhPhi', { thang: t }));
+  nhapDD = {};
+  await taiDuLieu();
+  baoToast('Đã lưu điểm danh ' + ngayDD);
+}
+
+/* ================== THU PHÍ ================== */
+let locThuPhi = 'chua';
+
+function veThuPhi() {
+  const ds = hsTrongThang(thang).concat(hsCoNo(thang)).map(h => {
+    const s = soLieu(h.id, thang); const n = noCu(h.id, thang);
+    const tongNo = n.reduce((a, x) => a + x.thieu, 0);
+    return { h, s, n, tongNo, canDong: Math.max(s.thieu, 0) + tongNo };
+  }).sort((a, b) => a.h.hoTen.localeCompare(b.h.hoTen, 'vi'));
+
+  const chua = ds.filter(x => x.canDong > 0), du = ds.filter(x => x.canDong <= 0);
+  const hien = locThuPhi === 'chua' ? chua : locThuPhi === 'du' ? du : ds;
+
+  $('#noiDung').innerHTML = `
+    ${!daTinhPhi(thang) ? `<div class="banner">Tháng ${thang} chưa tính phí.<br><button class="btn" onclick="tinhPhi()">Tính phí tháng ${thang}</button></div>` : ''}
+    <div class="tabs">
+      <button class="${locThuPhi === 'chua' ? 'on' : ''}" data-l="chua">Chưa đóng đủ (${chua.length})</button>
+      <button class="${locThuPhi === 'du' ? 'on' : ''}" data-l="du">Đã đóng đủ (${du.length})</button>
+      <button class="${locThuPhi === 'all' ? 'on' : ''}" data-l="all">Tất cả (${ds.length})</button>
+    </div>
+    ${hien.length ? hien.map(x => {
+      const trangThai = x.canDong <= 0 ? '<span class="tag ok">Đã đóng đủ</span>'
+        : x.s.da > 0 && x.s.thieu > 0 ? '<span class="tag part">Đóng thiếu</span>'
+        : x.s.thieu > 0 ? '<span class="tag no">Chưa đóng</span>' : '';
+      const daGui = D.daGui[thang + '|' + x.h.id];
+      return `
+      <div class="item" data-id="${esc(x.h.id)}">
+        <div class="avatar">${esc(chuCaiDau(x.h.hoTen))}</div>
+        <div class="grow">
+          <div class="name">${esc(x.h.hoTen)}</div>
+          <div class="meta">Tháng ${thang}: ${tien(x.s.phai)}${x.s.da ? ' · đã đóng ' + tien(x.s.da) : ''}</div>
+          <div>${trangThai}${x.n.length ? `<span class="tag part">Nợ ${x.n.length} tháng trước: ${tien(x.tongNo)}</span>` : ''}${daGui ? '<span class="tag">Đã nhắn Zalo</span>' : ''}</div>
+        </div>
+        <div class="amt ${x.canDong > 0 ? 'red' : 'green'}">${x.canDong > 0 ? tien(x.canDong) : '✓'}</div>
+      </div>`; }).join('')
+    : `<div class="empty">${locThuPhi === 'chua' ? 'Tất cả đã đóng đủ.' : 'Không có học sinh nào.'}</div>`}`;
+
+  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { locThuPhi = b.dataset.l; veThuPhi(); });
+  document.querySelectorAll('.item[data-id]').forEach(el => el.onclick = () => moHocSinh(el.dataset.id));
+}
+
+function chiTietThang(hsId, t) {
+  return D.phaiThu.filter(x => x.hsId === hsId && x.thang === t).map(x => {
+    const dv = D.dvTheoMa[x.maDv]; const ten = dv ? dv.ten : x.maDv;
+    if (dvTheoNgay(x.maDv)) return { ten: `${ten} (${x.soLuong} ngày × ${tien(x.mucPhi)})`, tien: x.thanhTien };
+    return { ten: ten + (x.soLuong > 0 && x.soLuong < 1 ? ' (nửa tháng)' : ''), tien: x.thanhTien };
+  });
+}
+
+function noiDungZalo(hsId) {
+  const h = D.hsTheoId[hsId] || { hoTen: hsId };
+  const s = soLieu(hsId, thang), n = noCu(hsId, thang);
+  const ct = chiTietThang(hsId, thang);
+  const tongNo = n.reduce((a, x) => a + x.thieu, 0);
+  let m = `Kính gửi phụ huynh em ${h.hoTen},\n\n`;
+  if (ct.length) {
+    m += `Học phí tháng ${thang}:\n` + ct.map(x => `- ${x.ten}: ${tien(x.tien)}`).join('\n') + '\n';
+    m += `Tổng phải đóng: ${tien(s.phai)}\n`;
+    if (s.da) m += `Đã đóng: ${tien(s.da)}\n`;
+    m += `Còn thiếu: ${tien(Math.max(s.thieu, 0))}\n`;
+  }
+  if (n.length) {
+    m += `\nNợ các tháng trước:\n` + n.map(x => `- Tháng ${x.thang}: ${tien(x.thieu)}`).join('\n') + '\n';
+  }
+  m += `\nTỔNG SỐ TIỀN CẦN ĐÓNG: ${tien(Math.max(s.thieu, 0) + tongNo)}\n\nCô cảm ơn phụ huynh!`;
+  return m;
+}
+
+async function saoChep(s) {
+  try { await navigator.clipboard.writeText(s); return true; }
+  catch (e) {
+    const ta = document.createElement('textarea'); ta.value = s; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch (e2) {}
+    ta.remove(); return ok;
+  }
+}
+
+async function nhanZalo(hsId) {
+  const h = D.hsTheoId[hsId] || {};
+  const ok = await saoChep(noiDungZalo(hsId));   // chép TRƯỚC rồi mới mở Zalo
+  goiApi('danhDauDaGui', { thang, hsId }).then(() => { D.daGui[thang + '|' + hsId] = true; }).catch(() => {});
+  if (!h.sdt) { baoToast(ok ? 'Đã chép tin nhắn. Học sinh chưa có SĐT phụ huynh trong sheet HOC_SINH.' : 'Không chép được, hãy bôi đen và chép tay.', 4500); return; }
+  baoToast(ok ? 'Đã chép tin nhắn — dán vào Zalo' : 'Không chép được tự động');
+  const link = 'https://zalo.me/' + h.sdt;
+  setTimeout(() => { if (laDienThoai()) location.href = link; else window.open(link, '_blank'); }, 400);
+}
+
+/* ---------- Hộp chi tiết 1 học sinh (thu tiền, Zalo, lịch sử) ---------- */
+function moHocSinh(hsId) {
+  const h = D.hsTheoId[hsId] || { id: hsId, hoTen: hsId, sdt: '' };
+  const s = soLieu(hsId, thang), n = noCu(hsId, thang);
+  const ct = chiTietThang(hsId, thang);
+  const tongNo = n.reduce((a, x) => a + x.thieu, 0);
+  const canDong = Math.max(s.thieu, 0) + tongNo;
+  const lichSu = D.thuTien.filter(x => x.hsId === hsId).slice().reverse();
+  const nhomLS = {};
+  lichSu.forEach(x => { const g = x.id.replace(/_\d+$/, ''); (nhomLS[g] = nhomLS[g] || { ngay: x.ngayThu, tong: 0, thang: [] }); nhomLS[g].tong += x.soTien; nhomLS[g].thang.push(x.thang); });
+
+  $('#modalNoiDung').innerHTML = `
+    <div class="row"><h3 class="grow">${esc(h.hoTen)}</h3><button class="btn ghost" onclick="dongModal()">Đóng</button></div>
+    <div class="muted small">${h.sdt ? 'SĐT: ' + esc(h.sdt) : 'Chưa có SĐT phụ huynh'}</div>
+
+    <h2>Tháng ${thang}</h2>
+    ${ct.length ? ct.map(x => `<div class="line"><span>${esc(x.ten)}</span><span>${tien(x.tien)}</span></div>`).join('') : '<div class="muted small">Không có dịch vụ tháng này</div>'}
+    ${ct.length ? `<div class="line total"><span>Phải đóng</span><span>${tien(s.phai)}</span></div>
+      <div class="line"><span>Đã đóng</span><span class="green">${tien(s.da)}</span></div>
+      <div class="line"><span>Còn thiếu</span><span class="${s.thieu > 0 ? 'red' : ''}">${tien(Math.max(s.thieu, 0))}</span></div>` : ''}
+
+    ${n.length ? `<h2>Nợ các tháng trước</h2>${n.map(x => `<div class="line"><span>Tháng ${x.thang}</span><span class="orange">${tien(x.thieu)}</span></div>`).join('')}` : ''}
+
+    <div class="card" style="margin-top:14px;background:var(--bg)">
+      <div class="line total" style="border:0;margin:0;padding:0"><span>Tổng cần đóng</span><span class="${canDong > 0 ? 'red' : 'green'}">${tien(canDong)}</span></div>
+    </div>
+
+    ${canDong > 0 ? `
+      <button class="btn full" id="dongDu">Xác nhận đã đóng đủ ${tien(canDong)}</button>
+      <details style="margin-top:8px"><summary>Đóng số tiền khác (đóng thiếu / đóng dư)</summary>
+        <label class="f" for="soTienKhac">Số tiền phụ huynh đưa</label>
+        <input type="number" id="soTienKhac" inputmode="numeric" placeholder="Ví dụ 1000000" min="0" step="1000">
+        <p class="muted small" style="margin:6px 0">Tiền được trừ vào tháng nợ cũ nhất trước, phần dư tính vào tháng ${thang}.</p>
+        <button class="btn sec full" id="dongKhac">Lưu số tiền này</button>
+      </details>` : ''}
+    <label class="f" for="ngayThu">Ngày thu</label>
+    <input type="date" id="ngayThu" value="${chuSangIso(homNayChu())}">
+
+    <h2>Tin nhắn Zalo</h2>
+    <pre class="msg">${esc(noiDungZalo(hsId))}</pre>
+    <div class="row wrap"><button class="btn" onclick="nhanZalo('${esc(hsId)}')">Chép & mở Zalo</button>
+      <button class="btn ghost" onclick="saoChep(noiDungZalo('${esc(hsId)}')).then(ok=>baoToast(ok?'Đã chép tin nhắn':'Không chép được'))">Chỉ chép</button></div>
+
+    ${Object.keys(nhomLS).length ? `<h2>Lịch sử đóng tiền</h2>${Object.keys(nhomLS).map(g => `
+      <div class="line"><span>${esc(nhomLS[g].ngay)} · ${tien(nhomLS[g].tong)}<br><span class="muted small">cho tháng ${[...new Set(nhomLS[g].thang)].join(', ')}</span></span>
+      <button class="btn danger" data-xoa="${esc(g)}">Xóa</button></div>`).join('')}` : ''}
+  `;
+  $('#modal').classList.add('show');
+
+  const layNgay = () => { const v = $('#ngayThu').value; return v ? isoSangChu(v) : homNayChu(); };
+  const dsNo = () => n.map(x => ({ thang: x.thang, thieu: x.thieu })).concat(s.thieu > 0 ? [{ thang, thieu: s.thieu }] : []);
+  const du = $('#dongDu');
+  if (du) du.onclick = () => luuThuTien(hsId, dsNo().map(x => ({ thang: x.thang, hsId, soTien: x.thieu })), layNgay(), 'Đóng đủ');
+  const khac = $('#dongKhac');
+  if (khac) khac.onclick = () => {
+    let con = Number($('#soTienKhac').value || 0);
+    if (!(con > 0)) { baoToast('Nhập số tiền trước'); return; }
+    const ds = [];
+    dsNo().forEach(x => { if (con <= 0) return; const tra = Math.min(con, x.thieu); ds.push({ thang: x.thang, hsId, soTien: tra }); con -= tra; });
+    if (con > 0) { const cur = ds.find(x => x.thang === thang); if (cur) cur.soTien += con; else ds.push({ thang, hsId, soTien: con }); }
+    luuThuTien(hsId, ds, layNgay(), con > 0 ? 'Đóng dư' : 'Đóng một phần');
+  };
+  document.querySelectorAll('[data-xoa]').forEach(b => b.onclick = async () => {
+    if (!confirm('Xóa lần đóng tiền này?')) return;
+    await chay(() => goiApi('xoaThuTien', { id: b.dataset.xoa }), 'Đã xóa');
+    await taiDuLieu(); moHocSinh(hsId);
+  });
+}
+async function luuThuTien(hsId, ds, ngayThu, ghiChu) {
+  await chay(() => goiApi('thuTien', { ds, ngayThu, ghiChu }), 'Đã lưu tiền thu');
+  await taiDuLieu();
+  moHocSinh(hsId);
+}
+function dongModal() { $('#modal').classList.remove('show'); }
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal') dongModal(); });
+
+/* ================== HỌC SINH ================== */
+let timHS = '';
+function veHocSinh() {
+  const trong = hsTrongThang(thang);
+  const idTrong = new Set(trong.map(h => h.id));
+  const khac = D.hocSinh.filter(h => !idTrong.has(h.id));
+  const khop = h => !timHS || h.hoTen.toLowerCase().includes(timHS.toLowerCase()) || h.id.toLowerCase().includes(timHS.toLowerCase());
+  const the = h => {
+    const dk = D.dangKy.filter(x => x.hsId === h.id && x.thang === thang);
+    const tags = dk.map(x => { const dv = D.dvTheoMa[x.maDv]; return `<span class="tag">${esc(dv ? dv.ten : x.maDv)}${dvTheoNgay(x.maDv) ? '' : ' · ' + tien(x.mucPhi)}</span>`; }).join('');
+    return `<div class="item" data-id="${esc(h.id)}"><div class="avatar">${esc(chuCaiDau(h.hoTen))}</div>
+      <div class="grow"><div class="name">${esc(h.hoTen)} <span class="muted small">${esc(h.id)}</span></div>
+      <div class="meta">${h.sdt ? esc(h.sdt) : 'Chưa có SĐT'}</div><div>${tags}</div></div></div>`;
+  };
+  const a = trong.filter(khop).sort((x, y) => x.hoTen.localeCompare(y.hoTen, 'vi'));
+  const b = khac.filter(khop).sort((x, y) => x.hoTen.localeCompare(y.hoTen, 'vi'));
+  $('#noiDung').innerHTML = `
+    <input type="search" id="timHS" placeholder="Tìm theo tên..." value="${esc(timHS)}" style="margin-bottom:12px">
+    <h2 style="margin-top:0">Có dịch vụ tháng ${thang} (${a.length})</h2>
+    ${a.map(the).join('') || '<div class="empty">Không có</div>'}
+    ${b.length ? `<details><summary>Không có dịch vụ tháng ${thang} (${b.length})</summary>${b.map(the).join('')}</details>` : ''}
+    <p class="muted small">Thêm học sinh, sửa SĐT hay đổi dịch vụ: làm trực tiếp trong Google Sheet (sheet HOC_SINH, DANG_KY_DICH_VU), rồi bấm Tải lại dữ liệu.</p>
+    <button class="btn ghost full" onclick="taiDuLieu()">Tải lại dữ liệu</button>`;
+  const o = $('#timHS');
+  o.oninput = e => { timHS = e.target.value; const pos = o.selectionStart; veHocSinh(); const n = $('#timHS'); n.focus(); n.setSelectionRange(pos, pos); };
+  document.querySelectorAll('.item[data-id]').forEach(el => el.onclick = () => moHocSinh(el.dataset.id));
+}
+
+/* ================== CÀI ĐẶT ================== */
+function veCaiDat() {
+  $('#noiDung').innerHTML = `
+    <div class="card">
+      <div class="name">Kết nối Google Sheet</div>
+      <label class="f" for="url">Đường link Web App (kết thúc bằng /exec)</label>
+      <input type="url" id="url" value="${esc(cauHinh.url || '')}" placeholder="https://script.google.com/macros/s/.../exec">
+      <label class="f" for="key">Mã bảo vệ (giống MA_BAO_VE trong Code.gs)</label>
+      <input type="password" id="key" value="${esc(cauHinh.key || '')}">
+      <button class="btn full" id="luuCH" style="margin-top:14px">Lưu và kết nối</button>
+      <p class="muted small">Link và mã chỉ lưu trên trình duyệt của máy này.</p>
+    </div>
+    ${D ? `<div class="card">
+      <div class="name">Số dư ban đầu</div>
+      <p class="muted small" style="margin:4px 0 10px">Dùng 1 lần khi mới chuyển dữ liệu cũ sang: ghi nhận là phụ huynh đã đóng đủ tiền của tất cả các tháng <b>trước</b> tháng chọn dưới đây. Khoản nào thực sự còn nợ thì sau đó xóa lần thu tương ứng của em đó.</p>
+      <label class="f" for="moc">Đã thu đủ các tháng trước tháng</label>
+      <select id="moc" class="thang" style="width:100%">${D.dsThang.slice().reverse().map(t => `<option>${t}</option>`).join('')}</select>
+      <button class="btn sec full" id="soDu" style="margin-top:10px">Ghi nhận đã thu đủ</button>
+    </div>` : ''}
+    ${D ? `<div class="card small muted">Đang kết nối: ${D.hocSinh.length} học sinh · ${D.dsThang.length} tháng dữ liệu · ${D.thuTien.length} lần thu tiền</div>` : ''}`;
+  $('#luuCH').onclick = async () => {
+    cauHinh = { url: $('#url').value.trim(), key: $('#key').value };
+    try { localStorage.setItem(LUU, JSON.stringify(cauHinh)); } catch (e) {}
+    await taiDuLieu(false);
+    manHinh = 'tongQuan'; ve();
+    baoToast('Kết nối thành công');
+  };
+  const sd = $('#soDu');
+  if (sd) sd.onclick = async () => {
+    const moc = $('#moc').value;
+    const ds = [];
+    D.hocSinh.forEach(h => noCu(h.id, moc).forEach(x => ds.push({ thang: x.thang, hsId: h.id, soTien: x.thieu })));
+    if (!ds.length) { baoToast('Các tháng trước ' + moc + ' không còn khoản nợ nào'); return; }
+    const tong = ds.reduce((a, x) => a + x.soTien, 0);
+    if (!confirm(`Ghi nhận đã thu ${tien(tong)} (${ds.length} khoản) cho các tháng trước ${moc}?`)) return;
+    await chay(() => goiApi('thuTien', { ds, ngayThu: homNayChu(), ghiChu: 'Số dư ban đầu' }), 'Đã ghi nhận số dư ban đầu');
+    await taiDuLieu();
+  };
+}
+
+/* ================== KHỞI ĐỘNG ================== */
+ve();
+if (cauHinh.url) taiDuLieu(false).catch(() => {});
+</script>
+</body>
+</html>
