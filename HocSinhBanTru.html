@@ -58,7 +58,7 @@
   .seg button { border: 0; background: var(--card); padding: 9px 14px; cursor: pointer; }
   .seg button.co.on { background: var(--ok); color: #fff; }
   .seg button.vang.on { background: var(--danger); color: #fff; }
-  input[type=text], input[type=url], input[type=password], input[type=date], input[type=number], input[type=search] {
+  input[type=text], input[type=tel], input[type=url], input[type=password], input[type=date], input[type=number], input[type=search] {
     width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
   label.f { display: block; font-size: 14px; color: var(--muted); margin: 10px 0 4px; }
   nav.bottom { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 1px solid var(--line);
@@ -86,6 +86,12 @@
   .spin { width: 36px; height: 36px; border: 4px solid var(--brand-soft); border-top-color: var(--brand); border-radius: 50%; animation: s 0.8s linear infinite; }
   @keyframes s { to { transform: rotate(360deg); } }
   pre.msg { white-space: pre-wrap; background: var(--bg); border-radius: 10px; padding: 12px; font: 14px/1.5 inherit; margin: 8px 0; }
+  .f2 { display: grid; grid-template-columns: 1fr; gap: 0 12px; }
+  .f2.in { grid-template-columns: minmax(0,1fr) minmax(0,1.3fr); }
+  @media (min-width: 560px) { .f2 { grid-template-columns: minmax(0,1fr) minmax(0,1fr); } }
+  .f3 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 0 10px; }
+  .f3 > div:first-child { grid-column: 1 / -1; }
+  @media (min-width: 560px) { .f3 { grid-template-columns: repeat(3, minmax(0,1fr)); } .f3 > div:first-child { grid-column: auto; } }
   details summary { cursor: pointer; color: var(--muted); padding: 6px 0; }
 </style>
 </head>
@@ -448,7 +454,8 @@ function moHocSinh(hsId) {
 
   $('#modalNoiDung').innerHTML = `
     <div class="row"><h3 class="grow">${esc(h.hoTen)}</h3><button class="btn ghost" onclick="dongModal()">Đóng</button></div>
-    <div class="muted small">${h.sdt ? 'SĐT: ' + esc(h.sdt) : 'Chưa có SĐT phụ huynh'}</div>
+    <div class="row small"><span class="muted grow">${h.sdt ? 'SĐT: ' + esc(h.sdt) : 'Chưa có SĐT phụ huynh'}</span>
+      <button class="btn ghost" style="padding:6px 10px" onclick="moSuaHocSinh('${esc(hsId)}')">Sửa hồ sơ & dịch vụ</button></div>
 
     <h2>Tháng ${thang}</h2>
     ${ct.length ? ct.map(x => `<div class="line"><span>${esc(x.ten)}</span><span>${tien(x.tien)}</span></div>`).join('') : '<div class="muted small">Không có dịch vụ tháng này</div>'}
@@ -520,28 +527,209 @@ function veHocSinh() {
   const khop = h => !timHS || h.hoTen.toLowerCase().includes(timHS.toLowerCase()) || h.id.toLowerCase().includes(timHS.toLowerCase());
   const the = h => {
     const dk = D.dangKy.filter(x => x.hsId === h.id && x.thang === thang);
-    const tags = dk.map(x => { const dv = D.dvTheoMa[x.maDv]; return `<span class="tag">${esc(dv ? dv.ten : x.maDv)}${dvTheoNgay(x.maDv) ? '' : ' · ' + tien(x.mucPhi)}</span>`; }).join('');
+    const tags = dk.map(x => {
+      const dv = D.dvTheoMa[x.maDv];
+      const ngung = x.denNgay && x.denNgay !== cuoiThangChu(thang) ? ` · ngừng ${x.denNgay.slice(0, 5)}` : '';
+      const bd = x.tuNgay && !x.tuNgay.startsWith('01/') ? ` · từ ${x.tuNgay.slice(0, 5)}` : '';
+      return `<span class="tag">${esc(dv ? dv.ten : x.maDv)}${dvTheoNgay(x.maDv) ? '' : ' · ' + tien(x.mucPhi)}${bd}${ngung}</span>`;
+    }).join('');
+    const phu = [h.lop ? 'Lớp ' + h.lop : '', h.sdt || 'Chưa có SĐT'].filter(Boolean).join(' · ');
     return `<div class="item" data-id="${esc(h.id)}"><div class="avatar">${esc(chuCaiDau(h.hoTen))}</div>
-      <div class="grow"><div class="name">${esc(h.hoTen)} <span class="muted small">${esc(h.id)}</span></div>
-      <div class="meta">${h.sdt ? esc(h.sdt) : 'Chưa có SĐT'}</div><div>${tags}</div></div></div>`;
+      <div class="grow"><div class="name">${esc(h.hoTen)}</div>
+      <div class="meta">${esc(phu)}</div><div>${tags}</div></div></div>`;
   };
   const a = trong.filter(khop).sort((x, y) => x.hoTen.localeCompare(y.hoTen, 'vi'));
   const b = khac.filter(khop).sort((x, y) => x.hoTen.localeCompare(y.hoTen, 'vi'));
   $('#noiDung').innerHTML = `
+    <button class="btn full" id="themHS" style="margin-bottom:12px">+ Thêm học sinh mới</button>
     <input type="search" id="timHS" placeholder="Tìm theo tên..." value="${esc(timHS)}" style="margin-bottom:12px">
-    <h2 style="margin-top:0">Có dịch vụ tháng ${thang} (${a.length})</h2>
+    <h2 style="margin-top:0">Đang dùng dịch vụ tháng ${thang} (${a.length})</h2>
     ${a.map(the).join('') || '<div class="empty">Không có</div>'}
-    ${b.length ? `<details><summary>Không có dịch vụ tháng ${thang} (${b.length})</summary>${b.map(the).join('')}</details>` : ''}
-    <p class="muted small">Thêm học sinh, sửa SĐT hay đổi dịch vụ: làm trực tiếp trong Google Sheet (sheet HOC_SINH, DANG_KY_DICH_VU), rồi bấm Tải lại dữ liệu.</p>
-    <button class="btn ghost full" onclick="taiDuLieu()">Tải lại dữ liệu</button>`;
+    ${b.length ? `<details><summary>Không dùng dịch vụ tháng ${thang} / đã nghỉ (${b.length})</summary>${b.map(the).join('')}</details>` : ''}
+    <button class="btn ghost full" style="margin-top:12px" onclick="taiDuLieu()">Tải lại dữ liệu</button>`;
   const o = $('#timHS');
   o.oninput = e => { timHS = e.target.value; const pos = o.selectionStart; veHocSinh(); const n = $('#timHS'); n.focus(); n.setSelectionRange(pos, pos); };
-  document.querySelectorAll('.item[data-id]').forEach(el => el.onclick = () => moHocSinh(el.dataset.id));
+  $('#themHS').onclick = () => moSuaHocSinh(null);
+  document.querySelectorAll('.item[data-id]').forEach(el => el.onclick = () => moSuaHocSinh(el.dataset.id));
 }
 
-/* ================== CÀI ĐẶT ================== */
+/* ---------- Hồ sơ học sinh: thêm / sửa thông tin + dịch vụ ---------- */
+const cuoiThangChu = t => { const [m, y] = t.split('/').map(Number); return pad(new Date(y, m, 0).getDate()) + '/' + pad(m) + '/' + y; };
+const dauThangChu = t => '01/' + t;
+const thangCuaNgay = chu => chu.slice(3);
+let SHS = null;   // hồ sơ đang sửa
+
+function cacThangChon() {
+  return [...new Set(D.dsThang.concat([thangHienTai(), thang]))].sort((a, b) => soThang(b) - soThang(a));
+}
+
+function napDichVu() {
+  const t = SHS.thang, id = SHS.id;
+  const homNay = homNayChu();
+  const batDauMacDinh = (!id && thangCuaNgay(homNay) === t) ? homNay : dauThangChu(t);
+  SHS.dv = {};
+  D.dichVu.forEach(d => {
+    const dk = id ? D.dangKy.find(x => x.hsId === id && x.thang === t && x.maDv === d.ma) : null;
+    SHS.dv[d.ma] = dk
+      ? { chon: true, mucPhi: dk.mucPhi, tu: dk.tuNgay || dauThangChu(t), den: dk.denNgay || cuoiThangChu(t) }
+      : { chon: false, mucPhi: d.mucPhi, tu: batDauMacDinh, den: cuoiThangChu(t) };
+  });
+  SHS.goc = JSON.stringify(SHS.dv);
+}
+
+function moSuaHocSinh(id, thangMo) {
+  const h = id ? (D.hsTheoId[id] || { id }) : {};
+  SHS = {
+    id: id || '',
+    info: { hoTen: h.hoTen || '', lop: h.lop || '', truong: h.truong || '', ngaySinh: h.ngaySinh || '', gioiTinh: h.gioiTinh || '',
+            tenBo: h.tenBo || '', tenMe: h.tenMe || '', sdt: h.sdt || '', diaChi: h.diaChi || '', ghiChu: h.ghiChu || '' },
+    thang: thangMo || (id ? thang : (D.dsThang.includes(thangHienTai()) ? thangHienTai() : thang)),
+    apDungSau: true, moNghi: false
+  };
+  napDichVu();
+  veSuaHocSinh();
+  $('#modal').classList.add('show');
+}
+
+function docFormHS() {
+  if (!$('#f_hoTen')) return;
+  Object.keys(SHS.info).forEach(k => { const el = $('#f_' + k); if (el) SHS.info[k] = el.value.trim(); });
+  if (SHS.info.ngaySinh && /^\d{4}-/.test(SHS.info.ngaySinh)) SHS.info.ngaySinh = isoSangChu(SHS.info.ngaySinh);
+  D.dichVu.forEach(d => {
+    const x = SHS.dv[d.ma]; if (!x) return;
+    const cb = $(`#c_${d.ma}`); if (cb) x.chon = cb.checked;
+    const g = $(`#g_${d.ma}`); if (g) x.mucPhi = Number(g.value || 0);
+    const tu = $(`#t_${d.ma}`); if (tu && tu.value) x.tu = isoSangChu(tu.value);
+    const den = $(`#d_${d.ma}`); if (den && den.value) x.den = isoSangChu(den.value);
+  });
+  const ap = $('#apDungSau'); if (ap) SHS.apDungSau = ap.checked;
+}
+
+function veSuaHocSinh() {
+  const i = SHS.info, t = SHS.thang;
+  const minI = chuSangIso(dauThangChu(t)), maxI = chuSangIso(cuoiThangChu(t));
+  const thangSau = D.dsThang.filter(x => soThang(x) > soThang(t));
+  const o = (k, nhan, kieu = 'text', them = '') => `<div><label class="f" for="f_${k}">${nhan}</label><input type="${kieu}" id="f_${k}" value="${esc(kieu === 'date' && i[k] ? chuSangIso(i[k]) : i[k])}" ${them}></div>`;
+  const dvHtml = D.dichVu.map(d => {
+    const x = SHS.dv[d.ma]; const theoNgay = d.cachTinh.toLowerCase() === 'theo ngày';
+    return `<div class="card" style="padding:10px 12px;margin-bottom:8px;${x.chon ? 'border-color:var(--brand)' : ''}">
+      <label class="row" style="cursor:pointer"><input type="checkbox" id="c_${d.ma}" ${x.chon ? 'checked' : ''} style="width:20px;height:20px">
+        <span class="grow"><b>${esc(d.ten)}</b><br><span class="muted small">${theoNgay ? tien(d.mucPhi) + '/ngày có mặt' : tien(d.mucPhi) + '/tháng'}</span></span></label>
+      ${x.chon ? `<div class="f3">
+        <div><label class="f" for="g_${d.ma}">${theoNgay ? 'Giá 1 ngày' : 'Giá tháng này'}</label><input type="number" id="g_${d.ma}" value="${x.mucPhi}" inputmode="numeric" step="1000" min="0"></div>
+        <div><label class="f" for="t_${d.ma}">Bắt đầu từ</label><input type="date" id="t_${d.ma}" value="${chuSangIso(x.tu)}" min="${minI}" max="${maxI}"></div>
+        <div><label class="f" for="d_${d.ma}">Dùng đến</label><input type="date" id="d_${d.ma}" value="${chuSangIso(x.den)}" min="${minI}" max="${maxI}"></div>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+
+  $('#modalNoiDung').innerHTML = `
+    <div class="row"><h3 class="grow">${SHS.id ? esc(i.hoTen || SHS.id) : 'Thêm học sinh mới'}</h3><button class="btn ghost" onclick="dongModal()">Đóng</button></div>
+    <h2>Thông tin</h2>
+    <div class="f2">
+      ${o('hoTen', 'Họ và tên *')}
+      <div class="f2 in">${o('lop', 'Lớp')}${o('ngaySinh', 'Ngày sinh', 'date')}</div>
+      ${o('truong', 'Trường')}
+      <div><label class="f" for="f_gioiTinh">Giới tính</label><select id="f_gioiTinh" class="thang" style="width:100%;font-weight:400">
+        ${['', 'Nam', 'Nữ'].map(g => `<option ${g === i.gioiTinh ? 'selected' : ''} value="${g}">${g || '—'}</option>`).join('')}</select></div>
+      ${o('tenBo', 'Tên bố')}${o('tenMe', 'Tên mẹ')}
+      ${o('sdt', 'SĐT phụ huynh (Zalo)', 'tel', 'inputmode="tel"')}${o('diaChi', 'Địa chỉ')}
+    </div>
+    ${o('ghiChu', 'Ghi chú')}
+
+    <div class="row" style="margin-top:18px"><h2 class="grow" style="margin:0">Dịch vụ sử dụng</h2>
+      <select id="thangDV" class="thang">${cacThangChon().map(x => `<option ${x === t ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+    <p class="muted small" style="margin:6px 0 10px">Tích chọn dịch vụ em dùng trong tháng ${t}. Vào học hoặc nghỉ giữa tháng thì sửa ngày "Bắt đầu từ" / "Dùng đến". App tự áp quy tắc ngày 16.</p>
+    ${dvHtml || '<div class="muted">Chưa có dịch vụ nào. Vào Cài đặt → Dịch vụ & giá để thêm.</div>'}
+    ${thangSau.length ? `<label class="row small" style="margin:6px 0;cursor:pointer"><input type="checkbox" id="apDungSau" ${SHS.apDungSau ? 'checked' : ''} style="width:18px;height:18px">
+      <span>Áp dụng giống vậy cho các tháng sau đã tạo (${thangSau.join(', ')})</span></label>` : ''}
+
+    <button class="btn full" id="luuHS" style="margin-top:12px">${SHS.id ? 'Lưu thay đổi' : 'Lưu học sinh mới'}</button>
+
+    ${SHS.id ? `
+      <div class="row wrap" style="margin-top:10px">
+        <button class="btn sec" id="thuTienHS">Thu tiền / Zalo</button>
+        <button class="btn ghost" id="choNghi">Cho nghỉ học…</button>
+        <button class="btn danger" id="xoaHS">Xóa</button>
+      </div>
+      ${SHS.moNghi ? `<div class="card" style="margin-top:10px;background:var(--warn-soft);border:0">
+        <label class="f" for="ngayNghi" style="margin-top:0;color:var(--warn)">Em nghỉ học từ ngày nào? (ngày cuối cùng còn đi học)</label>
+        <input type="date" id="ngayNghi" value="${chuSangIso(homNayChu())}">
+        <p class="small" style="color:var(--warn);margin:6px 0">Tất cả dịch vụ sẽ dừng ở ngày này, các tháng sau không còn tính tiền. Nghỉ trong ngày 1–15: tính 50% dịch vụ tháng; từ ngày 16: tính đủ tháng. Tiền còn nợ vẫn được giữ.</p>
+        <button class="btn full" id="xacNhanNghi" style="background:var(--warn)">Xác nhận cho nghỉ</button></div>` : ''}` : ''}
+  `;
+
+  document.querySelectorAll('[id^="c_"]').forEach(cb => cb.onchange = () => { docFormHS(); veSuaHocSinh(); });
+  $('#thangDV').onchange = e => {
+    docFormHS();
+    if (JSON.stringify(SHS.dv) !== SHS.goc && !confirm('Dịch vụ tháng ' + SHS.thang + ' chưa lưu. Chuyển tháng sẽ bỏ thay đổi đó?')) { e.target.value = SHS.thang; return; }
+    SHS.thang = e.target.value; napDichVu(); veSuaHocSinh();
+  };
+  $('#luuHS').onclick = luuHoSo;
+  if (SHS.id) {
+    $('#thuTienHS').onclick = () => moHocSinh(SHS.id);
+    $('#choNghi').onclick = () => { docFormHS(); SHS.moNghi = !SHS.moNghi; veSuaHocSinh(); };
+    $('#xoaHS').onclick = async () => {
+      if (!confirm('Xóa hẳn học sinh này? (Chỉ xóa được khi em chưa có dịch vụ/tiền thu nào)')) return;
+      await chay(() => goiApi('xoaHocSinh', { id: SHS.id }), 'Đã xóa học sinh');
+      dongModal(); await taiDuLieu();
+    };
+    const xn = $('#xacNhanNghi'); if (xn) xn.onclick = choNghiHoc;
+  }
+}
+
+async function luuHoSo() {
+  docFormHS();
+  if (!SHS.info.hoTen) { baoToast('Chưa nhập họ tên'); $('#f_hoTen').focus(); return; }
+  const ds = [];
+  for (const d of D.dichVu) {
+    const x = SHS.dv[d.ma]; if (!x.chon) continue;
+    if (chuSangNgay(x.den) < chuSangNgay(x.tu)) { baoToast(`${d.ten}: ngày "Dùng đến" phải sau ngày bắt đầu`, 4000); return; }
+    ds.push({ maDv: d.ma, mucPhi: x.mucPhi, tuNgay: x.tu, denNgay: x.den });
+  }
+  const moi = !SHS.id;
+  const doiDV = moi || JSON.stringify(SHS.dv) !== SHS.goc;
+  if (moi && !ds.length && !confirm('Chưa chọn dịch vụ nào cho em này. Vẫn lưu?')) return;
+  const kq = await chay(() => goiApi('luuHocSinh', { hs: Object.assign({ id: SHS.id }, SHS.info) }));
+  SHS.id = kq.id;
+  if (doiDV && (ds.length || !moi)) {
+    await chay(() => goiApi('luuDangKyHocSinh', { hsId: SHS.id, thang: SHS.thang, ds, apDungThangSau: SHS.apDungSau }));
+  }
+  await taiDuLieu();
+  dongModal();
+  baoToast(moi ? `Đã thêm ${SHS.info.hoTen}` : 'Đã lưu');
+}
+
+async function choNghiHoc() {
+  const v = $('#ngayNghi').value; if (!v) return;
+  const ngay = isoSangChu(v), t = thangCuaNgay(ngay);
+  if (SHS.thang !== t) { SHS.thang = t; napDichVu(); }
+  const ds = [];
+  D.dichVu.forEach(d => {
+    const x = SHS.dv[d.ma]; if (!x.chon) return;
+    if (chuSangNgay(x.tu) > chuSangNgay(ngay)) return;           // chưa bắt đầu thì bỏ
+    const den = chuSangNgay(x.den) < chuSangNgay(ngay) ? x.den : ngay;
+    ds.push({ maDv: d.ma, mucPhi: x.mucPhi, tuNgay: x.tu, denNgay: den });
+  });
+  if (!confirm(`Cho ${SHS.info.hoTen || SHS.id} nghỉ từ sau ngày ${ngay}?`)) return;
+  await chay(() => goiApi('luuDangKyHocSinh', { hsId: SHS.id, thang: t, ds, apDungThangSau: true }), 'Đã cho nghỉ học');
+  await taiDuLieu();
+  dongModal();
+}
+
+/* ================== CÀI ĐẶT (kết nối + Dịch vụ & giá) ================== */
 function veCaiDat() {
+  const dvHtml = D ? D.dichVu.map(d => {
+    const dung = D.dangKy.filter(x => x.maDv === d.ma && x.thang === thang).length;
+    return `<div class="item" data-ma="${esc(d.ma)}"><div class="grow"><div class="name">${esc(d.ten)}</div>
+      <div class="meta">${esc(d.cachTinh)} · ${dung} em dùng tháng ${thang}</div></div>
+      <div class="amt">${tien(d.mucPhi)}<div class="muted small" style="font-weight:400">${d.cachTinh.toLowerCase() === 'theo ngày' ? '/ngày' : '/tháng'}</div></div></div>`;
+  }).join('') : '';
   $('#noiDung').innerHTML = `
+    ${D ? `<h2 style="margin-top:0">Dịch vụ & giá</h2>
+      ${dvHtml}
+      <button class="btn sec full" id="themDV" style="margin-bottom:6px">+ Thêm dịch vụ</button>
+      <h2>Kết nối</h2>` : ''}
     <div class="card">
       <div class="name">Kết nối Google Sheet</div>
       <label class="f" for="url">Đường link Web App (kết thúc bằng /exec)</label>
@@ -577,9 +765,49 @@ function veCaiDat() {
     await chay(() => goiApi('thuTien', { ds, ngayThu: homNayChu(), ghiChu: 'Số dư ban đầu' }), 'Đã ghi nhận số dư ban đầu');
     await taiDuLieu();
   };
+  const td = $('#themDV'); if (td) td.onclick = () => moSuaDichVu(null);
+  document.querySelectorAll('.item[data-ma]').forEach(el => el.onclick = () => moSuaDichVu(el.dataset.ma));
+}
+
+function moSuaDichVu(ma) {
+  const d = ma ? D.dvTheoMa[ma] : { ten: '', cachTinh: 'Theo tháng', mucPhi: 0, ghiChu: '' };
+  const daDung = ma ? D.dangKy.some(x => x.maDv === ma) : false;
+  const cacThang = cacThangChon();
+  const macDinh = cacThang.includes(thangHienTai()) ? thangHienTai() : thang;
+  $('#modalNoiDung').innerHTML = `
+    <div class="row"><h3 class="grow">${ma ? 'Sửa dịch vụ' : 'Thêm dịch vụ'}</h3><button class="btn ghost" onclick="dongModal()">Đóng</button></div>
+    <label class="f" for="dv_ten">Tên dịch vụ *</label><input type="text" id="dv_ten" value="${esc(d.ten)}" placeholder="Ví dụ: Bán trú tính tháng">
+    <label class="f" for="dv_cach">Cách tính tiền</label>
+    <select id="dv_cach" class="thang" style="width:100%;font-weight:400" ${daDung ? 'disabled' : ''}>
+      <option ${d.cachTinh !== 'Theo ngày' ? 'selected' : ''}>Theo tháng</option><option ${d.cachTinh === 'Theo ngày' ? 'selected' : ''}>Theo ngày</option></select>
+    ${daDung ? '<p class="muted small" style="margin:4px 0">Dịch vụ đã có học sinh dùng nên không đổi cách tính được.</p>' : '<p class="muted small" style="margin:4px 0">Theo ngày = đếm ngày có mặt trong Điểm danh × giá 1 ngày.</p>'}
+    <label class="f" for="dv_gia">Giá mặc định (đồng)</label><input type="number" id="dv_gia" value="${d.mucPhi}" inputmode="numeric" step="1000" min="0">
+    ${ma && daDung ? `<div id="apGia" style="display:none">
+      <label class="f" for="dv_tu">Áp dụng giá mới cho các em đang dùng, từ tháng</label>
+      <select id="dv_tu" class="thang" style="width:100%">${cacThang.map(t => `<option ${t === macDinh ? 'selected' : ''}>${t}</option>`).join('')}<option value="">Không đổi tháng nào (chỉ dùng cho đăng ký mới)</option></select>
+      <p class="muted small" style="margin:4px 0">Các tháng trước vẫn giữ giá cũ. Em nào đang có giá riêng (khác giá cũ ${tien(d.mucPhi)}) thì giữ nguyên giá riêng.</p></div>` : ''}
+    <label class="f" for="dv_gc">Ghi chú</label><input type="text" id="dv_gc" value="${esc(d.ghiChu || '')}">
+    <button class="btn full" id="luuDV" style="margin-top:14px">Lưu</button>
+    ${ma && !daDung ? '<button class="btn danger full" id="xoaDV" style="margin-top:8px">Xóa dịch vụ</button>' : ''}`;
+  $('#modal').classList.add('show');
+  const ap = $('#apGia');
+  if (ap) $('#dv_gia').oninput = e => { ap.style.display = Number(e.target.value) !== d.mucPhi ? 'block' : 'none'; };
+  $('#luuDV').onclick = async () => {
+    const dv = { ma, laMoi: !ma, ten: $('#dv_ten').value.trim(), cachTinh: $('#dv_cach').value, mucPhi: Number($('#dv_gia').value || 0), ghiChu: $('#dv_gc').value.trim() };
+    if (!dv.ten) { baoToast('Chưa nhập tên dịch vụ'); return; }
+    if (ap && ap.style.display !== 'none') dv.apDungTuThang = $('#dv_tu').value;
+    const kq = await chay(() => goiApi('luuDichVu', { dv }));
+    await taiDuLieu(); dongModal();
+    baoToast(kq.capNhat ? `Đã lưu · đổi giá cho ${kq.capNhat} đăng ký (${kq.thangTinhLai.join(', ')})` : 'Đã lưu dịch vụ', 4500);
+  };
+  const x = $('#xoaDV'); if (x) x.onclick = async () => {
+    if (!confirm('Xóa dịch vụ này?')) return;
+    await chay(() => goiApi('xoaDichVu', { ma }), 'Đã xóa'); await taiDuLieu(); dongModal();
+  };
 }
 
 /* ================== KHỞI ĐỘNG ================== */
+window.addEventListener('unhandledrejection', e => e.preventDefault());   // lỗi đã được báo bằng thông báo nhỏ
 ve();
 if (cauHinh.url) taiDuLieu(false).catch(() => {});
 </script>
