@@ -84,12 +84,8 @@
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .step-title {
@@ -111,6 +107,14 @@
             color: #333;
             font-size: 14px;
             font-weight: 500;
+        }
+
+        .hint {
+            display: block;
+            margin-bottom: 6px;
+            color: #999;
+            font-size: 12px;
+            font-style: italic;
         }
 
         .required {
@@ -171,7 +175,6 @@
             align-items: center;
         }
 
-        input[type="checkbox"],
         input[type="radio"] {
             width: 18px;
             height: 18px;
@@ -218,17 +221,6 @@
         .btn-next:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn-submit {
-            background: linear-gradient(135deg, #2ecc71, #27ae60);
-            color: white;
-            width: 100%;
-        }
-
-        .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(46, 204, 113, 0.3);
         }
 
         .success-message {
@@ -286,13 +278,14 @@
         </div>
 
         <form id="healthForm">
-            <!-- Step 1: Thông tin cơ bản -->
+            <!-- Step 1: Thông tin cơ bản học sinh -->
             <div class="step active">
-                <div class="step-title">1️⃣ Thông tin cơ bản</div>
+                <div class="step-title">1️⃣ Thông tin cơ bản của học sinh</div>
 
                 <div class="form-group">
-                    <label>Họ và tên <span class="required">*</span></label>
-                    <input type="text" name="E_HO_TEN" placeholder="VD: NGUYỄN VĂN A">
+                    <label>Họ và tên học sinh <span class="required">*</span></label>
+                    <span class="hint">NHẬP HỌ TÊN (IN HOA) - VD: NGUYỄN VĂN A</span>
+                    <input type="text" name="E_HO_TEN" placeholder="">
                 </div>
 
                 <div class="form-row">
@@ -306,6 +299,7 @@
                     </div>
                     <div class="form-group">
                         <label>Ngày sinh <span class="required">*</span></label>
+                        <span class="hint">Định dạng: DD/MM/YYYY (VD: 31/01/2025)</span>
                         <input type="date" name="G_NGAY_SINH">
                     </div>
                 </div>
@@ -317,6 +311,7 @@
                     </div>
                     <div class="form-group">
                         <label>Dân tộc <span class="required">*</span></label>
+                        <span class="hint">VD: Kinh</span>
                         <select name="I_MA_DAN_TOC">
                             <option value="">-- Chọn --</option>
                             <option value="Kinh">Kinh</option>
@@ -334,24 +329,34 @@
                 <div class="step-title">2️⃣ Liên hệ & Định danh</div>
 
                 <div class="form-group">
-                    <label>Số điện thoại</label>
-                    <input type="tel" name="J_DIEN_THOAI" placeholder="VD: 0977889***">
+                    <label>Số điện thoại của học sinh</label>
+                    <span class="hint">Ghi rõ số điện thoại của người khám - VD: 0977889***</span>
+                    <input type="tel" name="J_DIEN_THOAI" placeholder="">
                 </div>
 
                 <div class="form-group">
-                    <label>Số CMND/CCCD <span class="required">*</span></label>
-                    <input type="text" name="K_SO_CCCD" placeholder="VD: 0260****7785">
+                    <label>Số CMND/CCCD của học sinh <span class="required">*</span></label>
+                    <span class="hint">Nhập Số CCCD/Mã định danh công dân - VD: 0260****7785</span>
+                    <input type="text" name="K_SO_CCCD">
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label>Ngày cấp CCCD</label>
+                        <span class="hint">Định dạng: DD/MM/YYYY (VD: 31/01/2025)</span>
                         <input type="date" name="L_NGAYCAP_CCCD">
                     </div>
                     <div class="form-group">
                         <label>Nơi cấp CCCD</label>
-                        <input type="text" name="M_NOICAP_CCCD" placeholder="VD: Công an TP.HCM">
+                        <span class="hint">Nhập nơi cấp số CCCD</span>
+                        <input type="text" name="M_NOICAP_CCCD" placeholder="">
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Số điện thoại của bố mẹ/người giám hộ</label>
+                    <span class="hint">Ghi rõ số điện thoại của người dân - VD: 0977889***</span>
+                    <input type="tel" name="X_DIEN_THOAI_BO_ME" placeholder="">
                 </div>
             </div>
 
@@ -361,40 +366,46 @@
 
                 <div class="form-group">
                     <label>Họ và tên bố, mẹ hoặc người giám hộ</label>
-                    <input type="text" name="N_NGUOI_GIAM_HO" placeholder="VD: NGUYỄN VĂN B">
+                    <span class="hint">NHẬP HỌ TÊN NGƯỜI GIÁM HỘ (IN HOA) - VD: NGUYỄN VĂN A</span>
+                    <input type="text" name="N_NGUOI_GIAM_HO" placeholder="">
                 </div>
 
                 <div class="form-group">
-                    <label>Mã định danh (CCCD) bố/mẹ/người giám hộ</label>
-                    <input type="text" name="O_SO_CCCD_NGH" placeholder="VD: 0260****7785">
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Tỉnh/Thành phố <span class="required">*</span></label>
-                        <select name="P_MATINH_CU_TRU">
-                            <option value="">-- Chọn --</option>
-                            <option value="TP.HCM">TP.HCM</option>
-                            <option value="Hà Nội">Hà Nội</option>
-                            <option value="Đồng Nai">Đồng Nai</option>
-                            <option value="Bình Dương">Bình Dương</option>
-                            <option value="Long An">Long An</option>
-                            <option value="Khác">Khác</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Xã/Phường <span class="required">*</span></label>
-                        <input type="text" name="R_MAXA_CU_TRU" placeholder="VD: Phường 1">
-                    </div>
+                    <label>Mã định danh (CCCD) của bố, mẹ hoặc người giám hộ</label>
+                    <span class="hint">Nhập Số CCCD/Mã định danh công dân - VD: 0260****7785</span>
+                    <input type="text" name="O_SO_CCCD_NGH" placeholder="">
                 </div>
 
                 <div class="form-group">
-                    <label>Địa chỉ hiện tại <span class="required">*</span></label>
-                    <input type="text" name="T_DIA_CHI" placeholder="VD: 123 Nguyễn Huệ, Q.1, TP.HCM">
+                    <label>Tỉnh/Thành phố nơi ở hiện tại <span class="required">*</span></label>
+                    <span class="hint">Tên Tỉnh/Thành phố</span>
+                    <select name="P_MATINH_CU_TRU">
+                        <option value="">-- Chọn --</option>
+                        <option value="TP.HCM">TP.HCM</option>
+                        <option value="Hà Nội">Hà Nội</option>
+                        <option value="Đồng Nai">Đồng Nai</option>
+                        <option value="Bình Dương">Bình Dương</option>
+                        <option value="Long An">Long An</option>
+                        <option value="Vũng Tàu">Vũng Tàu</option>
+                        <option value="Khác">Khác</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Xã/Phường nơi ở hiện tại <span class="required">*</span></label>
+                    <span class="hint">Tên Phường/Xã</span>
+                    <input type="text" name="R_MAXA_CU_TRU" placeholder="">
+                </div>
+
+                <div class="form-group">
+                    <label>Địa chỉ nơi ở hiện tại <span class="required">*</span></label>
+                    <span class="hint">Địa chỉ hiện tại (Số nhà, thôn, xóm)</span>
+                    <input type="text" name="T_DIA_CHI" placeholder="">
                 </div>
 
                 <div class="form-group">
                     <label>Nhóm máu</label>
+                    <span class="hint">Ghi theo hướng dẫn tại Quyết định 3176/QĐ-BYT</span>
                     <select name="U_NHOM_MAU">
                         <option value="">-- Chọn --</option>
                         <option value="O">O</option>
@@ -411,22 +422,24 @@
                 <div class="step-title">4️⃣ Tiền sử gia đình</div>
 
                 <div class="form-group">
-                    <label>Có ai trong gia đình mắc các bệnh bẩm sinh hoặc bệnh truyền nhiễm không?</label>
+                    <label>Có ai trong gia đình mắc bệnh bẩm sinh hoặc bệnh truyền nhiễm không?</label>
+                    <span class="hint">Ghi theo số tương ứng: "0"=Không, "1"=Có</span>
                     <div class="checkbox-group">
                         <div class="checkbox-item">
-                            <input type="radio" name="AA_TSGD_MAC_BENH" value="Có" id="aa_co">
-                            <label for="aa_co">Có</label>
+                            <input type="radio" name="AA_TSGD_MAC_BENH" value="0" id="aa_khong">
+                            <label for="aa_khong">0 - Không</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="radio" name="AA_TSGD_MAC_BENH" value="Không" id="aa_khong">
-                            <label for="aa_khong">Không</label>
+                            <input type="radio" name="AA_TSGD_MAC_BENH" value="1" id="aa_co">
+                            <label for="aa_co">1 - Có</label>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Nếu có, vui lòng chi tiết tiền sử bệnh gia đình</label>
-                    <textarea name="AB_TSGD_MA_BENH" placeholder="Nhập thông tin tiền sử bệnh gia đình..."></textarea>
+                    <label>Nếu có, vui lòng nêu tên bệnh gia đình</label>
+                    <span class="hint">Ví dụ: Tăng huyết áp, Đái tháo đường…</span>
+                    <textarea name="AB_TSGD_MA_BENH" placeholder=""></textarea>
                 </div>
             </div>
 
@@ -435,48 +448,43 @@
                 <div class="step-title">5️⃣ Tiền sử sản khoa</div>
 
                 <div class="form-group">
-                    <label>Sản khoa</label>
-                    <textarea name="AC_SAN_KHOA" placeholder="Nhập thông tin sản khoa..."></textarea>
+                    <label>Sản khoa bình thường hay không?</label>
+                    <span class="hint">Ghi: Không hoặc Có</span>
+                    <textarea name="AC_SAN_KHOA" placeholder=""></textarea>
                 </div>
 
                 <div class="form-group">
-                    <label>Sản khoa không bình thường?</label>
-                    <div class="checkbox-group">
-                        <div class="checkbox-item">
-                            <input type="radio" name="AD_SAN_KHOA_KB" value="Có" id="ad_co">
-                            <label for="ad_co">Có</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="radio" name="AD_SAN_KHOA_KB" value="Không" id="ad_khong">
-                            <label for="ad_khong">Không</label>
-                        </div>
-                    </div>
+                    <label>Sản khoa không bình thường</label>
+                    <span class="hint">Mã 1: Đẻ thiếu tháng, Mã 2: Đẻ thừa cân, Mã 3: Đẻ có can thiệp, Mã 4: Đẻ ngạt, Mã 5: Mẹ bị bệnh trong kỳ mang thai</span>
+                    <input type="text" name="AD_SAN_KHOA_KB" placeholder="">
                 </div>
 
                 <div class="form-group">
                     <label>Tên bệnh gây ra sản khoa không bình thường</label>
-                    <input type="text" name="AE_TEN_BENH_SK" placeholder="Nhập tên bệnh...">
+                    <span class="hint">Ví dụ: Mẹ bị tăng huyết áp</span>
+                    <input type="text" name="AE_TEN_BENH_SK" placeholder="">
                 </div>
             </div>
 
             <!-- Step 6: Lịch sử vắc xin -->
             <div class="step">
                 <div class="step-title">6️⃣ Lịch sử vắc xin</div>
+                <span class="hint" style="display: block; margin-bottom: 20px;">Ghi theo mã: "0"=Không được tiêm, "1"=Được tiêm, "99"=Không nhớ rõ</span>
 
                 <div class="form-group">
                     <label>BCG</label>
                     <div class="checkbox-group">
                         <div class="checkbox-item">
-                            <input type="radio" name="AF_BCG" value="Đã tiêm" id="af_tiem">
-                            <label for="af_tiem">Đã tiêm</label>
+                            <input type="radio" name="AF_BCG" value="0" id="af_0">
+                            <label for="af_0">0 - Không được tiêm</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="radio" name="AF_BCG" value="Chưa tiêm" id="af_chua">
-                            <label for="af_chua">Chưa tiêm</label>
+                            <input type="radio" name="AF_BCG" value="1" id="af_1">
+                            <label for="af_1">1 - Được tiêm</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="radio" name="AF_BCG" value="Không rõ" id="af_kr">
-                            <label for="af_kr">Không rõ</label>
+                            <input type="radio" name="AF_BCG" value="99" id="af_99">
+                            <label for="af_99">99 - Không nhớ rõ</label>
                         </div>
                     </div>
                 </div>
@@ -485,16 +493,16 @@
                     <label>Bạch hầu, ho gà, uốn ván (DPT)</label>
                     <div class="checkbox-group">
                         <div class="checkbox-item">
-                            <input type="radio" name="AG_DPT" value="Đã tiêm" id="ag_tiem">
-                            <label for="ag_tiem">Đã tiêm</label>
+                            <input type="radio" name="AG_DPT" value="0" id="ag_0">
+                            <label for="ag_0">0 - Không được tiêm</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="radio" name="AG_DPT" value="Chưa tiêm" id="ag_chua">
-                            <label for="ag_chua">Chưa tiêm</label>
+                            <input type="radio" name="AG_DPT" value="1" id="ag_1">
+                            <label for="ag_1">1 - Được tiêm</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="radio" name="AG_DPT" value="Không rõ" id="ag_kr">
-                            <label for="ag_kr">Không rõ</label>
+                            <input type="radio" name="AG_DPT" value="99" id="ag_99">
+                            <label for="ag_99">99 - Không nhớ rõ</label>
                         </div>
                     </div>
                 </div>
@@ -503,16 +511,16 @@
                     <label>Sởi</label>
                     <div class="checkbox-group">
                         <div class="checkbox-item">
-                            <input type="radio" name="AH_SORES" value="Đã tiêm" id="ah_tiem">
-                            <label for="ah_tiem">Đã tiêm</label>
+                            <input type="radio" name="AH_SORES" value="0" id="ah_0">
+                            <label for="ah_0">0 - Không được tiêm</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="radio" name="AH_SORES" value="Chưa tiêm" id="ah_chua">
-                            <label for="ah_chua">Chưa tiêm</label>
+                            <input type="radio" name="AH_SORES" value="1" id="ah_1">
+                            <label for="ah_1">1 - Được tiêm</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="radio" name="AH_SORES" value="Không rõ" id="ah_kr">
-                            <label for="ah_kr">Không rõ</label>
+                            <input type="radio" name="AH_SORES" value="99" id="ah_99">
+                            <label for="ah_99">99 - Không nhớ rõ</label>
                         </div>
                     </div>
                 </div>
@@ -521,16 +529,16 @@
                     <label>Bại liệt</label>
                     <div class="checkbox-group">
                         <div class="checkbox-item">
-                            <input type="radio" name="AI_BAILIET" value="Đã tiêm" id="ai_tiem">
-                            <label for="ai_tiem">Đã tiêm</label>
+                            <input type="radio" name="AI_BAILIET" value="0" id="ai_0">
+                            <label for="ai_0">0 - Không được tiêm</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="radio" name="AI_BAILIET" value="Chưa tiêm" id="ai_chua">
-                            <label for="ai_chua">Chưa tiêm</label>
+                            <input type="radio" name="AI_BAILIET" value="1" id="ai_1">
+                            <label for="ai_1">1 - Được tiêm</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="radio" name="AI_BAILIET" value="Không rõ" id="ai_kr">
-                            <label for="ai_kr">Không rõ</label>
+                            <input type="radio" name="AI_BAILIET" value="99" id="ai_99">
+                            <label for="ai_99">99 - Không nhớ rõ</label>
                         </div>
                     </div>
                 </div>
@@ -539,16 +547,16 @@
                     <label>Viêm não Nhật Bản B</label>
                     <div class="checkbox-group">
                         <div class="checkbox-item">
-                            <input type="radio" name="AJ_VIEM_NAO" value="Đã tiêm" id="aj_tiem">
-                            <label for="aj_tiem">Đã tiêm</label>
+                            <input type="radio" name="AJ_VIEM_NAO" value="0" id="aj_0">
+                            <label for="aj_0">0 - Không được tiêm</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="radio" name="AJ_VIEM_NAO" value="Chưa tiêm" id="aj_chua">
-                            <label for="aj_chua">Chưa tiêm</label>
+                            <input type="radio" name="AJ_VIEM_NAO" value="1" id="aj_1">
+                            <label for="aj_1">1 - Được tiêm</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="radio" name="AJ_VIEM_NAO" value="Không rõ" id="aj_kr">
-                            <label for="aj_kr">Không rõ</label>
+                            <input type="radio" name="AJ_VIEM_NAO" value="99" id="aj_99">
+                            <label for="aj_99">99 - Không nhớ rõ</label>
                         </div>
                     </div>
                 </div>
@@ -557,28 +565,41 @@
                     <label>Viêm gan B</label>
                     <div class="checkbox-group">
                         <div class="checkbox-item">
-                            <input type="radio" name="AK_VIEM_GAN_B" value="Đã tiêm" id="ak_tiem">
-                            <label for="ak_tiem">Đã tiêm</label>
+                            <input type="radio" name="AK_VIEM_GAN_B" value="0" id="ak_0">
+                            <label for="ak_0">0 - Không được tiêm</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="radio" name="AK_VIEM_GAN_B" value="Chưa tiêm" id="ak_chua">
-                            <label for="ak_chua">Chưa tiêm</label>
+                            <input type="radio" name="AK_VIEM_GAN_B" value="1" id="ak_1">
+                            <label for="ak_1">1 - Được tiêm</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="radio" name="AK_VIEM_GAN_B" value="Không rõ" id="ak_kr">
-                            <label for="ak_kr">Không rõ</label>
+                            <input type="radio" name="AK_VIEM_GAN_B" value="99" id="ak_99">
+                            <label for="ak_99">99 - Không nhớ rõ</label>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label>Các loại vắc xin khác</label>
-                    <input type="text" name="AL_VAC_XIN_KHAC" placeholder="VD: Cúm, Vô sinh, ...">
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="radio" name="AL_VAC_XIN_KHAC" value="0" id="al_0">
+                            <label for="al_0">0 - Không được tiêm</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" name="AL_VAC_XIN_KHAC" value="1" id="al_1">
+                            <label for="al_1">1 - Được tiêm</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" name="AL_VAC_XIN_KHAC" value="99" id="al_99">
+                            <label for="al_99">99 - Không nhớ rõ</label>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Tên vắc xin khác (nếu có)</label>
-                    <input type="text" name="AM_TEN_VAC_XIN_KHAC" placeholder="Nhập tên vắc xin...">
+                    <label>Tên vắc xin khác khi được tiêm</label>
+                    <input type="text" name="AM_TEN_VAC_XIN_KHAC" placeholder="">
                 </div>
             </div>
 
@@ -587,41 +608,44 @@
                 <div class="step-title">7️⃣ Tiền sử bệnh bản thân</div>
 
                 <div class="form-group">
-                    <label>Bản thân có mắc các bệnh bẩm sinh và mãn tính không?</label>
+                    <label>Bản thân có đang mắc bệnh bẩm sinh và mãn tính không?</label>
+                    <span class="hint">Ghi theo số tương ứng: "0"=Không, "1"=Có</span>
                     <div class="checkbox-group">
                         <div class="checkbox-item">
-                            <input type="radio" name="AN_BT_MAC_BENH" value="Có" id="an_co">
-                            <label for="an_co">Có</label>
+                            <input type="radio" name="AN_BT_MAC_BENH" value="0" id="an_0">
+                            <label for="an_0">0 - Không</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="radio" name="AN_BT_MAC_BENH" value="Không" id="an_khong">
-                            <label for="an_khong">Không</label>
+                            <input type="radio" name="AN_BT_MAC_BENH" value="1" id="an_1">
+                            <label for="an_1">1 - Có</label>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Tên bệnh tiền sử bản thân</label>
-                    <textarea name="AO_TEN_BENH_TS" placeholder="Nhập tên bệnh bẩm sinh hoặc mãn tính..."></textarea>
+                    <label>Tên bệnh tiền sử bản thân (nếu có)</label>
+                    <textarea name="AO_TEN_BENH_TS" placeholder=""></textarea>
                 </div>
 
                 <div class="form-group">
                     <label>Hiện tại có đang điều trị bệnh gì không?</label>
+                    <span class="hint">Ghi theo số tương ứng: "0"=Không, "1"=Có</span>
                     <div class="checkbox-group">
                         <div class="checkbox-item">
-                            <input type="radio" name="AP_DANG_DIEU_TRI" value="Có" id="ap_co">
-                            <label for="ap_co">Có</label>
+                            <input type="radio" name="AP_DANG_DIEU_TRI" value="0" id="ap_0">
+                            <label for="ap_0">0 - Không</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="radio" name="AP_DANG_DIEU_TRI" value="Không" id="ap_khong">
-                            <label for="ap_khong">Không</label>
+                            <input type="radio" name="AP_DANG_DIEU_TRI" value="1" id="ap_1">
+                            <label for="ap_1">1 - Có</label>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label>Cụ thể tên bệnh và liệt kê các thuốc đang dùng</label>
-                    <textarea name="AQ_BENH_THUOC" placeholder="Nhập tên bệnh, tên thuốc, liều dùng..."></textarea>
+                    <span class="hint">Nhập cụ thể tên bệnh và thuốc đang dùng</span>
+                    <textarea name="AQ_BENH_THUOC" placeholder=""></textarea>
                 </div>
             </div>
 
@@ -684,31 +708,28 @@
             e.preventDefault();
 
             if (currentStep === totalSteps) {
-                // Gửi form - kiểm tra trường bắt buộc
                 submitForm();
             } else {
-                // Chuyển trang bình thường - không kiểm tra
                 showStep(currentStep + 1);
             }
         });
 
         function validateForm() {
-            // Kiểm tra tất cả các trường bắt buộc khi gửi
-            const allRequiredFields = form.querySelectorAll('[required]');
+            const requiredFields = {
+                'E_HO_TEN': 'Họ và tên học sinh',
+                'F_GIOI_TINH': 'Giới tính',
+                'G_NGAY_SINH': 'Ngày sinh',
+                'I_MA_DAN_TOC': 'Dân tộc',
+                'K_SO_CCCD': 'Số CMND/CCCD của học sinh',
+                'P_MATINH_CU_TRU': 'Tỉnh/Thành phố nơi ở',
+                'R_MAXA_CU_TRU': 'Xã/Phường nơi ở',
+                'T_DIA_CHI': 'Địa chỉ nơi ở'
+            };
 
-            for (let field of allRequiredFields) {
-                if (!field.value.trim()) {
-                    const label = field.previousElementSibling?.textContent || 'Trường này';
-                    alert(`❌ Vui lòng điền trường bắt buộc: ${label}`);
-
-                    // Tìm step chứa field và quay lại
-                    for (let i = 0; i < totalSteps; i++) {
-                        if (steps[i].contains(field)) {
-                            showStep(i + 1);
-                            field.focus();
-                            return false;
-                        }
-                    }
+            for (const [fieldName, fieldLabel] of Object.entries(requiredFields)) {
+                const field = form.querySelector(`[name="${fieldName}"]`);
+                if (field && !field.value.trim()) {
+                    alert(`❌ Vui lòng điền: ${fieldLabel}`);
                     return false;
                 }
             }
@@ -716,7 +737,6 @@
         }
 
         async function submitForm() {
-            // Kiểm tra validation trước khi gửi
             if (!validateForm()) return;
 
             const formData = new FormData(form);
@@ -746,7 +766,6 @@
             }
         }
 
-        // Initialize
         showStep(1);
     </script>
 </body>
