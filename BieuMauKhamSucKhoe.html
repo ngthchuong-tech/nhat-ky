@@ -668,6 +668,7 @@
         <div class="success-message" id="successMsg">
             <p style="font-size:18px; margin-bottom:10px;">✅ Gửi thông tin thành công!</p>
             <p>Cảm ơn quý phụ huynh đã điền biểu mẫu.</p>
+            <p id="successDetail" style="margin-top:8px; font-size:13px; color:#1e7e34;"></p>
             <button type="button" class="btn-next" id="newFormBtn" style="margin-top:15px;">📝 Nhập phiếu cho học sinh khác</button>
         </div>
     </div>
@@ -807,6 +808,7 @@
 
                 // Thành công
                 sessionStorage.removeItem('healthFormData');
+                document.getElementById('successDetail').textContent = result.message || '';
                 form.style.display = 'none';
                 successMsg.style.display = 'block';
             } catch (error) {
