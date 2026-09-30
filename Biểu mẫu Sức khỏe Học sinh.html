@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biểu mẫu Sức khỏe Học sinh</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 30px 25px;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .progress-bar {
+            background: #e0e0e0;
+            height: 8px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            width: 14.28%;
+        }
+
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .step-title {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .required {
+            color: #e74c3c;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="tel"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="date"]:focus,
+        input[type="tel"]:focus,
+        input[type="number"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="checkbox"],
+        input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .checkbox-item label {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-prev {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-prev:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-next:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(46, 204, 113, 0.3);
+        }
+
+        .success-message {
+            display: none;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .error-message {
+            display: none;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f0f0f0;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Biểu mẫu Sức khỏe Học sinh</h1>
+            <p>Vui lòng điền đầy đủ thông tin</p>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill"></div>
+        </div>
+
+        <form id="healthForm">
+            <!-- Step 1: Thông tin cơ bản -->
+            <div class="step active">
+                <div class="step-title">1️⃣ Thông tin cơ bản</div>
+
+                <div class="form-group">
+                    <label>Họ và tên <span class="required">*</span></label>
+                    <input type="text" name="E_HO_TEN" required placeholder="VD: NGUYỄN VĂN A">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Giới tính <span class="required">*</span></label>
+                        <select name="F_GIOI_TINH" required>
+                            <option value="">-- Chọn --</option>
+                            <option value="Nam">Nam</option>
+                            <option value="Nữ">Nữ</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Ngày sinh <span class="required">*</span></label>
+                        <input type="date" name="G_NGAY_SINH" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Lớp</label>
+                        <input type="text" name="H_LOP" placeholder="VD: 10A1">
+                    </div>
+                    <div class="form-group">
+                        <label>Dân tộc <span class="required">*</span></label>
+                        <select name="I_MA_DAN_TOC" required>
+                            <option value="">-- Chọn --</option>
+                            <option value="Kinh">Kinh</option>
+                            <option value="Tày">Tày</option>
+                            <option value="Thái">Thái</option>
+                            <option value="Mường">Mường</option>
+                            <option value="Khác">Khác</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Liên hệ & Định danh -->
+            <div class="step">
+                <div class="step-title">2️⃣ Liên hệ & Định danh</div>
+
+                <div class="form-group">
+                    <label>Số điện thoại</label>
+                    <input type="tel" name="J_DIEN_THOAI" placeholder="VD: 0977889***">
+                </div>
+
+                <div class="form-group">
+                    <label>Số CMND/CCCD <span class="required">*</span></label>
+                    <input type="text" name="K_SO_CCCD" required placeholder="VD: 0260****7785">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Ngày cấp CCCD</label>
+                        <input type="date" name="L_NGAYCAP_CCCD">
+                    </div>
+                    <div class="form-group">
+                        <label>Nơi cấp CCCD</label>
+                        <input type="text" name="M_NOICAP_CCCD" placeholder="VD: Công an TP.HCM">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Thông tin gia đình -->
+            <div class="step">
+                <div class="step-title">3️⃣ Thông tin gia đình</div>
+
+                <div class="form-group">
+                    <label>Họ và tên bố, mẹ hoặc người giám hộ</label>
+                    <input type="text" name="N_NGUOI_GIAM_HO" placeholder="VD: NGUYỄN VĂN B">
+                </div>
+
+                <div class="form-group">
+                    <label>Mã định danh (CCCD) bố/mẹ/người giám hộ</label>
+                    <input type="text" name="O_SO_CCCD_NGH" placeholder="VD: 0260****7785">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tỉnh/Thành phố <span class="required">*</span></label>
+                        <select name="P_MATINH_CU_TRU" required>
+                            <option value="">-- Chọn --</option>
+                            <option value="TP.HCM">TP.HCM</option>
+                            <option value="Hà Nội">Hà Nội</option>
+                            <option value="Đồng Nai">Đồng Nai</option>
+                            <option value="Bình Dương">Bình Dương</option>
+                            <option value="Long An">Long An</option>
+                            <option value="Khác">Khác</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Xã/Phường <span class="required">*</span></label>
+                        <input type="text" name="R_MAXA_CU_TRU" required placeholder="VD: Phường 1">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Địa chỉ hiện tại <span class="required">*</span></label>
+                    <input type="text" name="T_DIA_CHI" required placeholder="VD: 123 Nguyễn Huệ, Q.1, TP.HCM">
+                </div>
+
+                <div class="form-group">
+                    <label>Nhóm máu</label>
+                    <select name="U_NHOM_MAU">
+                        <option value="">-- Chọn --</option>
+                        <option value="O">O</option>
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="AB">AB</option>
+                        <option value="Không rõ">Không rõ</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Step 4: Tiền sử gia đình -->
+            <div class="step">
+                <div class="step-title">4️⃣ Tiền sử gia đình</div>
+
+                <div class="form-group">
+                    <label>Có ai trong gia đình mắc các bệnh bẩm sinh hoặc bệnh truyền nhiễm không?</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="radio" name="AA_TSGD_MAC_BENH" value="Có" id="aa_co">
+                            <label for="aa_co">Có</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" name="AA_TSGD_MAC_BENH" value="Không" id="aa_khong">
+                            <label for="aa_khong">Không</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Nếu có, vui lòng chi tiết tiền sử bệnh gia đình</label>
+                    <textarea name="AB_TSGD_MA_BENH" placeholder="Nhập thông tin tiền sử bệnh gia đình..."></textarea>
+                </div>
+            </div>
+
+            <!-- Step 5: Tiền sử sản khoa -->
+            <div class="step">
+                <div class="step-title">5️⃣ Tiền sử sản khoa</div>
+
+                <div class="form-group">
+                    <label>Sản khoa</label>
+                    <textarea name="AC_SAN_KHOA" placeholder="Nhập thông tin sản khoa..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Sản khoa không bình thường?</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="radio" name="AD_SAN_KHOA_KB" value="Có" id="ad_co">
+                            <label for="ad_co">Có</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" name="AD_SAN_KHOA_KB" value="Không" id="ad_khong">
+                            <label for="ad_khong">Không</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Tên bệnh gây ra sản khoa không bình thường</label>
+                    <input type="text" name="AE_TEN_BENH_SK" placeholder="Nhập tên bệnh...">
+                </div>
+            </div>
+
+            <!-- Step 6: Lịch sử vắc xin -->
+            <div class="step">
+                <div class="step-title">6️⃣ Lịch sử vắc xin</div>
+
+                <div class="form-group">
+                    <label>BCG</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="radio" name="AF_BCG" value="Đã tiêm" id="af_tiem">
+                            <label for="af_tiem">Đã tiêm</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" name="AF_BCG" value="Chưa tiêm" id="af_chua">
+                            <label for="af_chua">Chưa tiêm</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" name="AF_BCG" value="Không rõ" id="af_kr">
+                            <label for="af_kr">Không rõ</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Bạch hầu, ho gà, uốn ván (DPT)</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="radio" name="AG_DPT" value="Đã tiêm" id="ag_tiem">
+                            <label for="ag_tiem">Đã tiêm</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" name="AG_DPT" value="Chưa tiêm" id="ag_chua">
+                            <label for="ag_chua">Chưa tiêm</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" name="AG_DPT" value="Không rõ" id="ag_kr">
+                            <label for="ag_kr">Không rõ</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Sởi</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="radio" name="AH_SORES" value="Đã tiêm" id="ah_tiem">
+                            <label for="ah_tiem">Đã tiêm</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" name="AH_SORES" value="Chưa tiêm" id="ah_chua">
+                            <label for="ah_chua">Chưa tiêm</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" name="AH_SORES" value="Không rõ" id="ah_kr">
+                            <label for="ah_kr">Không rõ</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Bại liệt</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="radio" name="AI_BAILIET" value="Đã tiêm" id="ai_tiem">
+                            <label for="ai_tiem">Đã tiêm</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" name="AI_BAILIET" value="Chưa tiêm" id="ai_chua">
+                            <label for="ai_chua">Chưa tiêm</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" name="AI_BAILIET" value="Không rõ" id="ai_kr">
+                            <label for="ai_kr">Không rõ</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Viêm não Nhật Bản B</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="radio" name="AJ_VIEM_NAO" value="Đã tiêm" id="aj_tiem">
+                            <label for="aj_tiem">Đã tiêm</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" name="AJ_VIEM_NAO" value="Chưa tiêm" id="aj_chua">
+                            <label for="aj_chua">Chưa tiêm</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" name="AJ_VIEM_NAO" value="Không rõ" id="aj_kr">
+                            <label for="aj_kr">Không rõ</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Viêm gan B</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="radio" name="AK_VIEM_GAN_B" value="Đã tiêm" id="ak_tiem">
+                            <label for="ak_tiem">Đã tiêm</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" name="AK_VIEM_GAN_B" value="Chưa tiêm" id="ak_chua">
+                            <label for="ak_chua">Chưa tiêm</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" name="AK_VIEM_GAN_B" value="Không rõ" id="ak_kr">
+                            <label for="ak_kr">Không rõ</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Các loại vắc xin khác</label>
+                    <input type="text" name="AL_VAC_XIN_KHAC" placeholder="VD: Cúm, Vô sinh, ...">
+                </div>
+
+                <div class="form-group">
+                    <label>Tên vắc xin khác (nếu có)</label>
+                    <input type="text" name="AM_TEN_VAC_XIN_KHAC" placeholder="Nhập tên vắc xin...">
+                </div>
+            </div>
+
+            <!-- Step 7: Tiền sử bệnh bản thân -->
+            <div class="step">
+                <div class="step-title">7️⃣ Tiền sử bệnh bản thân</div>
+
+                <div class="form-group">
+                    <label>Bản thân có mắc các bệnh bẩm sinh và mãn tính không?</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="radio" name="AN_BT_MAC_BENH" value="Có" id="an_co">
+                            <label for="an_co">Có</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" name="AN_BT_MAC_BENH" value="Không" id="an_khong">
+                            <label for="an_khong">Không</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Tên bệnh tiền sử bản thân</label>
+                    <textarea name="AO_TEN_BENH_TS" placeholder="Nhập tên bệnh bẩm sinh hoặc mãn tính..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Hiện tại có đang điều trị bệnh gì không?</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="radio" name="AP_DANG_DIEU_TRI" value="Có" id="ap_co">
+                            <label for="ap_co">Có</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" name="AP_DANG_DIEU_TRI" value="Không" id="ap_khong">
+                            <label for="ap_khong">Không</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Cụ thể tên bệnh và liệt kê các thuốc đang dùng</label>
+                    <textarea name="AQ_BENH_THUOC" placeholder="Nhập tên bệnh, tên thuốc, liều dùng..."></textarea>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="buttons">
+                <button type="button" class="btn-prev" id="prevBtn" style="display:none;">← Quay lại</button>
+                <button type="button" class="btn-next" id="nextBtn">Tiếp tục →</button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Đang gửi dữ liệu...</p>
+            </div>
+
+            <div class="success-message" id="successMsg">
+                ✅ Gửi thông tin thành công! Cảm ơn bạn đã điền biểu mẫu.
+            </div>
+
+            <div class="error-message" id="errorMsg">
+                ❌ Có lỗi khi gửi dữ liệu. Vui lòng thử lại.
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('healthForm');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const steps = document.querySelectorAll('.step');
+        const progressFill = document.querySelector('.progress-fill');
+        const successMsg = document.getElementById('successMsg');
+        const errorMsg = document.getElementById('errorMsg');
+        const loading = document.getElementById('loading');
+
+        let currentStep = 1;
+        const totalSteps = steps.length;
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby0igbprTeYLkXIyWsfsz7oQIQT1YSA705Id-j0-dSLXkgSbwI3_V5fMALFgOa7dbMD3Q/exec';
+
+        function showStep(n) {
+            steps.forEach(step => step.classList.remove('active'));
+            if (n > totalSteps) n = totalSteps;
+            if (n < 1) n = 1;
+
+            steps[n - 1].classList.add('active');
+            prevBtn.style.display = n === 1 ? 'none' : 'block';
+            nextBtn.innerHTML = n === totalSteps ? '✓ Gửi' : 'Tiếp tục →';
+
+            const progressPercent = (n / totalSteps) * 100;
+            progressFill.style.width = progressPercent + '%';
+
+            currentStep = n;
+            window.scrollTo(0, 0);
+        }
+
+        prevBtn.addEventListener('click', () => {
+            showStep(currentStep - 1);
+        });
+
+        nextBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+
+            if (currentStep === totalSteps) {
+                // Submit form
+                submitForm();
+            } else {
+                // Validate current step and move to next
+                if (validateStep(currentStep)) {
+                    showStep(currentStep + 1);
+                }
+            }
+        });
+
+        function validateStep(step) {
+            const currentStepElem = steps[step - 1];
+            const requiredFields = currentStepElem.querySelectorAll('[required]');
+
+            for (let field of requiredFields) {
+                if (!field.value.trim()) {
+                    alert(`❌ Vui lòng điền trường: ${field.previousElementSibling?.textContent || 'Bắt buộc'}`);
+                    field.focus();
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        async function submitForm() {
+            if (!validateStep(totalSteps)) return;
+
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+
+            loading.style.display = 'block';
+            successMsg.style.display = 'none';
+            errorMsg.style.display = 'none';
+
+            try {
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    form.style.display = 'none';
+                    loading.style.display = 'none';
+                    successMsg.style.display = 'block';
+                } else {
+                    throw new Error('Lỗi khi gửi dữ liệu');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                loading.style.display = 'none';
+                errorMsg.style.display = 'block';
+            }
+        }
+
+        // Initialize
+        showStep(1);
+    </script>
+</body>
+</html>
